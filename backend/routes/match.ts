@@ -55,66 +55,85 @@ export default async function matchRoutes(fastify: FastifyInstance) {
 
   //END MATCH
   fastify.post('/match/submit', async (req, reply) => {
-    const {
-      match_id,
-      winner_id,
-      score_p1,
-      score_p2
-    } = req.body as {
-      match_id: number;
-      winner_id: number;
-      score_p1: number;
-      score_p2: number;
-    };
+  const {
+    match_id,
+    winner_id,
+    score_p1,
+    score_p2
+  } = req.body as {
+    match_id: number;
+    winner_id: number;
+    score_p1: number;
+    score_p2: number;
+  };
 
-    // Validate input
-    if (!match_id || !winner_id || score_p1 == null || score_p2 == null) {
-      return reply.status(400).send({ error: 'Missing match data' });
+  if (!match_id || !winner_id || score_p1 == null || score_p2 == null) {
+    return reply.status(400).send({ error: 'Missing match data' });
+  }
+
+  const match = db.prepare('SELECT * FROM matches WHERE id = ?').get(match_id);
+  if (!match) {
+    return reply.status(404).send({ error: 'Match not found' });
+  }
+
+  if (match.winner_id !== null) {
+    return reply.status(400).send({ error: 'This match has already been submitted' });
+  }
+
+  const loser_id =
+    match.player1_id === winner_id ? match.player2_id : match.player1_id;
+
+  try {
+    // 1. Update the match
+    db.prepare(`
+      UPDATE matches
+      SET winner_id = ?, score_p1 = ?, score_p2 = ?, played_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(winner_id, score_p1, score_p2, match_id);
+
+    // 2. Update XP and trophies
+    db.prepare(`
+      UPDATE users
+      SET xp_level = xp_level + 0.3, trophies = trophies + 30
+      WHERE id = ?
+    `).run(winner_id);
+
+    const loser = db.prepare('SELECT trophies FROM users WHERE id = ?').get(loser_id);
+    const newTrophies = Math.max(0, loser.trophies - 15);
+
+    db.prepare(`
+      UPDATE users
+      SET xp_level = xp_level + 0.1, trophies = ?
+      WHERE id = ?
+    `).run(newTrophies, loser_id);
+
+    // ✅ 3. If part of a tournament, check and create final
+    if (match.tournament_id) {
+      const matches = db.prepare(`
+        SELECT * FROM matches WHERE tournament_id = ? ORDER BY id ASC
+      `).all(match.tournament_id);
+
+      const semiFinals = matches.slice(0, 2); // Assume first 2 = semis
+
+      const bothSemisDone = semiFinals.length === 2 && semiFinals.every((m: any) => m.winner_id !== null);
+      const finalExists = matches.length >= 3;
+
+      if (bothSemisDone && !finalExists) {
+        const [w1, w2] = semiFinals.map((m: any) => m.winner_id);
+        db.prepare(`
+          INSERT INTO matches (tournament_id, player1_id, player2_id)
+          VALUES (?, ?, ?)
+        `).run(match.tournament_id, w1, w2);
+      }
     }
 
-    // Fetch the match to get both players
-    const match = db.prepare('SELECT * FROM matches WHERE id = ?').get(match_id);
-    if (!match) {
-      return reply.status(404).send({ error: 'Match not found' });
-    }
+    return reply.send({ message: 'Match result recorded' });
+  } catch (err) {
+    console.error(err);
+    return reply.status(500).send({ error: 'Error updating match or user stats' });
+  }
+});
 
-    if (match.winner_id !== null) {
-        return reply.status(400).send({ error: 'This match has already been submitted' });
-    }
-    const loser_id =
-      match.player1_id === winner_id ? match.player2_id : match.player1_id;
-
-    try {
-      // 1. Update the match record
-      db.prepare(`
-        UPDATE matches
-        SET winner_id = ?, score_p1 = ?, score_p2 = ?, played_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).run(winner_id, score_p1, score_p2, match_id);
-
-      // 2. Update winner XP and trophies
-      db.prepare(`
-        UPDATE users
-        SET xp_level = xp_level + 0.3, trophies = trophies + 30
-        WHERE id = ?
-      `).run(winner_id);
-
-      // 3. Update loser XP and trophies (but don't go below 0 trophies)
-      const loser = db.prepare('SELECT trophies FROM users WHERE id = ?').get(loser_id);
-      const newTrophies = Math.max(0, loser.trophies - 15);
-
-      db.prepare(`
-        UPDATE users
-        SET xp_level = xp_level + 0.1, trophies = ?
-        WHERE id = ?
-      `).run(newTrophies, loser_id);
-
-      return reply.send({ message: 'Match result recorded' });
-    } catch (err) {
-      console.error(err);
-      return reply.status(500).send({ error: 'Error updating match or user stats' });
-    }
-  });
 
   fastify.get('/api/matches/history',
     { preHandler: authMiddleware },
