@@ -5,7 +5,6 @@
  *  – edit / save / cancel logic with password rules
  *  – toast + error helpers
  */
-var _a, _b;
 export function $(sel) {
     return document.querySelector(sel);
 }
@@ -234,10 +233,11 @@ cancelBtn === null || cancelBtn === void 0 ? void 0 : cancelBtn.addEventListener
     [inOldPass, inNewPass, inConfirmPass].forEach(i => i && (i.value = ""));
     toggleEdit(false);
 });
-saveBtn === null || saveBtn === void 0 ? void 0 : saveBtn.addEventListener("click", () => {
-    var _a, _b, _c, _d;
+saveBtn === null || saveBtn === void 0 ? void 0 : saveBtn.addEventListener("click", async () => {
+    var _a, _b, _c, _d, _e, _f;
     if (!inUsername || !inEmail)
         return;
+    /* ─── 1. front-end validation ─── */
     const u = inUsername.value.trim();
     const e = inEmail.value.trim();
     if (!u) {
@@ -270,19 +270,49 @@ saveBtn === null || saveBtn === void 0 ? void 0 : saveBtn.addEventListener("clic
             showError("New and confirm password do not match.");
             return;
         }
-        /* TODO: call backend to update password */
-        [inOldPass, inNewPass, inConfirmPass]
-            .forEach(i => i && (i.value = ""));
     }
-    localStorage.setItem("user", JSON.stringify(Object.assign(Object.assign({}, (JSON.parse((_d = localStorage.getItem("user")) !== null && _d !== void 0 ? _d : "{}"))), { username: u, email: e })));
+    /* ─── 2. build payload & call backend ─── */
+    try {
+        const payload = {};
+        if (u !== ((_d = viewUsername === null || viewUsername === void 0 ? void 0 : viewUsername.textContent) !== null && _d !== void 0 ? _d : ""))
+            payload.username = u;
+        if (e !== ((_e = viewEmail === null || viewEmail === void 0 ? void 0 : viewEmail.textContent) !== null && _e !== void 0 ? _e : ""))
+            payload.email = e;
+        if (newP)
+            payload.password = newP;
+        if (Object.keys(payload).length) {
+            const res = await fetch("http://localhost:3000/api/users/edit-profile", {
+                method: "PUT",
+                headers: Object.assign({ "Content-Type": "application/json" }, getAuthHeader()),
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            if (!res.ok) { // backend validation failed
+                showError(data.error || "Update failed");
+                return;
+            }
+        }
+        else {
+            showError("Nothing changed"); // user hit Save without edits
+            return;
+        }
+    }
+    catch (_g) {
+        showError("Network error – please try again");
+        return;
+    }
+    /* ─── 3. reflect success locally ─── */
+    localStorage.setItem("user", JSON.stringify(Object.assign(Object.assign({}, (JSON.parse((_f = localStorage.getItem("user")) !== null && _f !== void 0 ? _f : "{}"))), { username: u, email: e })));
     if (viewUsername)
         viewUsername.textContent = u;
     if (viewEmail)
         viewEmail.textContent = e;
+    [inOldPass, inNewPass, inConfirmPass] // clear pwd boxes
+        .forEach(i => i && (i.value = ""));
     toggleEdit(false);
     showToast();
     refreshProfileHeader();
 });
 /* initial hydrate once ------------------------------------------- */
 populateProfileViews();
-(_b = (_a = window).refreshProfileHeader) === null || _b === void 0 ? void 0 : _b.call(_a);
+refreshProfileHeader();
