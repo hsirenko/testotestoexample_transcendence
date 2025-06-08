@@ -235,12 +235,14 @@ cancelBtn?.addEventListener("click", () => {
   toggleEdit(false);
 });
 
-saveBtn?.addEventListener("click", () => {
+saveBtn?.addEventListener("click", async () => {
   if (!inUsername || !inEmail) return;
 
+  /* ─── 1. front-end validation ─── */
   const u = inUsername.value.trim();
   const e = inEmail.value.trim();
   if (!u) { showError("Username cannot be empty."); return; }
+
   const eErr = validateEmail(e);
   if (eErr) { showError(eErr); return; }
 
@@ -260,22 +262,55 @@ saveBtn?.addEventListener("click", () => {
     if (newP !== conP) {
       showError("New and confirm password do not match."); return;
     }
-    /* TODO: call backend to update password */
-    [inOldPass, inNewPass, inConfirmPass]
-      .forEach(i => i && (i.value = ""));
   }
 
+  /* ─── 2. build payload & call backend ─── */
+  try {
+    const payload: Record<string, string> = {};
+    if (u !== (viewUsername?.textContent ?? "")) payload.username = u;
+    if (e !== (viewEmail?.textContent ?? ""))    payload.email    = e;
+    if (newP)                                    payload.password = newP;
+
+    if (Object.keys(payload).length) {
+      const res  = await fetch("http://localhost:3000/api/users/edit-profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeader(),              // helper defined near top
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {                       // backend validation failed
+        showError(data.error || "Update failed");
+        return;
+      }
+    } else {
+      showError("Nothing changed");        // user hit Save without edits
+      return;
+    }
+  } catch {
+    showError("Network error – please try again");
+    return;
+  }
+
+  /* ─── 3. reflect success locally ─── */
   localStorage.setItem("user", JSON.stringify({
     ...(JSON.parse(localStorage.getItem("user") ?? "{}")),
-    username: u, email: e,
+    username: u,
+    email:    e,
   }));
   if (viewUsername) viewUsername.textContent = u;
   if (viewEmail)    viewEmail.textContent    = e;
+
+  [inOldPass, inNewPass, inConfirmPass]      // clear pwd boxes
+    .forEach(i => i && (i.value = ""));
 
   toggleEdit(false);
   showToast();
   refreshProfileHeader();
 });
+
 
 /* initial hydrate once ------------------------------------------- */
 populateProfileViews();
