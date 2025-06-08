@@ -71,6 +71,8 @@ function refreshProfileHeader() {
             mailEl.textContent = user.email;
         if (avatar && user.avatar_url)
             avatar.src = user.avatar_url;
+        else if (avatar && !user.avatar_url)
+            avatar.src = "https://img.freepik.com/free-vector/cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
     }
     catch ( /* ignore */_b) { /* ignore */ }
 }
@@ -179,11 +181,6 @@ saveBtn === null || saveBtn === void 0 ? void 0 : saveBtn.addEventListener("clic
         viewEmail.textContent = e;
     toggleEdit(false);
     showToast();
-    refreshProfileHeader();
-});
-// Refresh profile info on click
-const profileBtn = $("#nav-profile");
-profileBtn === null || profileBtn === void 0 ? void 0 : profileBtn.addEventListener("click", () => {
     refreshProfileHeader();
 });
 /* initial hydrate once ------------------------------------------- */
