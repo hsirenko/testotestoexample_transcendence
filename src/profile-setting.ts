@@ -23,6 +23,26 @@ function validatePassword(pw: string): string | null {
   return null;
 }
 
+/* — auth header & joined-date fetch — */
+function getAuthHeader(): HeadersInit {
+  const t = localStorage.getItem("token");
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
+
+async function fetchCreatedAt(): Promise<string | null> {
+  try {
+    const r = await fetch("http://localhost:3000/api/users/created-at", {
+      headers: getAuthHeader(),
+    });
+    if (!r.ok) return null;                       // 4xx / 5xx → ignore
+    const { created_at } = (await r.json()) as { created_at?: string };
+    return created_at ?? null;                    // ISO or null
+  } catch {
+    return null;                                 // network / CORS error
+  }
+}
+
+
 const enable2FABtn = document.getElementById('enable-2fa-btn')!;
 const status2FA    = document.getElementById('2fa-status')!;
 const modal2FA     = document.getElementById('2fa-modal')!;
@@ -141,6 +161,14 @@ export async function refreshProfileHeader(): Promise<void> {
     if (mailEl && user.email   ) mailEl.textContent = user.email;
 	if (avatar && user.avatar_url) avatar.src = user.avatar_url;
 	else if (avatar && !user.avatar_url) avatar.src = "https://img.freepik.com/free-vector/cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
+  /* joined date */
+  const iso = await fetchCreatedAt();
+  const joinEl = document.getElementById("profile-joined");
+  if (joinEl) {
+    joinEl.textContent = iso
+      ? `Player since — ${iso.slice(0, 10)}`
+      : "Player since —";
+  }
   } catch { /* ignore */ }
 }
 
@@ -252,3 +280,4 @@ saveBtn?.addEventListener("click", () => {
 /* initial hydrate once ------------------------------------------- */
 populateProfileViews();
 (window as any).refreshProfileHeader?.();
+  

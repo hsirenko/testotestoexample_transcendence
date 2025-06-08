@@ -5,6 +5,7 @@
  *  – edit / save / cancel logic with password rules
  *  – toast + error helpers
  */
+var _a, _b;
 export function $(sel) {
     return document.querySelector(sel);
 }
@@ -22,6 +23,25 @@ function validatePassword(pw) {
     if (!/\d/.test(pw))
         return "Password needs at least one number.";
     return null;
+}
+/* — auth header & joined-date fetch — */
+function getAuthHeader() {
+    const t = localStorage.getItem("token");
+    return t ? { Authorization: `Bearer ${t}` } : {};
+}
+async function fetchCreatedAt() {
+    try {
+        const r = await fetch("http://localhost:3000/api/users/created-at", {
+            headers: getAuthHeader(),
+        });
+        if (!r.ok)
+            return null; // 4xx / 5xx → ignore
+        const { created_at } = (await r.json());
+        return created_at !== null && created_at !== void 0 ? created_at : null; // ISO or null
+    }
+    catch (_a) {
+        return null; // network / CORS error
+    }
 }
 const enable2FABtn = document.getElementById('enable-2fa-btn');
 const status2FA = document.getElementById('2fa-status');
@@ -92,7 +112,7 @@ verifyBtn.addEventListener('click', async (e) => {
 /* basic DOM refs -------------------------------------------------- */
 const tabBtns = document.querySelectorAll("#profile-tabs .tab-btn");
 /* EXPORT 1: refresh spans + inputs with the current user ---------- */
-export function populateProfileViews() {
+export async function populateProfileViews() {
     var _a;
     try {
         const user = JSON.parse((_a = localStorage.getItem("user")) !== null && _a !== void 0 ? _a : "{}");
@@ -113,8 +133,14 @@ export function populateProfileViews() {
             if (inMail)
                 inMail.value = user.email;
         }
-        if (user.joined && vJoin)
-            vJoin.textContent = user.joined;
+        /* joined date (authoritative backend value) */
+        const iso = await fetchCreatedAt(); // e.g. "2025-06-04T11:27:00Z"
+        const joinText = iso ? `Player since — ${iso.slice(0, 10)}` : "Player since —";
+        if (vJoin)
+            vJoin.textContent = joinText; // Info-tab line
+        const headerJoin = document.getElementById("profile-joined");
+        if (headerJoin)
+            headerJoin.textContent = joinText; // big header line
     }
     catch ( /* ignore */_b) { /* ignore */ }
 }
@@ -124,7 +150,7 @@ export function setActiveTab(key) {
     btn === null || btn === void 0 ? void 0 : btn.click(); // triggers underline & panel logic in nav.ts
 }
 /* EXPORT 3: update big header (name + mail beside avatar) --------- */
-function refreshProfileHeader() {
+export async function refreshProfileHeader() {
     var _a;
     try {
         const user = JSON.parse((_a = localStorage.getItem("user")) !== null && _a !== void 0 ? _a : "{}");
@@ -139,6 +165,14 @@ function refreshProfileHeader() {
             avatar.src = user.avatar_url;
         else if (avatar && !user.avatar_url)
             avatar.src = "https://img.freepik.com/free-vector/cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
+        /* joined date */
+        const iso = await fetchCreatedAt();
+        const joinEl = document.getElementById("profile-joined");
+        if (joinEl) {
+            joinEl.textContent = iso
+                ? `Player since — ${iso.slice(0, 10)}`
+                : "Player since —";
+        }
     }
     catch ( /* ignore */_b) { /* ignore */ }
 }
@@ -251,3 +285,4 @@ saveBtn === null || saveBtn === void 0 ? void 0 : saveBtn.addEventListener("clic
 });
 /* initial hydrate once ------------------------------------------- */
 populateProfileViews();
+(_b = (_a = window).refreshProfileHeader) === null || _b === void 0 ? void 0 : _b.call(_a);
