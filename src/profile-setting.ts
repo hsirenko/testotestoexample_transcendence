@@ -64,6 +64,7 @@ function refreshProfileHeader(): void {
     if (nameEl && user.username) nameEl.textContent = user.username;
     if (mailEl && user.email   ) mailEl.textContent = user.email;
 	if (avatar && user.avatar_url) avatar.src = user.avatar_url;
+	else if (avatar && !user.avatar_url) avatar.src = "https://img.freepik.com/free-vector/cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
   } catch { /* ignore */ }
 }
 
@@ -171,13 +172,6 @@ saveBtn?.addEventListener("click", () => {
   showToast();
   refreshProfileHeader();
 });
-
-// Refresh profile info on click
-const profileBtn = $("#nav-profile") as HTMLInputElement | null;
-profileBtn?.addEventListener("click", () => {
-	refreshProfileHeader();
-});
-
 
 /* initial hydrate once ------------------------------------------- */
 populateProfileViews();

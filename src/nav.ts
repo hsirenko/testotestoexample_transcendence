@@ -88,9 +88,12 @@ function refreshProfileHeader(): void {
     const user = JSON.parse(localStorage.getItem("user") ?? "{}");
     const nameEl = document.getElementById("profile-name");
     const mailEl = document.getElementById("profile-mail");
+	const avatar = document.getElementById("avatar-img") as HTMLInputElement;
     if (nameEl && user.username) nameEl.textContent = user.username;
     if (mailEl && user.email   ) mailEl.textContent = user.email;
-  } catch { /* ignore */ }
+	if (avatar && user.avatar_url) avatar.src = user.avatar_url;
+	else if (avatar && !user.avatar_url) avatar.src = "https://img.freepik.com/free-vector/cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
+} catch { /* ignore */ }
 }
 
 /* open / close overlay */
@@ -100,6 +103,7 @@ $("#nav-profile")?.addEventListener("click", () => {
   show(profileOv);
   updateUnderline();
   refreshProfileHeader();
+  console.log("\nHERERE\n");
 });
 $("#profile-close")?.addEventListener("click", () => hide(profileOv));
 addEventListener("keydown", e => e.key === "Escape" && hide(profileOv));

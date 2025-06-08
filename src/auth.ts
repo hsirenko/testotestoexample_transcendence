@@ -135,6 +135,7 @@ form.addEventListener("submit", (e) => {
         if (!res.ok) {
           loginError.textContent = data.error || "Login failed.";
         } else {
+		  localStorage.setItem('token', data.token);
           localStorage.setItem("user", JSON.stringify(data.user));
           hideLogin();
           resetObjects();
@@ -263,5 +264,6 @@ signupForm?.addEventListener("submit", (e) => {
 
 document.getElementById("nav-signout")?.addEventListener("click", () => {
   localStorage.removeItem("user");
+  localStorage.removeItem('token');
   showLogin();
 });
