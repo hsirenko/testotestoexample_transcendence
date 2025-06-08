@@ -29,8 +29,8 @@ function startEdit(key) {
     row.innerHTML = `
     <input id="edit-input" value="${current}"
            class="flex-1 px-3 py-1 rounded bg-white/10 focus:bg-white/20 outline-none"/>
-    <button id="save-btn"   class="text-emerald-400 hover:underline mr-2">Save</button>
-    <button id="cancel-btn" class="text-red-400 hover:underline">Cancel</button>
+    <button id="save-btn" type="button"  class="text-emerald-400 hover:underline mr-2">Save</button>
+    <button id="cancel-btn" type="button" class="text-red-400 hover:underline">Cancel</button>
   `;
     const input = $("#edit-input");
     const save = $("#save-btn");

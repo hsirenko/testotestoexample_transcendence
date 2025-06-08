@@ -93,20 +93,42 @@
 
 import db from './utils/db';
 
-const player1Id = 39;
-const player2Id = 38;
+// const player1Id = 39;
+// const player2Id = 38;
 
-const insertMatch = db.prepare(`
-  INSERT INTO matches (player1_id, player2_id, winner_id, score_p1, score_p2, played_at)
-  VALUES (?, ?, ?, ?, ?, ?)
-`);
+// const insertMatch = db.prepare(`
+//   INSERT INTO matches (player1_id, player2_id, winner_id, score_p1, score_p2, played_at)
+//   VALUES (?, ?, ?, ?, ?, ?)
+// `);
 
-for (let i = 0; i < 10; i++) {
-  const score_p1 = Math.floor(Math.random() * 10);
-  const score_p2 = Math.floor(Math.random() * 10);
-  const winner_id = score_p1 === score_p2 ? null : (score_p1 > score_p2 ? player1Id : player2Id);
+// for (let i = 0; i < 10; i++) {
+//   const score_p1 = Math.floor(Math.random() * 10);
+//   const score_p2 = Math.floor(Math.random() * 10);
+//   const winner_id = score_p1 === score_p2 ? null : (score_p1 > score_p2 ? player1Id : player2Id);
 
-  insertMatch.run(player1Id, player2Id, winner_id, score_p1, score_p2, new Date().toISOString());
+//   insertMatch.run(player1Id, player2Id, winner_id, score_p1, score_p2, new Date().toISOString());
+// }
+
+// console.log("✅ 10 dummy matches inserted.");
+
+
+const senderId = 39;
+const receiverId = 38;
+
+// Check if they're already friends
+const existing = db.prepare(`
+  SELECT * FROM friends
+  WHERE (sender_id = ? AND receiver_id = ?)
+     OR (sender_id = ? AND receiver_id = ?)
+`).get(senderId, receiverId, receiverId, senderId);
+
+if (!existing) {
+  db.prepare(`
+    INSERT INTO friends (sender_id, receiver_id, status)
+    VALUES (?, ?, 'accepted')
+  `).run(senderId, receiverId);
+
+  console.log(`✅ Friend entry inserted between users ${senderId} and ${receiverId}`);
+} else {
+  console.log(`⚠️  Users ${senderId} and ${receiverId} are already friends or pending`);
 }
-
-console.log("✅ 10 dummy matches inserted.");
