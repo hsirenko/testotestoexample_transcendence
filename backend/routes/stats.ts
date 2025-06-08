@@ -1,31 +1,40 @@
 // routes/stats.ts
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import db from '../utils/db';
+import { authMiddleware } from '../middleware/auth';
+import { JWTPayload } from '../utils/jwt';
 
 export default async function statsRoutes(fastify: FastifyInstance) {
   // 1. /api/stats/wins — lifetime wins and losses
-  fastify.get('/api/stats/wins', async (req, reply) => {
-    const userId = 7; // replace with real session later
+  fastify.get(
+    '/api/stats/wins',
+    { preHandler: authMiddleware },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      // locally assert we ran authMiddleware and set `req.user`
+      const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
 
-    const totalGamesStmt = db.prepare(`
-      SELECT COUNT(*) AS total FROM matches
-      WHERE player1_id = ? OR player2_id = ?
-    `);
-    const totalWinsStmt = db.prepare(`
-      SELECT COUNT(*) AS wins FROM matches
-      WHERE winner_id = ?
-    `);
+      const totalGamesStmt = db.prepare(`
+        SELECT COUNT(*) AS total FROM matches
+        WHERE player1_id = ? OR player2_id = ?
+      `);
+      const totalWinsStmt = db.prepare(`
+        SELECT COUNT(*) AS wins FROM matches
+        WHERE winner_id = ?
+      `);
 
-    const totalGames = totalGamesStmt.get(userId, userId).total;
-    const totalWins = totalWinsStmt.get(userId).wins;
-    const losses = totalGames - totalWins;
+      const totalGames = totalGamesStmt.get(userId, userId).total;
+      const totalWins = totalWinsStmt.get(userId).wins;
+      const losses = totalGames - totalWins;
 
-    return reply.send({ wins: totalWins, losses });
-  });
+      return reply.send({ wins: totalWins, losses });
+    }
+  );
 
   // 2. /api/stats/monthly-wins — wins per month for the past year
-  fastify.get('/api/stats/monthly-wins', async (req, reply) => {
-  const userId = 7; // static for now
+  fastify.get('/api/stats/monthly-wins',
+    { preHandler: authMiddleware },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+  const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
   const result: { month: string; winRate: number }[] = [];
 
   const now = new Date();
@@ -60,8 +69,9 @@ export default async function statsRoutes(fastify: FastifyInstance) {
 
 //for all time goals scored/conceded
 
-fastify.get('/api/stats/goals', async (req, reply) => {
-  const userId = 7; // static for now
+fastify.get('/api/stats/goals',{ preHandler: authMiddleware },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+  const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
 
   const rows = db.prepare(`
     SELECT
@@ -92,8 +102,9 @@ fastify.get('/api/stats/goals', async (req, reply) => {
 
 //for monthly goals scored/conceded
 
-fastify.get('/api/stats/monthly-goals', async (req, reply) => {
-  const userId = 7; // static for now
+fastify.get('/api/stats/monthly-goals', { preHandler: authMiddleware },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+  const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
   const now = new Date();
   const result: { month: string; scored: number; conceded: number }[] = [];
 

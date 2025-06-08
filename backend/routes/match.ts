@@ -1,5 +1,7 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import db from '../utils/db';
+import { authMiddleware } from '../middleware/auth';
+import { JWTPayload } from '../utils/jwt';
 
 export default async function matchRoutes(fastify: FastifyInstance) {
   
@@ -114,8 +116,10 @@ export default async function matchRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.get('/api/matches/history', async (req, reply) => {
-    const userId = 7; // Replace with actual user ID (e.g., from token/session)
+  fastify.get('/api/matches/history',
+    { preHandler: authMiddleware },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+  const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
 
     const rows = db.prepare(`
       SELECT

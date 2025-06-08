@@ -1,10 +1,10 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
-
-import db from './utils/db';
 import signupRoutes from './routes/signup';
 import loginRoutes from './routes/login';
 import protectedRoutes from './plugins/protected-routes';
+import fastifyOauth2 from '@fastify/oauth2';
+import googleAuthRoutes from './routes/googleAuth';
 
 const fastify = Fastify({ logger: true });
 
@@ -14,6 +14,20 @@ fastify.get('/', async (req, reply) => {
 
 const start = async () => {
   try {
+	// Google OAuth
+	fastify.register(fastifyOauth2, {
+		name: 'googleOAuth2',
+		scope: ['profile', 'email'],
+		credentials: {
+			client: {
+			id: process.env.GOOGLE_CLIENT_ID || 'your-client-id',
+			secret: process.env.GOOGLE_CLIENT_SECRET || 'your-client-secret',
+			},
+			auth: fastifyOauth2.GOOGLE_CONFIGURATION,
+		},
+		startRedirectPath: '/auth/google',
+		callbackUri: 'http://localhost:3000/auth/google/callback',
+	});
     // Register CORS inside start()
     await fastify.register(cors, {
       origin: ['http://localhost:5500', 'http://127.0.0.1:5500'],
@@ -27,6 +41,7 @@ const start = async () => {
     // Public routes
     await fastify.register(signupRoutes);
     await fastify.register(loginRoutes);
+	await fastify.register(googleAuthRoutes);
 
     // Protected routes
     await fastify.register(protectedRoutes);

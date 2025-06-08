@@ -88,9 +88,24 @@ function refreshProfileHeader(): void {
     const user = JSON.parse(localStorage.getItem("user") ?? "{}");
     const nameEl = document.getElementById("profile-name");
     const mailEl = document.getElementById("profile-mail");
+	const avatar = document.getElementById("avatar-img") as HTMLInputElement;
+	const token = localStorage.getItem('token');
+	const status2FA    = document.getElementById('2fa-status')!;
     if (nameEl && user.username) nameEl.textContent = user.username;
     if (mailEl && user.email   ) mailEl.textContent = user.email;
-  } catch { /* ignore */ }
+	if (avatar && user.avatar_url) avatar.src = user.avatar_url;
+	else if (avatar && !user.avatar_url) avatar.src = "https://img.freepik.com/free-vector/cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
+	fetch('http://localhost:3000/api/users/me', {
+		headers: { 'Authorization': `Bearer ${token}` }
+	})
+	    .then((r) => r.json())
+    .then((user) => {
+      if (user.twofa_enabled)
+		status2FA.textContent = '2FA Enabled ✅';
+	  else
+	  	status2FA.textContent = 'Not enabled';
+    });
+} catch { /* ignore */ }
 }
 
 /* open / close overlay */

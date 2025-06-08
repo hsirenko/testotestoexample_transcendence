@@ -1,10 +1,11 @@
 //export {}; //this will treat this file as a module and not global script
 const GAME_SPEED = 1.25; //all game speed
 const BALL_SPEED_PX = 330; //ball speed b px/s
-const PADDLE_FR = 0.45; //paddle speed height / s
-const BALL_R = 10; //bal radius
-const PAD_W = 12; //paddle width
-const PAD_H = 80; //oaddle height
+const MOBILE_BREAK = 640;
+const PADDLE_FR = window.innerWidth <= MOBILE_BREAK ? 0.75 : 0.45; //paddle speed height / s
+let BALL_R = window.innerWidth <= MOBILE_BREAK ? 5 : 10; //bal radius
+const PAD_W = window.innerWidth <= MOBILE_BREAK ? 10 : 12; //paddle width
+const PAD_H = window.innerWidth <= MOBILE_BREAK ? 60 : 80; //oaddle height
 const PAD_GAP = 24; //distance between l paddle w edge
 
 /* ═════════════ COLORS ═════════════ */
@@ -110,8 +111,11 @@ const clamp = (v: number, lo: number, hi: number) => {
    It put paddles back to their place and ball to 0,0 with zero velocity
    so next code start from clean state. */
 function resetObjects(): void {
-  left = { x: PAD_GAP, y: 0, w: PAD_W, h: PAD_H };
-  right = { x: 0, y: 0, w: PAD_W, h: PAD_H };
+  const scale = window.innerWidth <= MOBILE_BREAK ? 0.7 : 1;
+  BALL_R = window.innerWidth <= MOBILE_BREAK ? 7 : 10;
+
+  left = { x: PAD_GAP, y: 0, w: PAD_W * scale, h: PAD_H * scale };
+  right = { x: 0, y: 0, w: PAD_W * scale, h: PAD_H * scale };
   ball = { x: 0, y: 0, v: { x: 0, y: 0 }, r: BALL_R };
   roundElapsed = 0; // NEW
   prevSpeed = GAME_SPEED; // NEW
@@ -121,8 +125,8 @@ function resetObjects(): void {
    and then launch the ball toward dir (1 to right, -1 to left)
    using random angle for little variety, speed multiplied by GAME_SPEED. */
 function resetPositions(dir: 1 | -1): void {
-  left.y = (cvs.height - PAD_H) / 2;
-  right.y = (cvs.height - PAD_H) / 2;
+  left.y = (cvs.height - left.h) / 2;
+  right.y = (cvs.height - right.h) / 2;
   ball.x = cvs.width / 2;
   ball.y = cvs.height / 2;
 
@@ -407,46 +411,64 @@ function handleWin(): void {
     const style = document.createElement("style");
     style.id = "win-style";
     style.textContent = `
-      #win-message.overlay{
-        position:absolute;
-        inset:0;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        pointer-events:auto;
-        backdrop-filter:blur(4px);
-      }
-      #win-message .msg-box{
-        background:linear-gradient(145deg,rgba(34,211,238,.25),rgba(251,191,36,.25));
-        border:3px solid #fff;
-        padding:2.5rem 4rem;
-        border-radius:14px;
-        box-shadow:0 0 25px rgba(255,255,255,.6),0 0 8px rgba(0,0,0,.4) inset;
-        text-align:center;
-      }
-      #win-message .winner{
-        font-size:3rem;
-        font-weight:800;
-        color:#fff;
-        text-shadow:0 0 8px #fff;
-      }
-      #play-again{
-        margin-top:1.75rem;
-        padding:.6rem 2.5rem;
-        font-size:1.35rem;
-        font-weight:700;
-        border:none;
-        border-radius:10px;
-        background:#f472b6;
-        color:#fff;
-        cursor:pointer;
-        transition:transform .2s,filter .2s;
-      }
-      #play-again:hover{
-        transform:scale(1.05);
-        filter:brightness(1.15);
-      }
-    `;
+  #win-message.overlay{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:auto;
+    backdrop-filter:blur(4px);
+  }
+  #win-message .msg-box{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:1rem;
+    background:linear-gradient(145deg,rgba(34,211,238,.25),rgba(251,191,36,.25));
+    border:3px solid #fff;
+    padding:2rem 2.5rem;
+    border-radius:14px;
+    box-shadow:0 0 25px rgba(255,255,255,.06),0 0 8px rgba(0,0,0,.4) inset;
+    text-align:center;
+  }
+  #win-message .winner{
+    font-size:1.5rem;
+    font-weight:800;
+    color:#fff;
+    text-shadow:0 0 8px #fff;
+  }
+  #play-again{
+    margin-top:1rem;
+    padding:.55rem 2rem;
+    font-size:1.1rem;
+    font-weight:700;
+    border:none;
+    border-radius:10px;
+    background:#f472b6;
+    color:#fff;
+    cursor:pointer;
+    transition:transform .2s,filter .2s;
+  }
+  #play-again:hover{
+    transform:scale(1.05);
+    filter:brightness(1.15);
+  }
+
+  /* Desktop refinements */
+  @media (min-width:640px){
+    #win-message .msg-box{
+      flex-direction:row;
+      gap:2rem;
+    }
+    #win-message .winner{ font-size:3rem; }
+    #play-again{
+      margin-top:0;
+      padding:.6rem 2.5rem;
+      font-size:1.25rem;
+    }
+  }
+`;
     document.head.appendChild(style);
   }
 

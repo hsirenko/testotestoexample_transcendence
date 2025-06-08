@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
   google_id TEXT,
   avatar_url TEXT,
   twofa_secret TEXT,
+  twofa_enabled INTEGER DEFAULT 0,
   xp_level INTEGER DEFAULT 0,
   trophies INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -63,5 +64,20 @@ CREATE TABLE IF NOT EXISTS friends (
   FOREIGN KEY (receiver_id) REFERENCES users(id)
 );
 `);
+
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS challenges (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  challenger_id INTEGER NOT NULL,
+  challenged_id INTEGER NOT NULL,
+  status TEXT CHECK(status IN ('pending', 'accepted', 'rejected', 'cancelled')) NOT NULL DEFAULT 'pending',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  responded_at DATETIME,
+  FOREIGN KEY (challenger_id) REFERENCES users(id),
+  FOREIGN KEY (challenged_id) REFERENCES users(id)
+);
+`);
+
 
 export default db;

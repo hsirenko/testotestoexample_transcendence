@@ -1,13 +1,15 @@
-// routes/friends.ts
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import db from '../utils/db';
+import { authMiddleware } from '../middleware/auth';
+import { JWTPayload } from '../utils/jwt';
 
 export default async function friendsRoutes(fastify: FastifyInstance) {
-  const getUserId = () => 11; // static for now
 
   // 1. Get accepted friends
-  fastify.get('/api/users/me/friends', async (req, reply) => {
-    const userId = getUserId();
+  fastify.get('/api/users/me/friends',
+    { preHandler: authMiddleware },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+  const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
 
     const friends = db.prepare(`
       SELECT u.id, u.username, u.email, f.status
@@ -22,8 +24,10 @@ export default async function friendsRoutes(fastify: FastifyInstance) {
   });
 
   // 2. Get pending friend requests
-  fastify.get('/api/users/me/friends/pending', async (req, reply) => {
-    const userId = getUserId();
+  fastify.get('/api/users/me/friends/pending',
+    { preHandler: authMiddleware },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+  const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
 
     const rows = db.prepare(`
       SELECT f.id, u.username, f.sender_id, f.receiver_id, f.status
@@ -36,8 +40,10 @@ export default async function friendsRoutes(fastify: FastifyInstance) {
   });
 
   // 3. Send friend request
-  fastify.post('/api/users/add-friend', async (req, reply) => {
-    const userId = getUserId();
+  fastify.post('/api/users/add-friend',
+    { preHandler: authMiddleware },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+  const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
     const { target_id } = req.body as { target_id: number };
 
     if (!target_id || target_id === userId) {
@@ -68,8 +74,10 @@ export default async function friendsRoutes(fastify: FastifyInstance) {
   });
 
   // 4. Respond to a request
-  fastify.post('/api/users/respond-friend', async (req, reply) => {
-    const userId = getUserId();
+  fastify.post('/api/users/respond-friend',
+    { preHandler: authMiddleware },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+  const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
     const { request_id, action } = req.body as {
       request_id: number;
       action: 'accept' | 'decline';
