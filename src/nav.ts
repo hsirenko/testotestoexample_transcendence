@@ -91,6 +91,8 @@ function refreshProfileHeader(): void {
 	const avatar = document.getElementById("avatar-img") as HTMLInputElement;
 	const token = localStorage.getItem('token');
 	const status2FA    = document.getElementById('2fa-status')!;
+	const enable2FABtn    = document.getElementById('enable-2fa-btn')!;
+	const remove2FABtn = document.getElementById('remove-2fa-btn')!;
     if (nameEl && user.username) nameEl.textContent = user.username;
     if (mailEl && user.email   ) mailEl.textContent = user.email;
 	if (avatar && user.avatar_url) avatar.src = user.avatar_url;
@@ -101,11 +103,19 @@ function refreshProfileHeader(): void {
 	    .then((r) => r.json())
     .then((user) => {
       if (user.twofa_enabled)
+	  {
 		status2FA.textContent = '2FA Enabled ✅';
+		enable2FABtn.innerHTML = "Reset 2FA";
+		remove2FABtn.classList.remove('hidden');
+	  }
 	  else
+	  {
 	  	status2FA.textContent = 'Not enabled';
+		enable2FABtn.innerHTML = "Enable Two-Factor Authentication";
+		remove2FABtn.classList.add('hidden');
+	  }
     });
-} catch { /* ignore */ }
+  } catch { /* ignore */ }
 }
 
 /* open / close overlay */
@@ -171,3 +181,44 @@ document.querySelectorAll<HTMLButtonElement>(".diff-btn").forEach(btn =>
     (window as any).setGameMode("ai");
   })
 );
+
+//TWO FACTOR AUTHENTICATION
+document.getElementById('remove-2fa-btn')?.addEventListener('click', () => {
+  (document.getElementById('remove-2fa-modal') as HTMLElement).classList.remove('hidden');
+  (document.getElementById('remove-2fa-token-input') as HTMLInputElement).value = '';
+  (document.getElementById('remove-2fa-error') as HTMLElement).textContent = '';
+});
+
+document.getElementById('remove-2fa-cancel-btn')?.addEventListener('click', () => {
+  (document.getElementById('remove-2fa-modal') as HTMLElement).classList.add('hidden');
+});
+
+document.getElementById('remove-2fa-confirm-btn')?.addEventListener('click', async () => {
+  const token = (document.getElementById('remove-2fa-token-input') as HTMLInputElement).value;
+  const errorEl = document.getElementById('remove-2fa-error')!;
+  const tokenStorage = localStorage.getItem('token');
+
+  try {
+    const res = await fetch('http://localhost:3000/api/2fa/remove', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${tokenStorage}`
+      },
+      body: JSON.stringify({ token })
+    });
+
+    const result = await res.json();
+    if (!res.ok) {
+      errorEl.textContent = result.error || 'Something went wrong.';
+      return;
+    }
+
+    // Success
+    (document.getElementById('remove-2fa-modal') as HTMLElement).classList.add('hidden');
+    refreshProfileHeader(); // Refresh UI
+  } catch (err) {
+    errorEl.textContent = 'Network error';
+  }
+});
+

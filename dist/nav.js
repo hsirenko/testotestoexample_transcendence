@@ -2,7 +2,7 @@
  * ------------------------------------------
  *  Inline-profile editor code was moved to profile-setting.ts
  */
-var _a, _b, _c, _d, _e, _f;
+var _a, _b, _c, _d, _e, _f, _g, _h, _j;
 import { initStatsTab } from "./stats.js";
 import { initHistoryTab } from "./history.js";
 import { populateProfileViews, setActiveTab } from "./profile-setting.js";
@@ -90,6 +90,8 @@ function refreshProfileHeader() {
         const avatar = document.getElementById("avatar-img");
         const token = localStorage.getItem('token');
         const status2FA = document.getElementById('2fa-status');
+        const enable2FABtn = document.getElementById('enable-2fa-btn');
+        const remove2FABtn = document.getElementById('remove-2fa-btn');
         if (nameEl && user.username)
             nameEl.textContent = user.username;
         if (mailEl && user.email)
@@ -103,10 +105,16 @@ function refreshProfileHeader() {
         })
             .then((r) => r.json())
             .then((user) => {
-            if (user.twofa_enabled)
+            if (user.twofa_enabled) {
                 status2FA.textContent = '2FA Enabled ✅';
-            else
+                enable2FABtn.innerHTML = "Reset 2FA";
+                remove2FABtn.classList.remove('hidden');
+            }
+            else {
                 status2FA.textContent = 'Not enabled';
+                enable2FABtn.innerHTML = "Enable Two-Factor Authentication";
+                remove2FABtn.classList.add('hidden');
+            }
         });
     }
     catch ( /* ignore */_b) { /* ignore */ }
@@ -174,3 +182,38 @@ document.querySelectorAll(".diff-btn").forEach(btn => btn.addEventListener("clic
     window.setAIRefresh(rate);
     window.setGameMode("ai");
 }));
+//TWO FACTOR AUTHENTICATION
+(_g = document.getElementById('remove-2fa-btn')) === null || _g === void 0 ? void 0 : _g.addEventListener('click', () => {
+    document.getElementById('remove-2fa-modal').classList.remove('hidden');
+    document.getElementById('remove-2fa-token-input').value = '';
+    document.getElementById('remove-2fa-error').textContent = '';
+});
+(_h = document.getElementById('remove-2fa-cancel-btn')) === null || _h === void 0 ? void 0 : _h.addEventListener('click', () => {
+    document.getElementById('remove-2fa-modal').classList.add('hidden');
+});
+(_j = document.getElementById('remove-2fa-confirm-btn')) === null || _j === void 0 ? void 0 : _j.addEventListener('click', async () => {
+    const token = document.getElementById('remove-2fa-token-input').value;
+    const errorEl = document.getElementById('remove-2fa-error');
+    const tokenStorage = localStorage.getItem('token');
+    try {
+        const res = await fetch('http://localhost:3000/api/2fa/remove', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${tokenStorage}`
+            },
+            body: JSON.stringify({ token })
+        });
+        const result = await res.json();
+        if (!res.ok) {
+            errorEl.textContent = result.error || 'Something went wrong.';
+            return;
+        }
+        // Success
+        document.getElementById('remove-2fa-modal').classList.add('hidden');
+        refreshProfileHeader(); // Refresh UI
+    }
+    catch (err) {
+        errorEl.textContent = 'Network error';
+    }
+});
