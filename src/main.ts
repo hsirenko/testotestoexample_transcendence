@@ -1,53 +1,48 @@
-//export {}; //this will treat this file as a module and not global script
-const GAME_SPEED = 1.25; //all game speed
-const BALL_SPEED_PX = 330; //ball speed b px/s
-const MOBILE_BREAK = 640;
-const PADDLE_FR = window.innerWidth <= MOBILE_BREAK ? 0.75 : 0.45; //paddle speed height / s
-let BALL_R = window.innerWidth <= MOBILE_BREAK ? 5 : 10; //bal radius
-const PAD_W = window.innerWidth <= MOBILE_BREAK ? 10 : 12; //paddle width
-const PAD_H = window.innerWidth <= MOBILE_BREAK ? 60 : 80; //oaddle height
-const PAD_GAP = 24; //distance between l paddle w edge
+const GSpeed = 1.25; //all game speed
+const BallSpeed = 330; //ball speed b px/s
+const MobileWidth = 640;
+const PadSpeed = window.innerWidth <= MobileWidth ? 0.75 : 0.45; //paddle speed height / s
+let BallSize = window.innerWidth <= MobileWidth ? 5 : 10; //bal size
+const PadW = window.innerWidth <= MobileWidth ? 10 : 12; //paddle width
+const PadH = window.innerWidth <= MobileWidth ? 60 : 80; //oaddle height
+const PadGap = 24; //distance between l paddle w edge
 
-/* ═════════════ COLORS ═════════════ */
-const COL_LEFT = "#22d3ee";
-const COL_RIGHT = "#fbbf24";
-const COL_BALL = "#f472b6";
-const COL_LINE = "#f3f4f6";
+const LpadCol = "#22d3ee"; //left paddle
+const RpadCol = "#fbbf24"; //rght paddle
+const BallCol = "#f472b6";
+const LineCol = "#f3f4f6";
 
-/* ═════════════ NEW CONSTANTS ═════════════ */
-const SPEED_INC_DELAY = 12; // NEW: seconds after which speed starts to ramp
-const SPEED_INC_RATE = 0.1; // NEW: extra speed added per second after delay
-const MAX_SCORE = 3; // NEW: score needed to win the game
+const TimeToIncSpeed = 12; //needed time to increment speed
+const IncRate = 0.1; //speed added
+const WinScrore = 3; //win score
 
 /* ═════════════ TYPES ═════════════ */
 interface Vec {
-  x: number;
-  y: number;
+    x: number;
+    y: number;
 } //vector interface
 interface Paddle extends Vec {
-  w: number;
-  h: number;
+    w: number;
+    h: number;
 } //paddle with width and height
 interface Ball extends Vec {
-  v: Vec;
-  r: number;
+    v: Vec;
+    r: number;
 } //ball with speed and radius
 
-/* ═════════════ DOM GRAB ═════════════ */
-const cvs = document.getElementById("pong-canvas") as HTMLCanvasElement; //get the canvas so we can add shapes
-const ctx = cvs.getContext("2d")!;
+const CanvasHtml = document.getElementById("pong-canvas") as HTMLCanvasElement; //get the canvas so we can add shapes
+const ctx = CanvasHtml.getContext("2d")!;
 const sLeft = document.getElementById("score-left")!; //left scorte
 const sRight = document.getElementById("score-right")!; //right score
 const startBtn = document.getElementById("start-btn") as HTMLButtonElement; //start
 
-/* ═════════════ STATE ═════════════ */
 let left: Paddle;
 let right: Paddle;
 let ball: Ball;
-let scoreL = 0;
-let scoreR = 0;
+let LScore = 0;
+let RScore = 0;
 let playing = false;
-let gameMode: "pvp" | "ai" = "pvp";
+let gameMode: "pvp" | "ai" = "pvp"; //mhmd ali
 let lastTime = performance.now();
 
 //mhmd ali
@@ -56,7 +51,7 @@ let AI_REFRESH = 0.05; // NEW: seconds between AI recalculations
 
 let aiAccumulator = 0;
 let roundElapsed = 0; // NEW: elapsed time in current round
-let prevSpeed = GAME_SPEED; // NEW: last applied speed multiplier
+let prevSpeed = GSpeed; // NEW: last applied speed multiplier
 
 //initialisation for the game
 resetObjects();
@@ -64,353 +59,340 @@ resizeCanvas();
 render();
 updateScore();
 
-//on click aal play we hide it and start the game
+//start the game with 3 days counter at start
 startBtn.addEventListener("click", () => {
-  const overlay = document.getElementById("win-message"); // NEW: remove win overlay if present
-  if (overlay) overlay.remove(); // NEW
-  startBtn.classList.add("hidden");
-  playing = true;
-  lastTime = performance.now();
-  requestAnimationFrame(loop);
+    document.getElementById("win-message")?.remove(); //clear old overlay
+    startBtn.classList.add("hidden");
+
+    resetObjects();
+    resizeCanvas();
+
+    startCountdown(3, beginPlay);
 });
 window.addEventListener("resize", resizeCanvas);
 
-//handling input (w, s, arrow up and arrow down)
-const keys: Record<string, boolean> = {};
+const keys: Record<string, boolean> = {}; //store key states
 
 /* key listeners for W/S and ArrowUp/ArrowDown */
 for (const type of ["keydown", "keyup"] as const) {
-  window.addEventListener(type, (evt: Event) => {
-    const e = evt as KeyboardEvent;
-    if (!["w", "s", "ArrowUp", "ArrowDown"].includes(e.key)) return;
+    window.addEventListener(type, (evt: Event) => {
+        const e = evt as KeyboardEvent;
+        if (!["w", "s", "ArrowUp", "ArrowDown"].includes(e.key)) return;
 
-    // ✨ Allow typing in login / sign-up forms: skip if an editable element has focus
-    const active = document.activeElement as HTMLElement | null;
-    if (
-      active &&
-      (["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName) ||
-        active.isContentEditable)
-    ) {
-      return; // let the form handle the keystroke
-    }
+        //skip typing if input box is active
+        const active = document.activeElement as HTMLElement | null;
+        if (
+            active &&
+            (["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName) ||
+                active.isContentEditable)
+        ) {
+            return; //let forms use keys
+        }
 
-    e.preventDefault(); // only preventDefault for gameplay
-    keys[e.key] = type === "keydown"; // store the key state
-  });
+        e.preventDefault(); //block default action
+        keys[e.key] = type === "keydown"; //update key state
+    });
 }
-
-/* ---------- REST OF THE GAME ENGINE  (unchanged) ---------------------- */
 
 const clamp = (v: number, lo: number, hi: number) => {
-  if (v < lo) return lo;
-  if (v > hi) return hi;
-  return v;
-};
+    if (v < lo) return lo;
+    if (v > hi) return hi;
+    return v;
+}; //limit number between min n max
 
-/* This func reset all game objects to start coordinates n speeds.
-   It put paddles back to their place and ball to 0,0 with zero velocity
-   so next code start from clean state. */
 function resetObjects(): void {
-  const scale = window.innerWidth <= MOBILE_BREAK ? 0.7 : 1;
-  BALL_R = window.innerWidth <= MOBILE_BREAK ? 7 : 10;
+    //set default sizes n positions for paddles n ball
+    const scale = window.innerWidth <= MobileWidth ? 0.7 : 1;
+    BallSize = window.innerWidth <= MobileWidth ? 7 : 10;
 
-  left = { x: PAD_GAP, y: 0, w: PAD_W * scale, h: PAD_H * scale };
-  right = { x: 0, y: 0, w: PAD_W * scale, h: PAD_H * scale };
-  ball = { x: 0, y: 0, v: { x: 0, y: 0 }, r: BALL_R };
-  roundElapsed = 0; // NEW
-  prevSpeed = GAME_SPEED; // NEW
+    left = { x: PadGap, y: 0, w: PadW * scale, h: PadH * scale };
+    right = { x: 0, y: 0, w: PadW * scale, h: PadH * scale };
+    ball = { x: 0, y: 0, v: { x: 0, y: 0 }, r: BallSize };
+    roundElapsed = 0; //restart round time
+    prevSpeed = GSpeed; //reset speed factor
 }
 
-/* This one recenters paddles & ball in middle of canvas
-   and then launch the ball toward dir (1 to right, -1 to left)
-   using random angle for little variety, speed multiplied by GAME_SPEED. */
 function resetPositions(dir: 1 | -1): void {
-  left.y = (cvs.height - left.h) / 2;
-  right.y = (cvs.height - right.h) / 2;
-  ball.x = cvs.width / 2;
-  ball.y = cvs.height / 2;
+    //center paddles and ball, shoot ball in dir
+    left.y = (CanvasHtml.height - left.h) / 2;
+    right.y = (CanvasHtml.height - right.h) / 2;
+    ball.x = CanvasHtml.width / 2;
+    ball.y = CanvasHtml.height / 2;
 
-  const speed = BALL_SPEED_PX * GAME_SPEED;
-  const angle = (Math.random() - 0.5) * (Math.PI / 3);
-  ball.v.x = dir * speed * Math.cos(angle);
-  ball.v.y = speed * Math.sin(angle);
+    const speed = BallSpeed * GSpeed;
+    const angle = (Math.random() - 0.5) * (Math.PI / 3);
+    ball.v.x = dir * speed * Math.cos(angle);
+    ball.v.y = speed * Math.sin(angle);
 
-  roundElapsed = 0; // NEW: restart round timer
-  prevSpeed = GAME_SPEED; // NEW: reset speed multiplier
+    roundElapsed = 0; //restart round clock
+    prevSpeed = GSpeed; //restore base speed
 }
 
-/* When window grow or shrink we call this.
-   It match canvas size to css size, move right paddle to new edge,
-   reset ball direction random and redraw so no weird stretch. */
 function resizeCanvas(): void {
-  cvs.width = cvs.clientWidth;
-  cvs.height = cvs.clientHeight;
-  right.x = cvs.width - PAD_GAP - right.w; // far right
-  resetPositions(Math.random() < 0.5 ? 1 : -1);
-  render();
+    //resize canvas to match screen, fix right paddle, relaunch ball
+    CanvasHtml.width = CanvasHtml.clientWidth;
+    CanvasHtml.height = CanvasHtml.clientHeight;
+    right.x = CanvasHtml.width - PadGap - right.w; //align to right
+    resetPositions(Math.random() < 0.5 ? 1 : -1);
+    render(); //redraw scene
 }
 
-/* Main loop. Executed every animation frame.
-   Compute time delta, if game is active we update physics n render,
-   then schedule itself again. */
 function loop(now: number): void {
-  const dt = (now - lastTime) / 1000;
-  lastTime = now;
+    //main game loop, runs every frame
+    const dt = (now - lastTime) / 1000;
+    lastTime = now;
 
-  if (playing) {
-    update(dt);
-    render();
-  }
-  requestAnimationFrame(loop);
+    if (playing) {
+        update(dt); //update logic
+        render(); //draw everything
+    }
+    requestAnimationFrame(loop); //keep looping
 }
 
-/* This does all heavy lifting each frame:
-   - read keyboard for human
-   - move paddles
-   - run AI moves when in vs AI
-   - move ball, bounce on walls, detect paddle hit, change velocity
-   - check scoring and reset when ball exit
-   Whole thing uses dt to stay smooth even if FPS change. */
 function update(dt: number): void {
-  roundElapsed += dt; // NEW: accumulate time since last score
+    //update game state using delta time
+    roundElapsed += dt;
 
-  /* ––––– Dynamic speed ramp ––––– */
-  const currSpeed =
-    GAME_SPEED + Math.max(0, roundElapsed - SPEED_INC_DELAY) * SPEED_INC_RATE; // NEW
+    //increase ball speed over time
+    const currSpeed =
+        GSpeed + Math.max(0, roundElapsed - TimeToIncSpeed) * IncRate;
 
-  if (currSpeed !== prevSpeed) {
-    const scale = currSpeed / prevSpeed; // NEW
-    ball.v.x *= scale; // NEW: boost current ball velocity
-    ball.v.y *= scale; // NEW
-    prevSpeed = currSpeed; // NEW
-  }
-
-  const paddleV = cvs.height * PADDLE_FR * currSpeed; // CHANGED: use dynamic speed
-
-  /* ––––– Left paddle (human) ––––– */
-  if (keys["w"]) left.y -= paddleV * dt;
-  if (keys["s"]) left.y += paddleV * dt;
-  left.y = clamp(left.y, 0, cvs.height - left.h);
-
-  /* ––––– Right paddle ––––– */
-  if (gameMode === "pvp") {
-    if (keys["ArrowUp"]) right.y -= paddleV * dt;
-    if (keys["ArrowDown"]) right.y += paddleV * dt;
-    right.y = clamp(right.y, 0, cvs.height - right.h);
-  } else {
-    //mhmd ali (ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!)
-    aiAccumulator += dt;
-    if (aiAccumulator >= AI_REFRESH) {
-      aiAccumulator -= AI_REFRESH;
-      computeAIDecision();
+    if (currSpeed !== prevSpeed) {
+        const scale = currSpeed / prevSpeed;
+        ball.v.x *= scale;
+        ball.v.y *= scale;
+        prevSpeed = currSpeed;
     }
-    //till here !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    if (keys["ArrowUp"]) right.y -= paddleV * AI_MAX_SPEED * dt;
-    if (keys["ArrowDown"]) right.y += paddleV * AI_MAX_SPEED * dt;
-    right.y = clamp(right.y, 0, cvs.height - right.h);
-  }
 
-  /* ––––– Ball physics ––––– */
-  ball.x += ball.v.x * dt;
-  ball.y += ball.v.y * dt;
+    const paddleV = CanvasHtml.height * PadSpeed * currSpeed;
 
-  // bounce off top/bottom
-  if (ball.y - BALL_R < 0 || ball.y + BALL_R > cvs.height) {
-    ball.v.y *= -1;
-    ball.y = clamp(ball.y, BALL_R, cvs.height - BALL_R);
-  }
+    //move left paddle (W/S)
+    if (keys["w"]) left.y -= paddleV * dt;
+    if (keys["s"]) left.y += paddleV * dt;
+    left.y = clamp(left.y, 0, CanvasHtml.height - left.h);
 
-  // paddle collisions
-  const hitPaddle = (p: Paddle, side: "left" | "right"): boolean => {
-    const inY = ball.y >= p.y && ball.y <= p.y + p.h;
-    if (!inY) return false;
-    if (side === "left" && ball.v.x < 0 && ball.x - BALL_R <= p.x + p.w) {
-      ball.x = p.x + p.w + BALL_R;
-      return true;
+    //move right paddle (arrows or AI)
+    if (gameMode === "pvp") {
+        if (keys["ArrowUp"]) right.y -= paddleV * dt;
+        if (keys["ArrowDown"]) right.y += paddleV * dt;
+        right.y = clamp(right.y, 0, CanvasHtml.height - right.h);
+    } else {
+        aiAccumulator += dt;
+        if (aiAccumulator >= AI_REFRESH) {
+            aiAccumulator -= AI_REFRESH;
+            computeAIDecision(); //decide AI move
+        }
+        if (keys["ArrowUp"]) right.y -= paddleV * AI_MAX_SPEED * dt;
+        if (keys["ArrowDown"]) right.y += paddleV * AI_MAX_SPEED * dt;
+        right.y = clamp(right.y, 0, CanvasHtml.height - right.h);
     }
-    if (side === "right" && ball.v.x > 0 && ball.x + BALL_R >= p.x) {
-      ball.x = p.x - BALL_R;
-      return true;
+
+    //move ball by velocity
+    ball.x += ball.v.x * dt;
+    ball.y += ball.v.y * dt;
+
+    //bounce off top/bottom
+    if (ball.y - BallSize < 0 || ball.y + BallSize > CanvasHtml.height) {
+        ball.v.y *= -1;
+        ball.y = clamp(ball.y, BallSize, CanvasHtml.height - BallSize);
     }
-    return false;
-  };
 
-  if (hitPaddle(left, "left") || hitPaddle(right, "right")) {
-    const p = ball.v.x < 0 ? left : right;
-    const rel = (ball.y - (p.y + p.h / 2)) / (p.h / 2);
-    const ang = rel * (Math.PI / 3);
-    const spd = BALL_SPEED_PX * currSpeed; // CHANGED: use dynamic speed
-    const dir = ball.v.x < 0 ? 1 : -1;
-    ball.v.x = dir * spd * Math.cos(ang);
-    ball.v.y = spd * Math.sin(ang);
-  }
+    //check paddle hit
+    const hitPaddle = (p: Paddle, side: "left" | "right"): boolean => {
+        const inY = ball.y >= p.y && ball.y <= p.y + p.h;
+        if (!inY) return false;
+        if (side === "left" && ball.v.x < 0 && ball.x - BallSize <= p.x + p.w) {
+            ball.x = p.x + p.w + BallSize;
+            return true;
+        }
+        if (side === "right" && ball.v.x > 0 && ball.x + BallSize >= p.x) {
+            ball.x = p.x - BallSize;
+            return true;
+        }
+        return false;
+    };
 
-  /* ––––– Scoring ––––– */
-  if (ball.x + BALL_R < 0) {
-    scoreR++;
-    updateScore();
-    if (scoreR >= MAX_SCORE) handleWin(); // NEW: check for winner
-    else resetPositions(1);
-  } else if (ball.x - BALL_R > cvs.width) {
-    scoreL++;
-    updateScore();
-    if (scoreL >= MAX_SCORE) handleWin(); // NEW: check for winner
-    else resetPositions(-1);
-  }
+    if (hitPaddle(left, "left") || hitPaddle(right, "right")) {
+        //reflect ball and adjust angle
+        const p = ball.v.x < 0 ? left : right;
+        const rel = (ball.y - (p.y + p.h / 2)) / (p.h / 2);
+        const ang = rel * (Math.PI / 3);
+        const spd = BallSpeed * currSpeed;
+        const dir = ball.v.x < 0 ? 1 : -1;
+        ball.v.x = dir * spd * Math.cos(ang);
+        ball.v.y = spd * Math.sin(ang);
+    }
+
+    //check score and reset after 1s
+    const pauseAndReset = (dir: 1 | -1) => {
+        playing = false;
+        ball.v.x = ball.v.y = 0;
+        resetPositions(dir);
+        setTimeout(() => {
+            lastTime = performance.now();
+            playing = true;
+        }, 1000);
+    };
+
+    if (ball.x + BallSize < 0) {
+        RScore++;
+        updateScore();
+        RScore >= WinScrore ? handleWin() : pauseAndReset(1);
+    } else if (ball.x - BallSize > CanvasHtml.width) {
+        LScore++;
+        updateScore();
+        LScore >= WinScrore ? handleWin() : pauseAndReset(-1);
+    }
 }
 
 /* Update the score DOM elements so player see current points. */
 function updateScore(): void {
-  sLeft.textContent = String(scoreL);
-  sRight.textContent = String(scoreR);
+    sLeft.textContent = String(LScore);
+    sRight.textContent = String(RScore);
 }
 
 //mhmd ali
 function computeAIDecision(): void {
-  if (ball.v.x <= 0) {
-    keys["ArrowUp"] = false;
-    keys["ArrowDown"] = false;
-    return;
-  }
-
-  let bx = ball.x;
-  let by = ball.y;
-  let vx = ball.v.x;
-  let vy = ball.v.y;
-
-  while (true) {
-    const dtX = (right.x - bx) / vx;
-    const nextY = by + vy * dtX;
-
-    if (nextY >= BALL_R && nextY <= cvs.height - BALL_R) {
-      by = nextY;
-      break;
+    if (ball.v.x <= 0) {
+        keys["ArrowUp"] = false;
+        keys["ArrowDown"] = false;
+        return;
     }
 
-    if (vy > 0) {
-      const dtW = (cvs.height - BALL_R - by) / vy;
-      bx += vx * dtW;
-      by = cvs.height - BALL_R;
-      vy = -vy;
+    let bx = ball.x;
+    let by = ball.y;
+    let vx = ball.v.x;
+    let vy = ball.v.y;
+
+    while (true) {
+        const dtX = (right.x - bx) / vx;
+        const nextY = by + vy * dtX;
+
+        if (nextY >= BallSize && nextY <= CanvasHtml.height - BallSize) {
+            by = nextY;
+            break;
+        }
+
+        if (vy > 0) {
+            const dtW = (CanvasHtml.height - BallSize - by) / vy;
+            bx += vx * dtW;
+            by = CanvasHtml.height - BallSize;
+            vy = -vy;
+        } else {
+            const dtW = (BallSize - by) / vy;
+            bx += vx * dtW;
+            by = BallSize;
+            vy = -vy;
+        }
+    }
+
+    const paddleCenter = right.y + right.h / 2;
+    if (by < paddleCenter - 5) {
+        keys["ArrowUp"] = true;
+        keys["ArrowDown"] = false;
+    } else if (by > paddleCenter + 5) {
+        keys["ArrowUp"] = false;
+        keys["ArrowDown"] = true;
     } else {
-      const dtW = (BALL_R - by) / vy;
-      bx += vx * dtW;
-      by = BALL_R;
-      vy = -vy;
+        keys["ArrowUp"] = false;
+        keys["ArrowDown"] = false;
     }
-  }
-
-  const paddleCenter = right.y + right.h / 2;
-  if (by < paddleCenter - 5) {
-    keys["ArrowUp"] = true;
-    keys["ArrowDown"] = false;
-  } else if (by > paddleCenter + 5) {
-    keys["ArrowUp"] = false;
-    keys["ArrowDown"] = true;
-  } else {
-    keys["ArrowUp"] = false;
-    keys["ArrowDown"] = false;
-  }
 }
 
-/* Draw everything for the current frame:
-   clear screen, net, paddles, ball */
 function render(): void {
-  ctx.clearRect(0, 0, cvs.width, cvs.height);
-  drawNet();
-  drawPaddle(left, COL_LEFT);
-  drawPaddle(right, COL_RIGHT);
-  drawBall();
+    //draw everything on screen
+    ctx.clearRect(0, 0, CanvasHtml.width, CanvasHtml.height);
+    drawNet(); //draw center line
+    drawPaddle(left, LpadCol); //draw left paddle
+    drawPaddle(right, RpadCol); //draw right paddle
+    drawBall(); //draw the ball
 }
 
-/* Paint the vertical dashed net in centre by many small rectangles. */
 function drawNet(): void {
-  ctx.fillStyle = COL_LINE;
-  const w = 4,
-    h = 18,
-    gap = 12,
-    x = cvs.width / 2 - w / 2;
-  for (let y = 0; y < cvs.height; y += h + gap) {
-    ctx.fillRect(x, y, w, h);
-  }
+    //draw dashed center net line
+    ctx.fillStyle = LineCol;
+    const w = 4,
+        h = 18,
+        gap = 12,
+        x = CanvasHtml.width / 2 - w / 2;
+    for (let y = 0; y < CanvasHtml.height; y += h + gap) {
+        ctx.fillRect(x, y, w, h);
+    }
 }
 
-/* draw a paddle rectangle using its x,y,w,h and chosen color. */
 function drawPaddle(p: Paddle, col: string): void {
-  ctx.fillStyle = col;
-  ctx.fillRect(p.x, p.y, p.w, p.h);
+    //draw a single paddle
+    ctx.fillStyle = col;
+    ctx.fillRect(p.x, p.y, p.w, p.h);
 }
 
-/* draw the ball as filled circle at current position. */
 function drawBall(): void {
-  ctx.fillStyle = COL_BALL;
-  ctx.beginPath();
-  ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI * 2);
-  ctx.fill();
+    //draw the ball as circle
+    ctx.fillStyle = BallCol;
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, BallSize, 0, Math.PI * 2);
+    ctx.fill();
 }
 
 /* ═════════════ GLOBAL FUNCTIONS ═════════════ */
 declare global {
-  interface Window {
-    setAIRefresh: (sec: number) => void;
-    setGameMode: (m: "pvp" | "ai") => void;
-  }
+    interface Window {
+        setAIRefresh: (sec: number) => void; //set ai speed
+        setGameMode: (m: "pvp" | "ai") => void; //change game mode
+    }
 }
 
 //mhmd ali
 window.setAIRefresh = (sec: number): void => {
-  AI_REFRESH = sec;
-  aiAccumulator = 0; // reset timer
+    AI_REFRESH = sec;
+    aiAccumulator = 0; // reset timer
 };
 
-/* Switch between PvP and vs-AI, reset scores, hide play button and kick off game instantly. */
+//mhmd ali
 window.setGameMode = (mode: "pvp" | "ai"): void => {
-  const overlay = document.getElementById("win-message"); // NEW: remove win overlay when switching mode
-  if (overlay) overlay.remove(); // NEW
+    document.getElementById("win-message")?.remove();
 
-  gameMode = mode;
-  scoreL = scoreR = 0;
-  updateScore();
+    gameMode = mode;
+    LScore = RScore = 0;
+    updateScore();
+    startBtn.classList.add("hidden");
 
-  playing = true;
-  startBtn.classList.add("hidden");
-  startBtn.textContent =
-    mode === "ai" ? "▶ PLAY VS AI" : "▶ LET THE GAME BEGIN";
+    resetObjects();
+    resizeCanvas();
 
-  resetObjects();
-  resizeCanvas();
-
-  lastTime = performance.now();
-  aiAccumulator = 0;
-  requestAnimationFrame(loop);
+    startCountdown(3, beginPlay); // << here!
 };
 
 /* ═════════════ WIN MESSAGE ═════════════ */
 function handleWin(): void {
-  playing = false;
-  const winner = scoreL > scoreR ? "Left Player" : "Right Player";
+    playing = false;
+    (window as any).refreshMobilePads?.(); // hide mobile arrows
 
-  let overlay = document.getElementById("win-message") as HTMLDivElement | null;
-  if (!overlay) {
-    overlay = document.createElement("div");
-    overlay.id = "win-message";
-    cvs.parentElement!.style.position = "relative";
-    cvs.parentElement!.appendChild(overlay);
-  }
+    const winner = LScore > RScore ? "Left Player" : "Right Player";
 
-  overlay.innerHTML = `
+    let overlay = document.getElementById(
+        "win-message"
+    ) as HTMLDivElement | null;
+    if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "win-message";
+        CanvasHtml.parentElement!.style.position = "relative";
+        CanvasHtml.parentElement!.appendChild(overlay);
+    }
+
+    overlay.innerHTML = `
     <div class="msg-box">
       <span class="winner">${winner} Wins!</span>
       <button id="play-again">Play Again</button>
     </div>
   `;
+    overlay.className = "overlay";
 
-  overlay.className = "overlay";
-
-  if (!document.getElementById("win-style")) {
-    const style = document.createElement("style");
-    style.id = "win-style";
-    style.textContent = `
+    /* inject style only once */
+    if (!document.getElementById("win-style")) {
+        const style = document.createElement("style");
+        style.id = "win-style";
+        style.textContent = `
   #win-message.overlay{
     position:absolute;
     inset:0;
@@ -469,22 +451,172 @@ function handleWin(): void {
     }
   }
 `;
-    document.head.appendChild(style);
-  }
+        document.head.appendChild(style);
+    }
 
-  const againBtn = document.getElementById("play-again") as HTMLButtonElement;
-  againBtn.onclick = () => {
-    overlay!.remove();
-    scoreL = scoreR = 0;
-    updateScore();
+    /* play-again button logic */
+    const againBtn = document.getElementById("play-again") as HTMLButtonElement;
+    againBtn.onclick = () => {
+        overlay!.remove();
+        LScore = RScore = 0;
+        updateScore();
+        startBtn.classList.add("hidden");
+
+        resetObjects();
+        resizeCanvas();
+
+        startCountdown(3, beginPlay); // << here!
+    };
+}
+
+/* ═════════════ MOBILE TOUCH CONTROLS (single-init) ═════════════ */
+(() => {
+    /* guard against the older duplicate blocks */
+    if ((window as any).mobilePadsInit) return;
+    (window as any).mobilePadsInit = true;
+
+    const isMobile = () => innerWidth <= MobileWidth;
+
+    /* build / rebuild on–screen arrow pads */
+    const buildControls = (): void => {
+        document.querySelectorAll(".mobile-pad").forEach((el) => el.remove());
+
+        /* show only while *playing* on a mobile viewport */
+        if (!isMobile() || !playing) return;
+
+        const pads = [
+            { side: "left", up: "w", down: "s", show: true },
+            {
+                side: "right",
+                up: "ArrowUp",
+                down: "ArrowDown",
+                show: gameMode === "pvp",
+            },
+        ];
+
+        pads.filter((p) => p.show).forEach((p) => {
+            const wrap = document.createElement("div");
+            const btnUp = document.createElement("button");
+            const btnDown = document.createElement("button");
+
+            wrap.className = `mobile-pad ${p.side}`;
+            btnUp.className = "arrow-btn up";
+            btnUp.textContent = "▲";
+            btnDown.className = "arrow-btn down";
+            btnDown.textContent = "▼";
+
+            wrap.append(btnUp, btnDown);
+            document.body.appendChild(wrap);
+
+            const press = (k: string) => () => (keys[k] = true);
+            const release = (k: string) => () => (keys[k] = false);
+
+            ["touchstart", "mousedown"].forEach((e) =>
+                [btnUp, btnDown].forEach((b, i) =>
+                    b.addEventListener(e, press(i ? p.down : p.up))
+                )
+            );
+            ["touchend", "touchcancel", "mouseup", "mouseleave"].forEach((e) =>
+                [btnUp, btnDown].forEach((b, i) =>
+                    b.addEventListener(e, release(i ? p.down : p.up))
+                )
+            );
+        });
+    };
+
+    /* expose so other parts (start / win handlers) can trigger a rebuild */
+    (window as any).refreshMobilePads = buildControls;
+
+    /* inject styling once */
+    if (!document.getElementById("mobile-pad-style")) {
+        const css = document.createElement("style");
+        css.id = "mobile-pad-style";
+        css.textContent = `
+  .mobile-pad{
+    position:fixed;
+    bottom:2.5rem;
+    display:flex;
+    flex-direction:column;
+    gap:.75rem;
+    z-index:50;
+  }
+  .mobile-pad.left  { left:2rem; }
+  .mobile-pad.right { right:2rem; }
+  .arrow-btn{
+    width:3.5rem;
+    height:3.5rem;
+    border:none;
+    border-radius:50%;
+    background:#1f2937cc;
+    color:#fff;
+    font-size:1.5rem;
+    font-weight:700;
+    touch-action:none;
+    box-shadow:0 0 6px rgba(0,0,0,.4);
+  }
+  .arrow-btn:active{
+    transform:scale(.9);
+    background:#1f2937;
+  }`;
+        document.head.appendChild(css);
+    }
+
+    /* rebuild controls when game mode switches */
+    const origSetGameMode = window.setGameMode;
+    window.setGameMode = (mode: "pvp" | "ai"): void => {
+        origSetGameMode(mode);
+        buildControls();
+    };
+
+    /* rebuild on viewport change */
+    addEventListener("resize", () => buildControls());
+
+    /* initial attempt (does nothing until a match starts) */
+    buildControls();
+})();
+
+/* ═════════════ COUNTDOWN HELPER (NEW) ═════════════ */
+function startCountdown(sec: number, callback: () => void): void {
+    let remaining = sec;
+
+    const overlay = document.createElement("div");
+    overlay.id = "countdown-overlay";
+    Object.assign(overlay.style, {
+        position: "fixed", // full viewport, immune to layout quirks
+        inset: "0",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "4rem",
+        fontWeight: "800",
+        color: "#fff",
+        backdropFilter: "blur(3px)",
+        zIndex: "9999",
+        pointerEvents: "none", // clicks fall through
+    } as Partial<CSSStyleDeclaration>);
+    overlay.textContent = String(remaining);
+    document.body.appendChild(overlay);
+
+    const tick = () => {
+        remaining--;
+        if (remaining === 0) {
+            overlay.remove();
+            callback(); // hand control back
+        } else {
+            overlay.textContent = String(remaining);
+            setTimeout(tick, 1000);
+        }
+    };
+    setTimeout(tick, 1000);
+}
+
+/* ── helper: begin the game loop after the countdown ── */
+function beginPlay(): void {
     playing = true;
-    startBtn.classList.add("hidden");
-    resetObjects();
-    resizeCanvas();
     lastTime = performance.now();
     aiAccumulator = 0;
     requestAnimationFrame(loop);
-  };
+    (window as any).refreshMobilePads?.(); // show on-screen arrows when needed
 }
 
 export { resetObjects, resizeCanvas, render, updateScore };
