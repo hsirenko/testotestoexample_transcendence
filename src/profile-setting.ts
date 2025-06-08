@@ -279,5 +279,4 @@ saveBtn?.addEventListener("click", () => {
 
 /* initial hydrate once ------------------------------------------- */
 populateProfileViews();
-(window as any).refreshProfileHeader?.();
-  
+refreshProfileHeader(); 
