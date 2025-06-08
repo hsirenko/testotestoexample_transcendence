@@ -40,26 +40,62 @@ backToLoginLink.className = "hidden";
 sendCodeBtn.insertAdjacentElement("afterend", backToLoginLink);
 
 // On page load, check for ?token=… in the URL
-const params = new URLSearchParams(window.location.search);
-const googleToken = params.get('token');
-if (googleToken) {
-  localStorage.setItem('token', googleToken);
-  // optionally fetch user profile from /users/me
-  fetch('http://localhost:3000/api/users/me', {
-    headers: { 'Authorization': `Bearer ${googleToken}` }
-  })
-    .then((r) => r.json())
-    .then((user) => {
+(async () => {
+  const params = new URLSearchParams(window.location.search);
+  const googleToken = params.get('token');
+  const twofaPending = params.get('twofaPending') === 'true';
+
+  if (!googleToken) return;
+
+  if (twofaPending) {
+    const code = prompt("Enter your 2FA code from your Authenticator app:");
+    if (!code) {
+      loginError.textContent = "2FA code is required.";
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:3000/auth/google/2fa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: googleToken, twofaToken: code }),
+      });
+
+      const result = await res.json();
+      if (!res.ok || result.error) {
+        loginError.textContent = result.error || "2FA verification failed.";
+        return;
+      }
+
+      localStorage.setItem('token', result.token);
+      localStorage.setItem('user', JSON.stringify(result.user));
+    } catch {
+      loginError.textContent = "Network error during 2FA verification.";
+      return;
+    }
+  } else {
+    // No 2FA required, token is valid
+    localStorage.setItem('token', googleToken);
+    try {
+      const res = await fetch('http://localhost:3000/api/users/me', {
+        headers: { 'Authorization': `Bearer ${googleToken}` }
+      });
+      const user = await res.json();
       localStorage.setItem('user', JSON.stringify(user));
-      // clean up the URL
-      window.history.replaceState({}, '', window.location.pathname);
-	  hideLogin();
-      resetObjects();
-      resizeCanvas();
-      render();
-      updateScore();
-    });
-}
+    } catch {
+      loginError.textContent = "Failed to fetch user data.";
+      return;
+    }
+  }
+
+  // Success — cleanup and show the app
+  window.history.replaceState({}, '', window.location.pathname);
+  hideLogin();
+  resetObjects();
+  resizeCanvas();
+  render();
+  updateScore();
+})();
 
 function animateIn(el: HTMLElement, cls: string) {
   el.classList.add("animate__animated", cls);
@@ -115,39 +151,73 @@ form.addEventListener("submit", (e) => {
   e.preventDefault();
   loginError.textContent = "";
 
-  const email = (
-    document.getElementById("email") as HTMLInputElement
-  ).value.trim();
+  const email = (document.getElementById("email") as HTMLInputElement)
+    .value.trim();
   const password = (document.getElementById("password") as HTMLInputElement)
     .value;
 
   const pwErr = validatePassword(password);
-  if (!email) loginError.textContent = "Email is required.";
-  else if (pwErr) loginError.textContent = pwErr;
-  else {
-    fetch("http://localhost:3000/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    })
-      .then(async (res) => {
-        const data = await res.json();
-        if (!res.ok) {
-          loginError.textContent = data.error || "Login failed.";
-        } else {
-		  localStorage.setItem('token', data.token);
-          localStorage.setItem("user", JSON.stringify(data.user));
-          hideLogin();
-          resetObjects();
-          resizeCanvas();
-          render();
-          updateScore();
-        }
-      })
-      .catch(() => {
-        loginError.textContent = "Network error. Please try again.";
-      });
+  if (!email) {
+    loginError.textContent = "Email is required.";
+    return;
+  } else if (pwErr) {
+    loginError.textContent = pwErr;
+    return;
   }
+
+  // First login attempt
+  fetch("http://localhost:3000/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  })
+    .then(async (res) => {
+      const data = await res.json();
+
+      // If 2FA is required, prompt for the code and retry
+	  console.log(data);
+      if (data.twofaRequired) {
+        const code = prompt("Enter 2FA code from your Authenticator app:");
+        if (!code) {
+          loginError.textContent = "2FA code required.";
+          return;
+        }
+
+        const retry = await fetch("http://localhost:3000/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, twofaToken: code }),
+        });
+        const result = await retry.json();
+
+        if (!retry.ok) {
+          loginError.textContent = result.error || "2FA validation failed.";
+          return;
+        }
+
+        // Override data with the successful retry payload
+        data.token = result.token;
+        data.user  = result.user;
+      }
+
+      // Handle non-2FA failures
+      if (!res.ok && !data.twofaRequired) {
+        loginError.textContent = data.error || "Login failed.";
+        return;
+      }
+
+      // Success: store token & user, and show the app
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      hideLogin();
+      resetObjects();
+      resizeCanvas();
+      render();
+      updateScore();
+    })
+    .catch(() => {
+      loginError.textContent = "Network error. Please try again.";
+    });
 });
 
 function enterResetMode() {

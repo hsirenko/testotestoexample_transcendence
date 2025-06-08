@@ -529,6 +529,57 @@
                 </div>
               </div>
 
+				<!-- ── TWO-FACTOR AUTH SETUP BUTTON & STATUS ── -->
+				<div class="flex items-center gap-4 mb-8">
+				<button
+					id="enable-2fa-btn"
+					type="button"
+					class="px-4 py-2 rounded-full bg-amber-500 hover:bg-amber-600 font-semibold"
+				>
+					Enable Two-Factor Authentication
+				</button>
+				<span id="2fa-status" class="text-sm text-white/70">Not enabled</span>
+				</div>
+
+				<!-- 2FA SETUP MODAL (hidden by default) -->
+				<div
+				id="2fa-modal"
+				class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden"
+				>
+				<div class="bg-black/70 text-white p-6 rounded-2xl shadow-lg max-w-sm w-full">
+					<h3 class="text-xl font-bold mb-4">Set up Two-Factor Auth</h3>
+					<img id="2fa-qr" alt="Scan QR code" class="mb-4 mx-auto rounded-md border border-white/30"/>
+					<p class="text-xs text-white/70 mb-2">Or enter this key manually:</p>
+					<code
+					id="2fa-manual"
+					class="block mb-4 text-center font-mono bg-white/10 p-2 rounded break-words"
+					></code>
+					<input
+					id="2fa-token-input"
+					type="text"
+					placeholder="123456"
+					class="w-full px-3 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none mb-4"
+					/>
+					<div class="flex justify-end gap-2">
+					<button
+						id="2fa-verify-btn"
+						type="button"
+						class="px-4 py-2 rounded-full bg-emerald-500 hover:bg-emerald-600 font-semibold"
+					>
+						Verify
+					</button>
+					<button
+						id="2fa-cancel-btn"
+						type="button"
+						class="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 font-semibold"
+					>
+						Cancel
+					</button>
+					</div>
+					<p id="2fa-error" class="text-red-400 text-sm mt-2 min-h-[1em]"></p>
+				</div>
+				</div>
+
               <!-- Save / Cancel (only in edit mode) -->
               <div id="settings-actions" class="mt-8 flex gap-4 hidden">
                 <button

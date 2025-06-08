@@ -17,6 +17,7 @@ export interface JWTPayload {
   userId: number;
   username: string;
   email: string;
+  twofaPending?: boolean;
 }
 
 export function generateToken(payload: JWTPayload): string {
