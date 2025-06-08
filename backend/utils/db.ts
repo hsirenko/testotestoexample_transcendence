@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
   google_id TEXT,
   avatar_url TEXT,
   twofa_secret TEXT,
+  twofa_enabled INTEGER DEFAULT 0,
   xp_level INTEGER DEFAULT 0,
   trophies INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
