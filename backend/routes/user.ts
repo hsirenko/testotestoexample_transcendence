@@ -1,4 +1,4 @@
-// routes/stats.ts
+// routes/user.ts
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import db from '../utils/db';
 import { authMiddleware } from '../middleware/auth';
@@ -105,7 +105,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 
       // Fetch all the fields you want to expose
       const user = db.prepare(`
-        SELECT id, username, email, xp_level, trophies, avatar_url
+        SELECT id, username, email, xp_level, trophies, avatar_url, twofa_enabled
         FROM users
         WHERE id = ?
       `).get(userId);

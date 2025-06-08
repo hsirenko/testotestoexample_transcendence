@@ -21,7 +21,6 @@ export default async function signupRoutes(fastify: FastifyInstance) {
     password: string;
   };
 
-  console.log("ello\n");
   if (!username || !email || !password) {
     return reply.status(400).send({ error: 'All fields are required' });
   }

@@ -88,6 +88,8 @@ function refreshProfileHeader() {
         const nameEl = document.getElementById("profile-name");
         const mailEl = document.getElementById("profile-mail");
         const avatar = document.getElementById("avatar-img");
+        const token = localStorage.getItem('token');
+        const status2FA = document.getElementById('2fa-status');
         if (nameEl && user.username)
             nameEl.textContent = user.username;
         if (mailEl && user.email)
@@ -96,6 +98,16 @@ function refreshProfileHeader() {
             avatar.src = user.avatar_url;
         else if (avatar && !user.avatar_url)
             avatar.src = "https://img.freepik.com/free-vector/cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
+        fetch('http://localhost:3000/api/users/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+            .then((r) => r.json())
+            .then((user) => {
+            if (user.twofa_enabled)
+                status2FA.textContent = '2FA Enabled ✅';
+            else
+                status2FA.textContent = 'Not enabled';
+        });
     }
     catch ( /* ignore */_b) { /* ignore */ }
 }
@@ -106,7 +118,6 @@ function refreshProfileHeader() {
     show(profileOv);
     updateUnderline();
     refreshProfileHeader();
-    console.log("\nHERERE\n");
 });
 (_c = $("#profile-close")) === null || _c === void 0 ? void 0 : _c.addEventListener("click", () => hide(profileOv));
 addEventListener("keydown", e => e.key === "Escape" && hide(profileOv));

@@ -89,10 +89,22 @@ function refreshProfileHeader(): void {
     const nameEl = document.getElementById("profile-name");
     const mailEl = document.getElementById("profile-mail");
 	const avatar = document.getElementById("avatar-img") as HTMLInputElement;
+	const token = localStorage.getItem('token');
+	const status2FA    = document.getElementById('2fa-status')!;
     if (nameEl && user.username) nameEl.textContent = user.username;
     if (mailEl && user.email   ) mailEl.textContent = user.email;
 	if (avatar && user.avatar_url) avatar.src = user.avatar_url;
 	else if (avatar && !user.avatar_url) avatar.src = "https://img.freepik.com/free-vector/cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
+	fetch('http://localhost:3000/api/users/me', {
+		headers: { 'Authorization': `Bearer ${token}` }
+	})
+	    .then((r) => r.json())
+    .then((user) => {
+      if (user.twofa_enabled)
+		status2FA.textContent = '2FA Enabled ✅';
+	  else
+	  	status2FA.textContent = 'Not enabled';
+    });
 } catch { /* ignore */ }
 }
 
@@ -103,7 +115,6 @@ $("#nav-profile")?.addEventListener("click", () => {
   show(profileOv);
   updateUnderline();
   refreshProfileHeader();
-  console.log("\nHERERE\n");
 });
 $("#profile-close")?.addEventListener("click", () => hide(profileOv));
 addEventListener("keydown", e => e.key === "Escape" && hide(profileOv));

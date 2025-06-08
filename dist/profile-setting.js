@@ -23,6 +23,72 @@ function validatePassword(pw) {
         return "Password needs at least one number.";
     return null;
 }
+const enable2FABtn = document.getElementById('enable-2fa-btn');
+const status2FA = document.getElementById('2fa-status');
+const modal2FA = document.getElementById('2fa-modal');
+const qrImg = document.getElementById('2fa-qr');
+const manualKeyEl = document.getElementById('2fa-manual');
+const tokenInput = document.getElementById('2fa-token-input');
+const secretInput = document.getElementById('2fa-manual');
+const verifyBtn = document.getElementById('2fa-verify-btn');
+const cancelBtn2fa = document.getElementById('2fa-cancel-btn');
+const error2FA = document.getElementById('2fa-error');
+const modalContent = modal2FA.querySelector('div');
+// helper to get auth header
+function authHeader() {
+    return { Authorization: `Bearer ${localStorage.getItem('token')}` };
+}
+modalContent.addEventListener('click', (e) => {
+    e.stopPropagation();
+});
+// 2) open setup modal
+enable2FABtn.addEventListener('click', async (e) => {
+    try {
+        e.preventDefault();
+        e.stopPropagation();
+        const res = await fetch('http://localhost:3000/api/2fa/setup', {
+            headers: Object.assign(Object.assign({}, authHeader()), { 'Content-Type': 'application/json' }),
+        });
+        const { qrDataUrl, manualKey } = await res.json();
+        qrImg.src = qrDataUrl;
+        manualKeyEl.textContent = manualKey;
+        tokenInput.value = '';
+        error2FA.textContent = '';
+        modal2FA.classList.remove('hidden');
+    }
+    catch (err) {
+        status2FA.textContent = 'Failed to start 2FA setup.';
+    }
+});
+// 3) cancel
+cancelBtn2fa.addEventListener('click', (e) => {
+    e.preventDefault();
+    modal2FA.classList.add('hidden');
+});
+// 4) verify the TOTP
+verifyBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const token = tokenInput.value.trim();
+    const secretFromReq = secretInput.innerHTML.trim().toString();
+    if (!token) {
+        error2FA.textContent = 'Enter the code from your app';
+        return;
+    }
+    try {
+        const res = await fetch('http://localhost:3000/api/2fa/verify', {
+            method: 'POST',
+            headers: Object.assign(Object.assign({}, authHeader()), { 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ token, secretFromReq }),
+        });
+        if (!res.ok)
+            throw await res.json();
+        modal2FA.classList.add('hidden');
+        status2FA.textContent = '2FA Enabled ✅';
+    }
+    catch (e) {
+        error2FA.textContent = e.error || 'Invalid code, try again';
+    }
+});
 /* basic DOM refs -------------------------------------------------- */
 const tabBtns = document.querySelectorAll("#profile-tabs .tab-btn");
 /* EXPORT 1: refresh spans + inputs with the current user ---------- */
