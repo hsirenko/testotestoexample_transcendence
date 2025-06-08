@@ -5,7 +5,6 @@
  *  – edit / save / cancel logic with password rules
  *  – toast + error helpers
  */
-var _a, _b;
 export function $(sel) {
     return document.querySelector(sel);
 }
@@ -285,4 +284,4 @@ saveBtn === null || saveBtn === void 0 ? void 0 : saveBtn.addEventListener("clic
 });
 /* initial hydrate once ------------------------------------------- */
 populateProfileViews();
-(_b = (_a = window).refreshProfileHeader) === null || _b === void 0 ? void 0 : _b.call(_a);
+refreshProfileHeader();
