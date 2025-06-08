@@ -23,6 +23,26 @@ function validatePassword(pw: string): string | null {
   return null;
 }
 
+/* — auth header & joined-date fetch — */
+function getAuthHeader(): HeadersInit {
+  const t = localStorage.getItem("token");
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
+
+async function fetchCreatedAt(): Promise<string | null> {
+  try {
+    const r = await fetch("http://localhost:3000/api/users/created-at", {
+      headers: getAuthHeader(),
+    });
+    if (!r.ok) return null;                       // 4xx / 5xx → ignore
+    const { created_at } = (await r.json()) as { created_at?: string };
+    return created_at ?? null;                    // ISO or null
+  } catch {
+    return null;                                 // network / CORS error
+  }
+}
+
+
 const enable2FABtn = document.getElementById('enable-2fa-btn')!;
 const status2FA    = document.getElementById('2fa-status')!;
 const modal2FA     = document.getElementById('2fa-modal')!;
@@ -97,7 +117,7 @@ verifyBtn.addEventListener('click', async (e) => {
 const tabBtns = document.querySelectorAll<HTMLButtonElement>("#profile-tabs .tab-btn");
 
 /* EXPORT 1: refresh spans + inputs with the current user ---------- */
-export function populateProfileViews(): void {
+export async function populateProfileViews(): Promise<void> {
   try {
     const user = JSON.parse(localStorage.getItem("user") ?? "{}");
     const vUser = $("#view-username") as HTMLElement | null;
@@ -114,7 +134,13 @@ export function populateProfileViews(): void {
       if (vMail) vMail.textContent = user.email;
       if (inMail) inMail.value     = user.email;
     }
-    if (user.joined && vJoin) vJoin.textContent = user.joined;
+    /* joined date (authoritative backend value) */
+    const iso       = await fetchCreatedAt();              // e.g. "2025-06-04T11:27:00Z"
+    const joinText  = iso ? `Player since — ${iso.slice(0, 10)}` : "Player since —";
+    if (vJoin)  vJoin.textContent = joinText;              // Info-tab line
+    const headerJoin = document.getElementById("profile-joined");
+    if (headerJoin) headerJoin.textContent = joinText;     // big header line
+
   } catch { /* ignore */ }
 }
 
@@ -125,7 +151,7 @@ export function setActiveTab(key: string): void {
 }
 
 /* EXPORT 3: update big header (name + mail beside avatar) --------- */
-function refreshProfileHeader(): void {
+export async function refreshProfileHeader(): Promise<void> {
   try {
     const user = JSON.parse(localStorage.getItem("user") ?? "{}");
     const nameEl = document.getElementById("profile-name");
@@ -135,6 +161,14 @@ function refreshProfileHeader(): void {
     if (mailEl && user.email   ) mailEl.textContent = user.email;
 	if (avatar && user.avatar_url) avatar.src = user.avatar_url;
 	else if (avatar && !user.avatar_url) avatar.src = "https://img.freepik.com/free-vector/cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
+  /* joined date */
+  const iso = await fetchCreatedAt();
+  const joinEl = document.getElementById("profile-joined");
+  if (joinEl) {
+    joinEl.textContent = iso
+      ? `Player since — ${iso.slice(0, 10)}`
+      : "Player since —";
+  }
   } catch { /* ignore */ }
 }
 
@@ -245,3 +279,4 @@ saveBtn?.addEventListener("click", () => {
 
 /* initial hydrate once ------------------------------------------- */
 populateProfileViews();
+refreshProfileHeader(); 
