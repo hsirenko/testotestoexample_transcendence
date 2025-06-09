@@ -3,14 +3,18 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "concurrently \"tsc --watch\" \"live-server --ignore=backend,pong.db\""
+    "build": "tsc",
+    "serve": "http-server . -p 5500 -c-1",
+    "dev": "concurrently \"tsc --watch\" \"http-server . -p 5500 -c-1\"",
+    "start": "npm run build && npm run serve"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "chart.js": "^4.4.9"
+    "chart.js": "^4.4.9",
+    "http-server": "^14.1.1"
   },
   "description": "",
   "repository": {
