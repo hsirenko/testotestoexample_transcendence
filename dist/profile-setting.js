@@ -112,7 +112,7 @@ verifyBtn.addEventListener('click', async (e) => {
         if (!res.ok)
             throw await res.json();
         modal2FA.classList.add('hidden');
-        status2FA.textContent = '2FA Enabled ✅';
+        refreshProfileHeader();
     }
     catch (e) {
         error2FA.textContent = e.error || 'Invalid code, try again';
@@ -166,6 +166,10 @@ export async function refreshProfileHeader() {
         const nameEl = document.getElementById("profile-name");
         const mailEl = document.getElementById("profile-mail");
         const avatar = $("#avatar-img");
+        const token = localStorage.getItem('token');
+        const status2FA = document.getElementById('2fa-status');
+        const enable2FABtn = document.getElementById('enable-2fa-btn');
+        const remove2FABtn = document.getElementById('remove-2fa-btn');
         if (nameEl && user.username)
             nameEl.textContent = user.username;
         if (mailEl && user.email)
@@ -174,6 +178,22 @@ export async function refreshProfileHeader() {
             avatar.src = user.avatar_url;
         else if (avatar && !user.avatar_url)
             avatar.src = "https://img.freepik.com/free-vector/cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
+        fetch('http://localhost:3000/api/users/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+            .then((r) => r.json())
+            .then((user) => {
+            if (user.twofa_enabled) {
+                status2FA.textContent = '2FA Enabled ✅';
+                enable2FABtn.innerHTML = "Reset 2FA";
+                remove2FABtn.classList.remove('hidden');
+            }
+            else {
+                status2FA.textContent = 'Not enabled';
+                enable2FABtn.innerHTML = "Enable Two-Factor Authentication";
+                remove2FABtn.classList.add('hidden');
+            }
+        });
         /* joined date */
         const iso = await fetchCreatedAt();
         const joinEl = document.getElementById("profile-joined");

@@ -5,7 +5,7 @@
 var _a, _b, _c, _d, _e, _f, _g, _h, _j;
 import { initStatsTab } from "./stats.js";
 import { initHistoryTab } from "./history.js";
-import { populateProfileViews, setActiveTab } from "./profile-setting.js";
+import { populateProfileViews, setActiveTab, refreshProfileHeader } from "./profile-setting.js";
 import "./welcome.js";
 /* ───── shorthand ───── */
 const $ = (sel) => document.querySelector(sel);
@@ -81,44 +81,6 @@ tabBtns.forEach(btn => btn.addEventListener("click", () => {
         initHistoryTab();
 }));
 addEventListener("resize", updateUnderline);
-function refreshProfileHeader() {
-    var _a;
-    try {
-        const user = JSON.parse((_a = localStorage.getItem("user")) !== null && _a !== void 0 ? _a : "{}");
-        const nameEl = document.getElementById("profile-name");
-        const mailEl = document.getElementById("profile-mail");
-        const avatar = document.getElementById("avatar-img");
-        const token = localStorage.getItem('token');
-        const status2FA = document.getElementById('2fa-status');
-        const enable2FABtn = document.getElementById('enable-2fa-btn');
-        const remove2FABtn = document.getElementById('remove-2fa-btn');
-        if (nameEl && user.username)
-            nameEl.textContent = user.username;
-        if (mailEl && user.email)
-            mailEl.textContent = user.email;
-        if (avatar && user.avatar_url)
-            avatar.src = user.avatar_url;
-        else if (avatar && !user.avatar_url)
-            avatar.src = "https://img.freepik.com/free-vector/cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
-        fetch('http://localhost:3000/api/users/me', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        })
-            .then((r) => r.json())
-            .then((user) => {
-            if (user.twofa_enabled) {
-                status2FA.textContent = '2FA Enabled ✅';
-                enable2FABtn.innerHTML = "Reset 2FA";
-                remove2FABtn.classList.remove('hidden');
-            }
-            else {
-                status2FA.textContent = 'Not enabled';
-                enable2FABtn.innerHTML = "Enable Two-Factor Authentication";
-                remove2FABtn.classList.add('hidden');
-            }
-        });
-    }
-    catch ( /* ignore */_b) { /* ignore */ }
-}
 /* open / close overlay */
 (_b = $("#nav-profile")) === null || _b === void 0 ? void 0 : _b.addEventListener("click", () => {
     populateProfileViews(); // fresh user data
