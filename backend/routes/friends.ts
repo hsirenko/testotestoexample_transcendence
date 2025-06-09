@@ -101,4 +101,30 @@ export default async function friendsRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: 'Invalid action' });
     }
   });
+
+    // 5. Remove (unfriend) an existing friend
+  fastify.delete('/api/users/remove-friend/:friendId',
+    { preHandler: authMiddleware },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
+      const { friendId } = req.params as { friendId: string };
+      const friendUserId = parseInt(friendId, 10);
+
+      if (isNaN(friendUserId) || friendUserId === userId) {
+        return reply.status(400).send({ error: 'Invalid friend ID' });
+      }
+
+      const deleted = db.prepare(`
+        DELETE FROM friends
+        WHERE (sender_id = ? AND receiver_id = ?)
+           OR (sender_id = ? AND receiver_id = ?)
+      `).run(userId, friendUserId, friendUserId, userId);
+
+      if (deleted.changes === 0) {
+        return reply.status(404).send({ error: 'Friendship not found' });
+      }
+
+      return reply.send({ message: 'Friend removed successfully' });
+    });
+
 }
