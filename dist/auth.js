@@ -1,5 +1,9 @@
 var _a, _b, _c, _d, _e, _f;
 import { resetObjects, resizeCanvas, render, updateScore } from "./main.js";
+import { loadFriendsSidebar } from "./friends.js";
+import "./friends.js"; // this file already auto-fetches & renders the sidebar
+import "./stats.js"; // likewise for stats tab if you want to warm it up
+import "./history.js";
 const overlay = document.getElementById("login-overlay");
 const appShell = document.getElementById("app");
 const form = document.getElementById("login-form");
@@ -73,6 +77,7 @@ sendCodeBtn.insertAdjacentElement("afterend", backToLoginLink);
     resizeCanvas();
     render();
     updateScore();
+    loadFriendsSidebar();
 })();
 // function show2FALoginModal(): Promise<string | null> {
 //   return new Promise((resolve) => {
@@ -199,6 +204,7 @@ form.addEventListener("submit", async (e) => {
             resizeCanvas();
             render();
             updateScore();
+            loadFriendsSidebar();
             return;
         }
         catch (_a) {
@@ -259,6 +265,7 @@ form.addEventListener("submit", async (e) => {
     resizeCanvas();
     render();
     updateScore();
+    loadFriendsSidebar();
 });
 function enterResetMode() {
     var _a, _b, _c;

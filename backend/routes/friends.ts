@@ -12,7 +12,7 @@ export default async function friendsRoutes(fastify: FastifyInstance) {
   const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
 
     const friends = db.prepare(`
-      SELECT u.id, u.username, u.email, f.status
+      SELECT u.id, u.username, u.email, u.avatar_url, f.status
       FROM friends f
       JOIN users u ON (
         u.id = CASE WHEN f.sender_id = ? THEN f.receiver_id ELSE f.sender_id END

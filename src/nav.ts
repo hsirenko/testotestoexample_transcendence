@@ -100,22 +100,22 @@ function refreshProfileHeader(): void {
 	fetch('http://localhost:3000/api/users/me', {
 		headers: { 'Authorization': `Bearer ${token}` }
 	})
-	    .then((r) => r.json())
+    .then((r) => r.json())
     .then((user) => {
-      if (user.twofa_enabled)
+    if (user.twofa_enabled)
 	  {
-		status2FA.textContent = '2FA Enabled ✅';
-		enable2FABtn.innerHTML = "Reset 2FA";
-		remove2FABtn.classList.remove('hidden');
+      status2FA.textContent = '2FA Enabled ✅';
+      enable2FABtn.innerHTML = "Reset 2FA";
+      remove2FABtn.classList.remove('hidden');
 	  }
 	  else
 	  {
 	  	status2FA.textContent = 'Not enabled';
-		enable2FABtn.innerHTML = "Enable Two-Factor Authentication";
-		remove2FABtn.classList.add('hidden');
+      enable2FABtn.innerHTML = "Enable Two-Factor Authentication";
+      remove2FABtn.classList.add('hidden');
 	  }
     });
-  } catch { /* ignore */ }
+} catch { /* ignore */ }
 }
 
 /* open / close overlay */

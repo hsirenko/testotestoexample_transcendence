@@ -1,4 +1,9 @@
 import { resetObjects, resizeCanvas, render, updateScore } from "./main.js";
+import { populateProfileViews, refreshProfileHeader } from "./profile-setting.js";
+import { loadFriendsSidebar } from "./friends.js";
+import "./friends.js";      // this file already auto-fetches & renders the sidebar
+import "./stats.js";        // likewise for stats tab if you want to warm it up
+import "./history.js";
 
 const overlay = document.getElementById("login-overlay") as HTMLElement;
 const appShell = document.getElementById("app") as HTMLElement;
@@ -90,6 +95,7 @@ sendCodeBtn.insertAdjacentElement("afterend", backToLoginLink);
   resizeCanvas();
   render();
   updateScore();
+  loadFriendsSidebar();
 })();
 
 // function show2FALoginModal(): Promise<string | null> {
@@ -236,6 +242,7 @@ form.addEventListener("submit", async (e) => {
       resizeCanvas();
       render();
       updateScore();
+      loadFriendsSidebar();
       return;
     } catch {
       loginError.textContent = "Network error during Google 2FA login.";
@@ -305,6 +312,7 @@ form.addEventListener("submit", async (e) => {
   resizeCanvas();
   render();
   updateScore();
+  loadFriendsSidebar();
 });
 
 
