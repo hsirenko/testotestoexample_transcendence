@@ -29,18 +29,30 @@ function getAuthHeader(): HeadersInit {
   return t ? { Authorization: `Bearer ${t}` } : {};
 }
 
+/* profile-setting.ts  … */
+
+/* ---------- fetchCreatedAt (lazy + memoised) ------------------- */
+let cachedCreatedAt: string | null | undefined = undefined;   // ➊ NEW
+
 async function fetchCreatedAt(): Promise<string | null> {
+  /* ➋ Return cached value if we already fetched once */
+  if (cachedCreatedAt !== undefined) return cachedCreatedAt;
+
   try {
     const r = await fetch("http://localhost:3000/api/users/created-at", {
-      headers: getAuthHeader(),
+      headers: getAuthHeader(),                // unchanged helper
     });
-    if (!r.ok) return null;                       // 4xx / 5xx → ignore
+    if (!r.ok) { cachedCreatedAt = null; return null; }
+
     const { created_at } = (await r.json()) as { created_at?: string };
-    return created_at ?? null;                    // ISO or null
+    cachedCreatedAt = created_at ?? null;     // ➌ store for next time
+    return cachedCreatedAt;
   } catch {
-    return null;                                 // network / CORS error
+    cachedCreatedAt = null;                   // ➍ remember failure, skip retry
+    return null;
   }
 }
+
 
 
 const enable2FABtn = document.getElementById('enable-2fa-btn')!;
@@ -312,6 +324,8 @@ saveBtn?.addEventListener("click", async () => {
 });
 
 
-/* initial hydrate once ------------------------------------------- */
-populateProfileViews();
-refreshProfileHeader(); 
+ /* initial hydrate once ------------------------------------------- */
+if (localStorage.getItem("token")) {
+  populateProfileViews();
+  refreshProfileHeader();
+}

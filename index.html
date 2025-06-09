@@ -410,13 +410,6 @@
             >
               History
             </button>
-            <button
-              type="button"
-              data-tab="friends"
-              class="tab-btn pb-2 cursor-pointer"
-            >
-              Friends
-            </button>
 
             <!-- sliding underline -->
             <span
@@ -696,36 +689,6 @@
               </div>
             </section>
 
-            <!-- FRIENDS -->
-            <section data-panel="friends" class="panel hidden">
-              <h3 class="text-xl font-semibold mb-4">Friends</h3>
-              <ul class="space-y-4">
-                <li class="flex items-center gap-4">
-                  <img
-                    src="https://i.pravatar.cc/40?u=a"
-                    class="w-10 h-10 rounded-full"
-                  />
-                  <span class="flex-1">Aya</span>
-                  <button
-                    class="text-xs px-3 py-1 rounded-full bg-amber-500 text-white"
-                  >
-                    Challenge
-                  </button>
-                </li>
-                <li class="flex items-center gap-4">
-                  <img
-                    src="https://i.pravatar.cc/40?u=b"
-                    class="w-10 h-10 rounded-full"
-                  />
-                  <span class="flex-1">Karim</span>
-                  <button
-                    class="text-xs px-3 py-1 rounded-full bg-amber-500 text-white"
-                  >
-                    Challenge
-                  </button>
-                </li>
-              </ul>
-            </section>
           </div>
         </div>
       </div>
@@ -866,6 +829,22 @@
           </div>
         </div>
       </div>
+      <!-- ░░ FRIENDS SIDEBAR ░░ -->
+      <aside id="friends-sidebar"
+            class="fixed right-0 top-16 bottom-0 w-75
+                    bg-black/30 backdrop-blur
+                    border-l border-white/20
+                    flex flex-col z-[40]">
+
+        <h2 class="text-lg font-bold px-4 py-3 border-b border-white/20">Friends</h2>
+
+        <div id="friends-list"
+            class="flex-1 overflow-y-auto custom-scroll px-4 py-3 space-y-4">
+          <!-- filled by friends.ts -->
+        </div>
+      </aside>
+
+
     </div>
     <!-- MODE-CARD & DIFFICULTY STYLES (unchanged) -->
 
@@ -875,5 +854,6 @@
     <script type="module" src="./dist/nav.js"></script>
     <script type="module" src="./dist/stats.js"></script>
     <script type="module" src="./dist/main.js"></script>
+    <script type="module" src="./dist/friends.js"></script>
   </body>
 </html>
