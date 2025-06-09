@@ -3,7 +3,7 @@ import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import db from '../utils/db';
 import { authMiddleware } from '../middleware/auth';
 import { JWTPayload } from '../utils/jwt';
-import { hashPassword } from '../utils/hash';
+import { verifyPassword, hashPassword } from '../utils/hash';
 
 function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -21,34 +21,48 @@ export default async function userRoutes(fastify: FastifyInstance) {
   fastify.put('/api/users/edit-profile', {
     preHandler: authMiddleware
   }, async (req: FastifyRequest, reply: FastifyReply) => {
-    const { username, email, password } = req.body as {
+    const { username, email, oldPassword, newPassword } = req.body as {
       username?: string;
       email?: string;
-      password?: string;
+      oldPassword?: string;
+      newPassword?: string;
     };
 
     const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
 
-    if (!username && !email && !password) {
+    if (!username && !email && !newPassword) {
       return reply.status(400).send({ error: 'Nothing to update' });
     }
 
-    // 🧪 Validations
+    // ✅ Validate username
     if (username && username.length < 2) {
       return reply.status(400).send({ error: 'Username must be at least 2 characters long' });
     }
 
+    // ✅ Validate email
     if (email && !isValidEmail(email)) {
       return reply.status(400).send({ error: 'Invalid email format' });
     }
 
-    if (password && !isValidPassword(password)) {
-      return reply.status(400).send({
-        error: 'Password must be at least 8 characters long and include a lowercase, uppercase, number, and special character'
-      });
+    // ✅ Validate password change
+    if (newPassword) {
+      if (!oldPassword) {
+        return reply.status(400).send({ error: 'Old password is required to change your password' });
+      }
+
+      const user = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(userId);
+      if (!user || !verifyPassword(oldPassword, user.password_hash)) {
+        return reply.status(401).send({ error: 'Old password is incorrect' });
+      }
+
+      if (!isValidPassword(newPassword)) {
+        return reply.status(400).send({
+          error: 'Password must be at least 8 characters long and include a lowercase, uppercase, number, and special character'
+        });
+      }
     }
 
-    // Check if username or email already exists
+    // ✅ Check for duplicate username/email
     if (username || email) {
       const existing = db.prepare(`
         SELECT id FROM users WHERE (username = ? OR email = ?) AND id != ?
@@ -73,8 +87,8 @@ export default async function userRoutes(fastify: FastifyInstance) {
         values.push(email);
       }
 
-      if (password) {
-        const hashed = hashPassword(password);
+      if (newPassword) {
+        const hashed = hashPassword(newPassword);
         updates.push("password_hash = ?");
         values.push(hashed);
       }
@@ -93,6 +107,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
       return reply.status(500).send({ error: 'Failed to update profile' });
     }
   });
+
 
 
   // 1) Get full “me” object
