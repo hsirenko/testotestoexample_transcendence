@@ -1,22 +1,36 @@
-/* friends.ts – always-visible sidebar with optional mock data */
+/* friends.ts – sidebar with two-click “Remove friend” confirmation  */
+/* =================================================================*/
 
-/* ── 1. toggle for mock mode ───────────────────────────────────── */
-const USE_MOCK_DATA = false;           // ← set true for demo without backend
+/* 1 ░ mock toggle + dummy users -----------------------------------*/
+const USE_MOCK_DATA = false;
 
-/* dummy friends */
 const MOCK_FRIENDS = [
-    { id: "u01", username: "Aya",   email: "aya@example.com",
-     avatar_url: "https://i.pravatar.cc/40?u=aya" },
-    { id: "u02", username: "Karim", email: "karim@example.com",
-     avatar_url: "https://i.pravatar.cc/40?u=karim" },
-    { id: "u03", username: "Maya",  email: "maya@example.com",
-     avatar_url: "https://i.pravatar.cc/40?u=maya" },
+  { userId: 1, username: "Aya",   email: "aya@example.com",
+    avatar_url: "https://i.pravatar.cc/40?u=aya" },
+  { userId: 2, username: "Karim", email: "karim@example.com",
+    avatar_url: "https://i.pravatar.cc/40?u=karim" },
+  { userId: 3, username: "Maya",  email: "maya@example.com",
+    avatar_url: "https://i.pravatar.cc/40?u=maya" },
 ];
 
-/* ── 2. helpers ────────────────────────────────────────────────── */
+
+/* 2 ░ helpers ------------------------------------------------------*/
 function getAuthHeader(): HeadersInit {
   const t = localStorage.getItem("token");
   return t ? { Authorization: `Bearer ${t}` } : {};
+}
+
+function showToast(msg: string, isError = false): void {
+  const t = document.getElementById("friends-toast")!;
+  t.textContent = msg;
+  t.classList.toggle("bg-red-500",  isError);
+  t.classList.toggle("bg-emerald-500", !isError);
+  t.classList.add("opacity-100");
+  t.classList.remove("pointer-events-none");
+  setTimeout(() => {
+    t.classList.remove("opacity-100");
+    t.classList.add("pointer-events-none");
+  }, 2_000);
 }
 
 async function fetchFriends(): Promise<any[]> {
@@ -26,17 +40,18 @@ async function fetchFriends(): Promise<any[]> {
     const r = await fetch("http://localhost:3000/api/users/me/friends", {
       headers: getAuthHeader(),
     });
-    if (!r.ok) throw await r.json();             // 4xx / 5xx with JSON body
+    if (!r.ok) throw await r.json();
     return (await r.json()) as any[];
   } catch {
-    /* fallback to mock when backend unreachable */
-    return MOCK_FRIENDS;
+    return MOCK_FRIENDS;                   // offline fallback
   }
 }
 
-/* ── 3. render list ────────────────────────────────────────────── */
+
+/* 3 ░ render list --------------------------------------------------*/
 function render(friends: any[]): void {
   const list = document.getElementById("friends-list")!;
+  const tpl  = document.getElementById("friend-row-template") as HTMLTemplateElement;
   list.innerHTML = "";
 
   if (!friends.length) {
@@ -44,76 +59,98 @@ function render(friends: any[]): void {
     return;
   }
 
-  friends.forEach(f => {
-  /* container row */
-  const row = document.createElement("div");
-  row.className =
-    "bg-white/10 rounded-lg overflow-hidden" +          // keep nice corners
-    " transition-[max-height] duration-300";            // slide animation
-  row.style.maxHeight = "56px";                         // 56 = 14 × 4  (closed)
+  friends.forEach((f) => {
+    /* ─ clone row template */
+    const frag = tpl.content.cloneNode(true) as DocumentFragment;
+    const row  = frag.firstElementChild as HTMLDivElement;
 
-  /* visible header */
-  row.innerHTML = `
-    <div class="flex items-center gap-3 p-2">
-      <img src="${f.avatar_url ?? 'https://i.pravatar.cc/40?u=placeholder'}" class="w-8 h-8 rounded-full"/>
-      <div class="flex-1">
-        <p class="text-sm font-semibold">${f.username}</p>
-        <p class="text-[10px] text-white/60">${f.email}</p>
-      </div>
-      <button class="more-btn text-[10px] px-2 py-1 rounded-full
-                     bg-amber-500 hover:bg-amber-600">
-        more ▾
-      </button>
-    </div>
+    /* numeric id expected by backend */
+    const friendId = Number(f.userId ?? f.id ?? f.friend_id ?? NaN);
+    if (Number.isNaN(friendId)) return;        // skip bad rows
 
-    <!-- hidden panel -->
-    <div class="submenu px-2 pb-3 space-x-2 hidden">
-      <button class="sub px-2 py-1 text-[10px] bg-emerald-500 rounded-full">
-        Challenge
-      </button>
-      <button class="sub px-2 py-1 text-[10px] bg-cyan-500 rounded-full">
-        Stats
-      </button>
-      <button class="sub px-2 py-1 text-[10px] bg-red-500 rounded-full">
-        Remove
-      </button>
-    </div>
-  `;
+    /* fill visuals */
+    (row.querySelector(".avatar")   as HTMLImageElement).src =
+      f.avatar_url ?? "https://i.pravatar.cc/40?u=placeholder";
+    (row.querySelector(".username") as HTMLElement).textContent = f.username;
+    (row.querySelector(".email")    as HTMLElement).textContent = f.email;
 
-  /* toggle handler */
-  const btn   = row.querySelector<HTMLButtonElement>(".more-btn")!;
-  const panel = row.querySelector<HTMLDivElement>(".submenu")!;
-  let open    = false;
+    /* ─ DOM refs */
+    const moreBtn   = row.querySelector<HTMLButtonElement>(".more-btn")!;
+    const submenu   = row.querySelector<HTMLDivElement>(".submenu")!;
+    const confirm   = row.querySelector<HTMLDivElement>(".confirm-box")!;
+    const removeBtn = row.querySelector<HTMLButtonElement>(".remove-btn")!;
+    const yesBtn    = row.querySelector<HTMLButtonElement>(".yes-btn")!;
+    const noBtn     = row.querySelector<HTMLButtonElement>(".no-btn")!;
 
-  btn.addEventListener("click", () => {
-    open = !open;
-    panel.classList.toggle("hidden", !open);
-    row.style.maxHeight = open ? panel.scrollHeight + 56 + "px" : "56px";
-    btn.textContent = open ? "less ▲" : "more ▾";
+    /* submenu toggle */
+    let open = false;
+    moreBtn.addEventListener("click", () => {
+      open = !open;
+      submenu.classList.toggle("hidden", !open);
+      confirm.classList.add("hidden");
+      row.style.maxHeight = open ? submenu.scrollHeight + 56 + "px" : "56px";
+      moreBtn.textContent = open ? "less ▲" : "more ▾";
+    });
+
+    /* step-1  Remove → show confirm bar */
+    removeBtn.addEventListener("click", () => {
+      submenu.classList.add("hidden");
+      confirm.classList.remove("hidden");
+      row.style.maxHeight = confirm.scrollHeight + 56 + "px";
+    });
+
+    /* step-2a User cancels */
+    noBtn.addEventListener("click", () => {
+      confirm.classList.add("hidden");
+      submenu.classList.remove("hidden");
+      row.style.maxHeight = submenu.scrollHeight + 56 + "px";
+    });
+
+    /* step-2b User confirms */
+    yesBtn.addEventListener("click", async () => {
+      row.style.opacity = "0.6";
+      yesBtn.disabled = noBtn.disabled = true;
+
+      try {
+        const r = await fetch(
+          `http://localhost:3000/api/users/remove-friend/${friendId}`,
+          { method: "DELETE", headers: getAuthHeader() },
+        );
+        const body = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(body.error || r.statusText);
+
+        /* success – slide up & toast */
+        row.style.maxHeight = "0";
+        row.style.opacity   = "0";
+        setTimeout(() => {
+          row.remove();
+          if (!list.querySelector(".bg-white/10"))
+            list.innerHTML =
+              `<p class="text-white/70">You have no friends yet.</p>`;
+        }, 300);
+        showToast(`${f.username} has been removed.`, false);
+      } catch (e: any) {
+        row.style.opacity = "1";
+        yesBtn.disabled = noBtn.disabled = false;
+        showToast(`Could not remove ${f.username}: ${e.message}`, true);
+      }
+    });
+
+    list.appendChild(frag);
   });
-
-  list.appendChild(row);
-});
-
 }
 
+
+/* 4 ░ public loader + auto-init ----------------------------------*/
 export async function loadFriendsSidebar(): Promise<void> {
   const list = document.getElementById("friends-list")!;
   list.innerHTML = `<p class="text-white/70">Loading…</p>`;
-
   try {
-    const friends = await fetchFriends();
-    render(friends);
+    render(await fetchFriends());
   } catch (e: any) {
     list.innerHTML =
       `<p class="text-red-400">${e?.error ?? "Failed to load friends."}</p>`;
   }
 }
 
-(async () => {
-    const t = localStorage.getItem("token");
-    if (t)
-    {
-        loadFriendsSidebar();
-    }
-})();
+if (localStorage.getItem("token")) loadFriendsSidebar();
