@@ -15,6 +15,7 @@ import {
   LongestHitDTO,
   TrophyDTO,
 } from "./types.js";
+import { HOST } from './config.js';
 
 // test();
 
@@ -22,7 +23,7 @@ import {
 const USE_MOCK_DATA = false;
 
 /* base URL */
-const API_BASE = "http://localhost:3000";
+const API_BASE = `http://${HOST}:3000`;
 
 /* REST endpoints */
 const ENDPOINT = {

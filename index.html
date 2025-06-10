@@ -754,6 +754,7 @@
 
             <!-- remote -->
             <button
+			  id="remote-play"
               data-mode="remote"
               class="mode-card flex flex-col items-center gap-3 p-6 rounded-2xl bg-white/10 hover:bg-white/15 transition"
             >
@@ -778,6 +779,37 @@
           </div>
         </div>
       </div>
+
+		<!-- Remote-Play Modal -->
+		<div id="remote-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+		<div class="relative bg-white p-8 rounded-2xl w-full max-w-md text-black">
+			<!-- close × -->
+			<button id="remote-close" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+			&times;
+			</button>
+			<h3 class="text-2xl font-bold mb-6 text-center">Remote Play</h3>
+			<div class="flex flex-col gap-4">
+			<button id="remote-create-btn" class="px-4 py-2 bg-blue-600 text-white rounded">Create Game</button>
+			<button id="remote-join-btn" class="px-4 py-2 bg-green-600 text-white rounded">Join Game</button>
+			</div>
+			<!-- after Create -->
+			<div id="remote-created" class="mt-6 hidden">
+			<p class="mb-2">Share this Game ID:</p>
+			<div class="flex items-center gap-2">
+				<input id="remote-created-id" readonly class="flex-1 border p-2 rounded bg-white text-black" />
+				<button id="remote-copy-btn" class="px-3 py-2 bg-gray-300 rounded">Copy</button>
+			</div>
+			</div>
+			<!-- after Join -->
+			<div id="remote-join" class="mt-6 hidden">
+			<p class="mb-2">Enter Game ID to join:</p>
+			<div class="flex items-center gap-2">
+				<input id="remote-join-input" class="flex-1 border p-2 rounded bg-white text-black" />
+				<button id="remote-join-confirm" class="px-3 py-2 bg-green-600 text-white rounded">Join</button>
+			</div>
+			</div>
+		</div>
+		</div>
 
       <!-- ░░ DIFFICULTY POP-UP ░░ -->
       <div
@@ -829,20 +861,65 @@
           </div>
         </div>
       </div>
-      <!-- ░░ FRIENDS SIDEBAR ░░ -->
+	  <!-- ░░ FRIENDS SIDEBAR ░░ -->
       <aside id="friends-sidebar"
-            class="fixed right-0 top-16 bottom-0 w-75
+            class="fixed right-0 top-16 bottom-0 w-80
                     bg-black/30 backdrop-blur
-                    border-l border-white/20
-                    flex flex-col z-[40]">
-
-        <h2 class="text-lg font-bold px-4 py-3 border-b border-white/20">Friends</h2>
-
+                    border-l border-white/20 flex flex-col z-[40]">
+        <h2 class="text-lg font-bold px-4 py-3 border-b border-white/20">
+          Friends
+        </h2>
         <div id="friends-list"
             class="flex-1 overflow-y-auto custom-scroll px-4 py-3 space-y-4">
-          <!-- filled by friends.ts -->
+          <!-- rows injected by friends.ts -->
         </div>
       </aside>
+	  <!-- NEW friend-row template (one time in HTML) -->
+      <template id="friend-row-template">
+        <div class="bg-white/10 rounded-lg overflow-hidden
+                    transition-[max-height,opacity] duration-300"
+            style="max-height:56px">
+          <!-- visible row -->
+          <div class="flex items-center gap-3 p-2">
+            <img class="avatar w-8 h-8 rounded-full" src="" />
+            <div class="flex-1">
+              <p class="username text-sm font-semibold"></p>
+              <p class="email text-[10px] text-white/60"></p>
+            </div>
+            <button class="more-btn text-[10px] px-2 py-1 rounded-full
+                          bg-amber-500 hover:bg-amber-600">
+              more ▾
+            </button>
+          </div>
+          <!-- submenu -->
+          <div class="submenu px-2 pb-3 space-x-2 hidden">
+            <button class="sub px-2 py-1 text-[10px] bg-emerald-500 rounded-full">
+              Challenge
+            </button>
+            <button class="sub px-2 py-1 text-[10px] bg-cyan-500 rounded-full">
+              Stats
+            </button>
+            <button class="sub remove-btn px-2 py-1 text-[10px] bg-red-500 rounded-full
+                          active:scale-95 transition-transform duration-75">
+              Remove
+            </button>
+          </div>
+          <!-- confirm bar (hidden by default) -->
+          <div class="confirm-box px-2 pb-3 space-x-2 hidden">
+            <span class="text-[11px]">Remove friend?</span>
+            <button class="yes-btn px-2 py-[2px] text-[10px] rounded-full
+                          bg-red-500 hover:bg-red-600">Yes</button>
+            <button class="no-btn  px-2 py-[2px] text-[10px] rounded-full
+                          bg-white/10 hover:bg-white/20">No</button>
+          </div>
+        </div>
+      </template>
+      <!-- FRIENDS SIDEBAR TOAST -->
+      <div id="friends-toast"
+     class="fixed top-6 right-6 z-50
+            bg-emerald-500 text-white px-4 py-2 rounded-full shadow-lg text-sm
+            opacity-0 pointer-events-none transition-opacity duration-300"></div>
+      </div>
 
 
     </div>

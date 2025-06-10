@@ -112,7 +112,7 @@ import db from './utils/db';
 // console.log("✅ 10 dummy matches inserted.");
 
 
-const senderId = 39;
+const senderId = 50;
 const receiverId = 38;
 
 // Check if they're already friends

@@ -5,6 +5,7 @@ import { generateToken } from '../utils/jwt';
 import '@fastify/oauth2';
 import speakeasy from 'speakeasy';
 import { verifyToken } from '../utils/jwt';
+import { HOST } from '../server'
 
 type GoogleProfile = {
   id: string;
@@ -55,7 +56,7 @@ export default async function googleAuthRoutes(fastify: FastifyInstance) {
 		twofaPending: true,
       });
 
-      return reply.redirect(`http://localhost:5500?twofaPending=true&token=${tempToken}`);
+      return reply.redirect(`http://${HOST}:5500?twofaPending=true&token=${tempToken}`);
     }
     const jwtToken = generateToken({
       userId: user.id,
@@ -64,7 +65,7 @@ export default async function googleAuthRoutes(fastify: FastifyInstance) {
     });
 
     // Redirect back with token (or use cookie/session)
-    return reply.redirect(`http://localhost:5500?token=${jwtToken}`);
+    return reply.redirect(`http://${HOST}:5500?token=${jwtToken}`);
   });
 
   fastify.post('/auth/google/2fa', async (req, reply) => {
