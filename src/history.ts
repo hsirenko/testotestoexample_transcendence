@@ -9,10 +9,11 @@
  * ]
  */
 
+import { HOST } from './config.js';
 import { MatchRow } from "./types.js";
 
 /* Endpoint */
-const API_BASE = "http://localhost:3000";
+const API_BASE = `http://${HOST}:3000`;
 const ENDPOINT = `${API_BASE}/api/matches/history`;
 
 /* One-time guard */

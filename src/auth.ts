@@ -1,3 +1,5 @@
+//CHANGE THIS TO YOUR IP ADDRESS
+import { HOST } from './config.js';
 import { resetObjects, resizeCanvas, render, updateScore } from "./main.js";
 import { populateProfileViews, refreshProfileHeader } from "./profile-setting.js";
 import { loadFriendsSidebar } from "./friends.js";
@@ -19,7 +21,7 @@ let resetMode = false;
 const $ = <T extends HTMLElement = HTMLElement>(sel: string) =>
   document.querySelector<T>(sel);
 
-const GOOGLE_LOGIN_URL = 'http://localhost:3000/auth/google';
+const GOOGLE_LOGIN_URL = `http://${HOST}:3000/auth/google`;
 
 const originalSubmit = form.querySelector(
   "button[type='submit'],input[type='submit']"
@@ -79,7 +81,7 @@ sendCodeBtn.insertAdjacentElement("afterend", backToLoginLink);
   // No 2FA required
   localStorage.setItem('token', googleToken);
   try {
-    const res = await fetch('http://localhost:3000/api/users/me', {
+    const res = await fetch(`http://${HOST}:3000/api/users/me`, {
       headers: { 'Authorization': `Bearer ${googleToken}` }
     });
     const user = await res.json();
@@ -200,7 +202,7 @@ form.addEventListener("submit", async (e) => {
 
     // Send token only to /api/2fa/verify
     try {
-      const res = await fetch("http://localhost:3000/api/2fa/verify", {
+      const res = await fetch(`http://${HOST}:3000/api/2fa/verify`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -217,7 +219,7 @@ form.addEventListener("submit", async (e) => {
       }
 
       // ✅ Verified: fetch user and continue
-      const userRes = await fetch('http://localhost:3000/api/users/me', {
+      const userRes = await fetch(`http://${HOST}:3000/api/users/me`, {
         headers: { 'Authorization': `Bearer ${pendingGoogleToken}` },
       });
       const user = await userRes.json();
@@ -260,7 +262,7 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
-  const res = await fetch("http://localhost:3000/login", {
+  const res = await fetch(`http://${HOST}:3000/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
@@ -281,7 +283,7 @@ form.addEventListener("submit", async (e) => {
       return;
     }
 
-    const retry = await fetch("http://localhost:3000/login", {
+    const retry = await fetch(`http://${HOST}:3000/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, twofaToken }),
@@ -408,7 +410,7 @@ signupForm?.addEventListener("submit", (e) => {
   else if (pwErr) signupError.textContent = pwErr;
   else if (pw !== pw2) signupError.textContent = "Passwords don’t match.";
   else {
-    fetch("http://localhost:3000/signup", {
+    fetch(`http://${HOST}:3000/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: un, email: em, password: pw }),

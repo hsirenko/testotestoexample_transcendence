@@ -1,3 +1,4 @@
+//frontend/src/welcome.ts
 const game = document.getElementById("game-container") as HTMLElement;
 const main = game?.parentElement as HTMLElement; // the <main> element
 

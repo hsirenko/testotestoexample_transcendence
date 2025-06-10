@@ -9,6 +9,10 @@ import { populateProfileViews,
          setActiveTab, 
 		 refreshProfileHeader }          from "./profile-setting.js";
 import "./welcome.js";
+import { initRemote } from './main.js';
+import { initRemoteModal } from './main.js';
+import { HOST } from './config.js';
+
 /* ───── shorthand ───── */
 const $ = <T extends HTMLElement = HTMLElement>(sel: string) =>
   document.querySelector<T>(sel);
@@ -124,15 +128,26 @@ const playOv = $("#play-overlay")!;
 $("#nav-play")?.addEventListener("click", () => show(playOv));
 $("#play-close")?.addEventListener("click", () => hide(playOv));
 addEventListener("keydown", e => e.key === "Escape" && hide(playOv));
-document.querySelectorAll<HTMLButtonElement>(".mode-card").forEach(card =>
-  card.addEventListener("click", () => {
-    const mode = card.dataset.mode as "ai"|"offline"|"remote"|"tournament";
+
+document.querySelectorAll<HTMLButtonElement>('.mode-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const mode = card.dataset.mode as
+      | 'ai' | 'offline' | 'remote' | 'tournament';
     hide(playOv);
-    if (mode === "ai") show($("#difficulty-overlay")!, $("#difficulty-container")!);
-    else if (mode === "offline")  (window as any).setGameMode("pvp");
-    else alert(`Mode “${mode}” coming soon!`);
-  })
-);
+    if (mode === 'ai') {
+      show($('#difficulty-overlay')!, $('#difficulty-container')!);
+    } else if (mode === 'offline') {
+      (window as any).setGameMode('pvp');
+    }
+	else if (mode === 'remote') {
+      initRemoteModal();
+    }
+	else {
+      alert(`Mode “${mode}” coming soon!`);
+    }
+  });
+});
+
 const diffOv  = $("#difficulty-overlay")!;
 const diffBox = $("#difficulty-container")!;
 $("#difficulty-close")?.addEventListener("click", () => hide(diffOv, diffBox));
@@ -164,7 +179,7 @@ document.getElementById('remove-2fa-confirm-btn')?.addEventListener('click', asy
   const tokenStorage = localStorage.getItem('token');
 
   try {
-    const res = await fetch('http://localhost:3000/api/2fa/remove', {
+    const res = await fetch(`http://${HOST}:3000/api/2fa/remove`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

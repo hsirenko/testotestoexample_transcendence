@@ -6,6 +6,8 @@
  *  – toast + error helpers
  */
 
+import { HOST } from './config.js';
+
 export function $(sel: string): HTMLElement | null {
   return document.querySelector(sel);
 }
@@ -39,7 +41,7 @@ async function fetchCreatedAt(): Promise<string | null> {
   if (cachedCreatedAt !== undefined) return cachedCreatedAt;
 
   try {
-    const r = await fetch("http://localhost:3000/api/users/created-at", {
+    const r = await fetch(`http://${HOST}:3000/api/users/created-at`, {
       headers: getAuthHeader(),                // unchanged helper
     });
     if (!r.ok) { cachedCreatedAt = null; return null; }
@@ -82,7 +84,7 @@ enable2FABtn.addEventListener('click', async (e) => {
 	try {
 		e.preventDefault();
 		e.stopPropagation();
-		const res = await fetch('http://localhost:3000/api/2fa/setup', {
+		const res = await fetch(`http://${HOST}:3000/api/2fa/setup`, {
 		headers: { ...authHeader(), 'Content-Type': 'application/json' },
 		});
 		const { qrDataUrl, manualKey } = await res.json();
@@ -112,7 +114,7 @@ verifyBtn.addEventListener('click', async (e) => {
 		return;
 	}
 	try {
-		const res = await fetch('http://localhost:3000/api/2fa/verify', {
+		const res = await fetch(`http://${HOST}:3000/api/2fa/verify`, {
 		method: 'POST',
 		headers: { ...authHeader(), 'Content-Type': 'application/json' },
 		body: JSON.stringify({ token, secretFromReq }),
@@ -177,7 +179,7 @@ export async function refreshProfileHeader(): Promise<void> {
     if (mailEl && user.email   ) mailEl.textContent = user.email;
 	if (avatar && user.avatar_url) avatar.src = user.avatar_url;
 	else if (avatar && !user.avatar_url) avatar.src = "https://img.freepik.com/free-vector/cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
-	fetch('http://localhost:3000/api/users/me', {
+	fetch(`http://${HOST}:3000/api/users/me`, {
 	headers: { 'Authorization': `Bearer ${token}` }
 	})
     .then((r) => r.json())
@@ -306,7 +308,7 @@ saveBtn?.addEventListener("click", async () => {
     if (newP)                                    payload.password = newP;
 
     if (Object.keys(payload).length) {
-      const res  = await fetch("http://localhost:3000/api/users/edit-profile", {
+      const res  = await fetch(`http://${HOST}:3000/api/users/edit-profile`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

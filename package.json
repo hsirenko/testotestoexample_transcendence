@@ -4,8 +4,8 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "serve": "http-server . -p 5500 -c-1",
-    "dev": "concurrently \"tsc --watch\" \"http-server . -p 5500 -c-1\"",
+    "serve": "http-server . -p 5500 -c-1 --cors",
+    "dev": "concurrently \"tsc --watch\" \"http-server . -p 5500 -c-1 --cors\"",
     "start": "npm run build && npm run serve"
   },
   "devDependencies": {
