@@ -224,7 +224,7 @@ const inNewPass     = $("#edit-newpass")    as HTMLInputElement | null;
 const inConfirmPass = $("#edit-confpass")   as HTMLInputElement | null;
 
 const DUMMY_OLD_PASS = "OldPass123";
-let   editing        = false;
+let   editing        = true;
 
 /* helpers --------------------------------------------------------- */
 function toggleEdit(on: boolean) {

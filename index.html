@@ -1,532 +1,567 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ft_transcendence</title>
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>ft_transcendence</title>
 
-    <!-- Chart.js for the graphs -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+	<!-- Chart.js for the graphs -->
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-    <!-- Tailwind CSS – CDN “browser” build -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
-    />
+	<!-- Tailwind CSS – CDN “browser” build -->
+	<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+	<link
+	rel="stylesheet"
+	href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+	/>
 
-    <!-- ───────────── Sleek scrollbars (fuchsia main, amber inner) -->
-    <style>
-      @import url("https://fonts.googleapis.com/css2?family=Baloo+2&display=swap");
+	<!-- ───────────── Sleek scrollbars (fuchsia main, amber inner) -->
+	<style>
+	@import url("https://fonts.googleapis.com/css2?family=Baloo+2&display=swap");
 
-      body {
-        font-family: "Baloo 2", cursive;
-      }
+	body {
+		font-family: "Baloo 2", cursive;
+	}
 
-      /* Main scroll area in the profile page */
-      #tab-panels::-webkit-scrollbar {
-        width: 10px;
-      }
-      #tab-panels::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.07);
-        border-radius: 10px;
-      }
-      #tab-panels::-webkit-scrollbar-thumb {
-        background: rgba(232, 60, 140, 0.85);
-        border-radius: 10px;
-      }
-      #tab-panels:hover::-webkit-scrollbar-thumb {
-        background: rgba(232, 60, 140, 1);
-      }
-      #tab-panels {
-        scrollbar-width: thin;
-        scrollbar-color: rgba(232, 60, 140, 0.9) rgba(255, 255, 255, 0.07);
-      }
+	/* Main scroll area in the profile page */
+	#tab-panels::-webkit-scrollbar {
+		width: 10px;
+	}
+	#tab-panels::-webkit-scrollbar-track {
+		background: rgba(255, 255, 255, 0.07);
+		border-radius: 10px;
+	}
+	#tab-panels::-webkit-scrollbar-thumb {
+		background: rgba(232, 60, 140, 0.85);
+		border-radius: 10px;
+	}
+	#tab-panels:hover::-webkit-scrollbar-thumb {
+		background: rgba(232, 60, 140, 1);
+	}
+	#tab-panels {
+		scrollbar-width: thin;
+		scrollbar-color: rgba(232, 60, 140, 0.9) rgba(255, 255, 255, 0.07);
+	}
 
-      /* Amber variant for anything with .custom-scroll */
-      .custom-scroll::-webkit-scrollbar {
-        width: 8px;
-      }
-      .custom-scroll::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      .custom-scroll::-webkit-scrollbar-thumb {
-        background: rgba(251, 191, 36, 0.9);
-        border-radius: 8px;
-      }
-      .custom-scroll:hover::-webkit-scrollbar-thumb {
-        background: rgba(253, 224, 71, 1);
-      }
-      .custom-scroll {
-        scrollbar-width: thin;
-        scrollbar-color: rgba(251, 191, 36, 0.9) transparent;
-      }
-    </style>
-  </head>
+	/* Amber variant for anything with .custom-scroll */
+	.custom-scroll::-webkit-scrollbar {
+		width: 8px;
+	}
+	.custom-scroll::-webkit-scrollbar-track {
+		background: transparent;
+	}
+	.custom-scroll::-webkit-scrollbar-thumb {
+		background: rgba(251, 191, 36, 0.9);
+		border-radius: 8px;
+	}
+	.custom-scroll:hover::-webkit-scrollbar-thumb {
+		background: rgba(253, 224, 71, 1);
+	}
+	.custom-scroll {
+		scrollbar-width: thin;
+		scrollbar-color: rgba(251, 191, 36, 0.9) transparent;
+	}
+	</style>
+</head>
 
-  <body
-    class="min-h-screen flex flex-col bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white selection:bg-pink-400/40"
-  >
-    <!-- ░░ LOGIN OVERLAY ░░ -->
-    <div
-      id="login-overlay"
-      class="fixed inset-0 bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white flex items-center justify-center z-[70]"
-    >
-      <form
-        id="login-form"
-        class="bg-black/60 backdrop-blur p-8 rounded-3xl flex flex-col gap-4 w-full max-w-sm"
-      >
-        <h2 class="text-2xl font-extrabold text-center mb-2">Sign in</h2>
-        <input
-          type="email"
-          id="email"
-          placeholder="Email"
-          required
-          class="px-4 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none"
-        />
-        <input
-          type="password"
-          id="password"
-          placeholder="Password"
-          required
-          class="px-4 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none"
-        />
+<body
+	class="min-h-screen flex flex-col bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white selection:bg-pink-400/40"
+>
+	<!-- ░░ LOGIN OVERLAY ░░ -->
+	<div
+	id="login-overlay"
+	class="fixed inset-0 bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white flex items-center justify-center z-[70]"
+	>
+	<form
+		id="login-form"
+		class="bg-black/60 backdrop-blur p-8 rounded-3xl flex flex-col gap-4 w-full max-w-sm"
+	>
+		<h2 class="text-2xl font-extrabold text-center mb-2">Sign in</h2>
 		<input
-		  type="text"
-		  id="twofa-token"
-		  placeholder="2FA Code"
-		  class="px-4 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none hidden"
+		type="email"
+		id="email"
+		placeholder="Email"
+		required
+		class="px-4 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none"
+		/>
+		<input
+		type="password"
+		id="password"
+		placeholder="Password"
+		required
+		class="px-4 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none"
+		/>
+		<input
+		type="text"
+		id="twofa-token"
+		placeholder="2FA Code"
+		class="px-4 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none hidden"
 		/>
 
-        <p id="login-error" class="text-xs text-red-400 min-h-[1em]"></p>
+		<p id="login-error" class="text-xs text-red-400 min-h-[1em]"></p>
 
-        <!-- Forgot-password (no action yet) -->
-        <button
-          type="button"
-          id="forgot-btn"
-          class="text-xs self-end text-amber-400 hover:underline mt-[-4px]"
-        >
-          Forgot password?
-        </button>
+		<!-- Forgot-password (no action yet) -->
+		<button
+		type="button"
+		id="forgot-btn"
+		class="text-xs self-end text-amber-400 hover:underline mt-[-4px]"
+		>
+		Forgot password?
+		</button>
 
-        <button
-          type="submit"
-          class="py-2 rounded-full bg-amber-500 hover:bg-amber-600 font-semibold"
-        >
-          Login
-        </button>
-        <!-- Google sign-in (does nothing yet) -->
-        <button
-          type="button"
-		  id="google-login-btn"
-          class="flex items-center justify-center gap-2 py-2 rounded-full bg-white text-black hover:bg-white/90 font-medium"
-        >
-          <!-- Google “G” logo (simple SVG) -->
-          <svg viewBox="0 0 24 24" class="w-5 h-5">
-            <path
-              fill="#EA4335"
-              d="M12 11.8v4.4h6.2c-.3 1.6-1.9 4.8-6.2 4.8a7.2 7.2 0 1 1 0-14.4 6.63 6.63 0 0 1 4.7 1.8l3.2-3.1A11.79 11.79 0 0 0 12 2.4a9.6 9.6 0 0 0 0 19.2c5.5 0 9.2-3.9 9.2-9.4 0-.6 0-1-.1-1.4H12z"
-            />
-          </svg>
-          Continue with Google
-        </button>
+		<button
+		type="submit"
+		class="py-2 rounded-full bg-amber-500 hover:bg-amber-600 font-semibold"
+		>
+		Login
+		</button>
+		<!-- Google sign-in (does nothing yet) -->
+		<button
+		type="button"
+		id="google-login-btn"
+		class="flex items-center justify-center gap-2 py-2 rounded-full bg-white text-black hover:bg-white/90 font-medium"
+		>
+		<!-- Google “G” logo (simple SVG) -->
+		<svg viewBox="0 0 24 24" class="w-5 h-5">
+			<path
+			fill="#EA4335"
+			d="M12 11.8v4.4h6.2c-.3 1.6-1.9 4.8-6.2 4.8a7.2 7.2 0 1 1 0-14.4 6.63 6.63 0 0 1 4.7 1.8l3.2-3.1A11.79 11.79 0 0 0 12 2.4a9.6 9.6 0 0 0 0 19.2c5.5 0 9.2-3.9 9.2-9.4 0-.6 0-1-.1-1.4H12z"
+			/>
+		</svg>
+		Continue with Google
+		</button>
 
-        <!-- Switch to sign-up -->
-        <p class="text-xs text-center">
-          Don’t have an account?
-          <a href="#" id="show-signup" class="text-amber-400 hover:underline"
-            >Sign up</a
-          >
-        </p>
-      </form>
-    </div>
+		<!-- Switch to sign-up -->
+		<p class="text-xs text-center">
+		Don’t have an account?
+		<a href="#" id="show-signup" class="text-amber-400 hover:underline"
+			>Sign up</a
+		>
+		</p>
+	</form>
+	</div>
 
-    <!-- ░░ SIGN-UP OVERLAY ░░ -->
-    <div
-      id="signup-overlay"
-      class="fixed inset-0 bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white flex items-center justify-center z-[70] hidden"
-    >
-      <form
-        id="signup-form"
-        class="bg-black/60 backdrop-blur p-8 rounded-3xl flex flex-col gap-4 w-full max-w-sm"
-      >
-        <h2 class="text-2xl font-extrabold text-center mb-2">Create account</h2>
+	<!-- ░░ SIGN-UP OVERLAY ░░ -->
+	<div
+	id="signup-overlay"
+	class="fixed inset-0 bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white flex items-center justify-center z-[70] hidden"
+	>
+	<form
+		id="signup-form"
+		class="bg-black/60 backdrop-blur p-8 rounded-3xl flex flex-col gap-4 w-full max-w-sm"
+	>
+		<h2 class="text-2xl font-extrabold text-center mb-2">Create account</h2>
 
-        <input
-          type="text"
-          id="su-username"
-          placeholder="Username"
-          required
-          class="px-4 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none"
-        />
-        <input
-          type="email"
-          id="su-email"
-          placeholder="Email"
-          required
-          class="px-4 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none"
-        />
-        <input
-          type="password"
-          id="su-password"
-          placeholder="Password"
-          required
-          class="px-4 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none"
-        />
-        <input
-          type="password"
-          id="su-password2"
-          placeholder="Confirm password"
-          required
-          class="px-4 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none"
-        />
+		<input
+		type="text"
+		id="su-username"
+		placeholder="Username"
+		required
+		class="px-4 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none"
+		/>
+		<input
+		type="email"
+		id="su-email"
+		placeholder="Email"
+		required
+		class="px-4 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none"
+		/>
+		<input
+		type="password"
+		id="su-password"
+		placeholder="Password"
+		required
+		class="px-4 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none"
+		/>
+		<input
+		type="password"
+		id="su-password2"
+		placeholder="Confirm password"
+		required
+		class="px-4 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none"
+		/>
 
-        <p id="signup-error" class="text-xs text-red-400 min-h-[1em]"></p>
+		<p id="signup-error" class="text-xs text-red-400 min-h-[1em]"></p>
 
-        <button
-          type="submit"
-          class="py-2 rounded-full bg-amber-500 hover:bg-amber-600 font-semibold"
-        >
-          Sign up
-        </button>
-        <!-- Google sign-in (does nothing yet) -->
-        <button
-          type="button"
-		  id="google-signup-btn"
-          class="flex items-center justify-center gap-2 py-2 rounded-full bg-white text-black hover:bg-white/90 font-medium"
-        >
-          <!-- Google “G” logo (simple SVG) -->
-          <svg viewBox="0 0 24 24" class="w-5 h-5">
-            <path
-              fill="#EA4335"
-              d="M12 11.8v4.4h6.2c-.3 1.6-1.9 4.8-6.2 4.8a7.2 7.2 0 1 1 0-14.4 6.63 6.63 0 0 1 4.7 1.8l3.2-3.1A11.79 11.79 0 0 0 12 2.4a9.6 9.6 0 0 0 0 19.2c5.5 0 9.2-3.9 9.2-9.4 0-.6 0-1-.1-1.4H12z"
-            />
-          </svg>
-          Continue with Google
-        </button>
+		<button
+		type="submit"
+		class="py-2 rounded-full bg-amber-500 hover:bg-amber-600 font-semibold"
+		>
+		Sign up
+		</button>
+		<!-- Google sign-in (does nothing yet) -->
+		<button
+		type="button"
+		id="google-signup-btn"
+		class="flex items-center justify-center gap-2 py-2 rounded-full bg-white text-black hover:bg-white/90 font-medium"
+		>
+		<!-- Google “G” logo (simple SVG) -->
+		<svg viewBox="0 0 24 24" class="w-5 h-5">
+			<path
+			fill="#EA4335"
+			d="M12 11.8v4.4h6.2c-.3 1.6-1.9 4.8-6.2 4.8a7.2 7.2 0 1 1 0-14.4 6.63 6.63 0 0 1 4.7 1.8l3.2-3.1A11.79 11.79 0 0 0 12 2.4a9.6 9.6 0 0 0 0 19.2c5.5 0 9.2-3.9 9.2-9.4 0-.6 0-1-.1-1.4H12z"
+			/>
+		</svg>
+		Continue with Google
+		</button>
 
-        <!-- Switch back to login -->
-        <p class="text-xs text-center">
-          Already have an account?
-          <a href="#" id="show-login" class="text-amber-400 hover:underline"
-            >Sign in</a
-          >
-        </p>
-      </form>
-    </div>
+		<!-- Switch back to login -->
+		<p class="text-xs text-center">
+		Already have an account?
+		<a href="#" id="show-login" class="text-amber-400 hover:underline"
+			>Sign in</a
+		>
+		</p>
+	</form>
+	</div>
 
-    <!-- ░░ NAVBAR ░░ -->
-    <div id="app" class="flex flex-col min-h-screen hidden">
-      <header class="sticky top-0 bg-black/50 backdrop-blur-md z-50">
-        <nav
-          class="max-w-5xl mx-auto px-4 flex items-center justify-between h-16"
-        >
-          <a href="#" class="text-3xl font-extrabold">⚡ ft_transcendence</a>
+	<!-- ░░ NAVBAR ░░ -->
+	<div id="app" class="flex flex-col min-h-screen hidden">
+	<header class="sticky top-0 bg-black/50 backdrop-blur-md z-50">
+		<nav
+		class="relative max-w-5xl mx-auto px-4 flex items-center justify-between h-16"
+		>
+		<a href="#" class="text-3xl font-extrabold">⚡ ft_transcendence</a>
 
-          <button id="burger" class="sm:hidden text-white">
-            <svg
-              class="w-8 h-8"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+		<button id="burger" class="sm:hidden text-white">
+			<svg
+			class="w-8 h-8"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2"
+			viewBox="0 0 24 24"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			>
+			<path d="M4 6h16M4 12h16M4 18h16" />
+			</svg>
+		</button>
 
-          <!-- nav-menu gets mobile layout classes toggled in nav.ts -->
-          <ul id="nav-menu" class="hidden sm:flex sm:space-x-8">
-            <li>
-              <button
-                class="hover:text-pink-200 transition-transform duration-200 hover:scale-105"
-                data-nav="home"
-              >
-                Home
-              </button>
-            </li>
-            <li>
-              <button
-                id="nav-play"
-                class="hover:text-pink-200 transition-transform duration-200 hover:scale-105"
-              >
-                Play
-              </button>
-            </li>
-            <li>
-              <button
-                id="nav-profile"
-                class="hover:text-pink-200 transition-transform duration-200 hover:scale-105"
-              >
-                Profile
-              </button>
-            </li>
-            <li>
-              <button
-                id="nav-signout"
-                class="hover:text-pink-200 transition-transform duration-200 hover:scale-105"
-              >
-                Sign&nbsp;Out
-              </button>
-            </li>
-          </ul>
-          <!-- TOASTS -->
-          <div
-            id="login-toast"
-            class="fixed top-24 right-6 bg-emerald-500/90 text-white px-4 py-2 rounded-full shadow-lg text-sm opacity-0 pointer-events-none transition-opacity duration-300"
-          >
-            Logged in&nbsp;✔
-          </div>
-        </nav>
-      </header>
+		<!-- nav-menu gets mobile layout classes toggled in nav.ts -->
+		<ul id="nav-menu" class="hidden sm:flex sm:space-x-8">
+			<!-- inside #nav-menu -->
+			<!-- ░░ BELL + DROPDOWN ░░ -->
+			<li class="relative">
+			<!-- bell button -->
+			<button id="nav-notif"
+					class="relative hover:text-pink-200 transition-transform duration-200 hover:scale-105">
+				<!-- bell icon -->
+				<svg class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+					stroke="currentColor" stroke-width="2">
+				<path stroke-linecap="round" stroke-linejoin="round"
+						d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11
+						a6 6 0 00-5-5.917V4a1 1 0 10-2 0v1.083A6 6 0 006 11v3.159
+						c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0h6z"/>
+				</svg>
 
-      <!-- ░░ GAME AREA ░░ -->
-      <main class="flex-grow flex items-center justify-center p-8">
-        <div
-          id="game-container"
-          class="relative w-full max-w-4xl aspect-video bg-gray-900/70 rounded-3xl shadow-2xl overflow-hidden"
-        >
-          <canvas id="pong-canvas" class="w-full h-full rounded-3xl"></canvas>
+				<!-- badge -->
+				<span id="notif-badge"
+					class="absolute -top-1 -right-1
+							w-4 h-4 rounded-full bg-red-500 text-[10px] font-bold
+							flex items-center justify-center text-white
+							opacity-0 pointer-events-none
+							transition-opacity duration-300"></span>
+			</button>
 
-          <!-- SCOREBOARD -->
-          <div
-            id="scoreboard"
-            class="absolute top-4 left-1/2 -translate-x-1/2 text-4xl font-extrabold flex gap-3 drop-shadow-[0_0_8px_rgb(0_0_0/0.9)] select-none z-10"
-          >
-            <span id="score-left" class="text-cyan-300">0</span>
-            <span>:</span>
-            <span id="score-right" class="text-amber-300">0</span>
-          </div>
+			<!-- dropdown -->
+			<div id="notif-panel"
+				class="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-72 hidden
+				max-h-80 overflow-y-auto custom-scroll bg-black/30 backdrop-blur
+				border-l border-white/20 border rounded-xl p-4 space-y-3 z-[55]">
+				<!-- rows injected by notifications.ts -->
+				<p class="text-center text-sm text-white/70">No notifications yet.</p>
+			</div>
+			</li>
+			
+			<li>
+			<button
+				class="hover:text-pink-200 transition-transform duration-200 hover:scale-105"
+				data-nav="home"
+			>
+				Home
+			</button>
+			</li>
+			<li>
+			<button
+				id="nav-play"
+				class="hover:text-pink-200 transition-transform duration-200 hover:scale-105"
+			>
+				Play
+			</button>
+			</li>
+			<li>
+			<button
+				id="nav-profile"
+				class="hover:text-pink-200 transition-transform duration-200 hover:scale-105"
+			>
+				Profile
+			</button>
+			</li>
+			<li>
+			<button
+				id="nav-signout"
+				class="hover:text-pink-200 transition-transform duration-200 hover:scale-105"
+			>
+				Sign&nbsp;Out
+			</button>
+			</li>
+		</ul>
+		<!-- TOASTS -->
+		<div
+			id="login-toast"
+			class="fixed top-24 right-6 bg-emerald-500/90 text-white px-4 py-2 rounded-full shadow-lg text-sm opacity-0 pointer-events-none transition-opacity duration-300"
+		>
+			Logged in&nbsp;✔
+		</div>
+		</nav>
+	</header>
 
-          <!-- START OVERLAY -->
-          <button
-            id="start-btn"
-            class="absolute inset-0 flex items-center justify-center z-20 bg-black/40 backdrop-blur-sm text-3xl md:text-5xl font-extrabold tracking-wide text-white hover:scale-105 transition before:absolute before:inset-0 before:-z-10 before:rounded-3xl before:bg-[conic-gradient(at_top_left,_theme(colors.cyan.400), _theme(colors.fuchsia.500),_theme(colors.amber.400))] before:opacity-40 before:blur-2xl"
-          >
-            ▶ LET&nbsp;THE&nbsp;GAME&nbsp;BEGIN
-          </button>
-        </div>
-      </main>
 
-      <!-- ░░ PROFILE MINI-PAGE ░░ -->
-      <div
-        id="profile-overlay"
-        class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden opacity-0 transition-opacity duration-300"
-      >
-        <div
-          class="relative w-full max-w-3xl h-[90vh] bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white p-8 rounded-3xl shadow-2xl flex flex-col"
-        >
-          <!-- close × -->
-          <button
-            id="profile-close"
-            class="absolute top-4 right-4 text-white/70 hover:text-white"
-          >
-            <svg
-              class="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
 
-          <!-- header -->
-          <div class="flex items-center gap-6 mb-8">
-            <div
-              class="group relative w-24 h-24 rounded-full p-[3px] bg-gradient-to-br from-cyan-400 via-fuchsia-500 to-amber-400 shrink-0"
-            >
-              <img
-                id="avatar-img"
+	<!-- ░░ GAME AREA ░░ -->
+	<main class="flex-grow flex items-center justify-center p-8">
+		<div
+		id="game-container"
+		class="relative w-full max-w-4xl aspect-video bg-gray-900/70 rounded-3xl shadow-2xl overflow-hidden"
+		>
+		<canvas id="pong-canvas" class="w-full h-full rounded-3xl"></canvas>
+
+		<!-- SCOREBOARD -->
+		<div
+			id="scoreboard"
+			class="absolute top-4 left-1/2 -translate-x-1/2 text-4xl font-extrabold flex gap-3 drop-shadow-[0_0_8px_rgb(0_0_0/0.9)] select-none z-10"
+		>
+			<span id="score-left" class="text-cyan-300">0</span>
+			<span>:</span>
+			<span id="score-right" class="text-amber-300">0</span>
+		</div>
+
+		<!-- START OVERLAY -->
+		<button
+			id="start-btn"
+			class="absolute inset-0 flex items-center justify-center z-20 bg-black/40 backdrop-blur-sm text-3xl md:text-5xl font-extrabold tracking-wide text-white hover:scale-105 transition before:absolute before:inset-0 before:-z-10 before:rounded-3xl before:bg-[conic-gradient(at_top_left,_theme(colors.cyan.400), _theme(colors.fuchsia.500),_theme(colors.amber.400))] before:opacity-40 before:blur-2xl"
+		>
+			▶ LET&nbsp;THE&nbsp;GAME&nbsp;BEGIN
+		</button>
+		</div>
+	</main>
+	<!-- ░░ PROFILE MINI-PAGE ░░ -->
+	<div
+		id="profile-overlay"
+		class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden opacity-0 transition-opacity duration-300"
+	>
+		<div
+		class="relative w-full max-w-3xl h-[90vh] bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white p-8 rounded-3xl shadow-2xl flex flex-col"
+		>
+		<!-- close × -->
+		<button
+			id="profile-close"
+			class="absolute top-4 right-4 text-white/70 hover:text-white"
+		>
+			<svg
+			class="w-6 h-6"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2"
+			viewBox="0 0 24 24"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			>
+			<path d="M6 18L18 6M6 6l12 12" />
+			</svg>
+		</button>
+
+		<!-- header -->
+		<div class="flex items-center gap-6 mb-8">
+			<div
+			class="group relative w-24 h-24 rounded-full p-[3px] bg-gradient-to-br from-cyan-400 via-fuchsia-500 to-amber-400 shrink-0"
+			>
+			<img
+				id="avatar-img"
 				src="https://i.pravatar.cc/150?u=user"
-                alt="Profile picture"
-                class="w-full h-full object-cover rounded-full"
-              />
-              <label
-                for="avatar-input"
-                class="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
-                title="Change picture"
-              >
-                <svg
-                  class="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  viewBox="0 0 24 24"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path
-                    d="M3 7h4l2-3h6l2 3h4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"
-                  />
-                  <circle cx="12" cy="13" r="4" />
-                </svg>
-              </label>
-              <input
-                type="file"
-                id="avatar-input"
-                accept="image/*"
-                class="hidden"
-              />
-            </div>
-            <div>
-              <!-- populated by nav.ts -->
-              <h2 id="profile-name" class="text-3xl font-bold">Username</h2>
-              <p id="profile-mail" class="text-sm text-white/70">user@email</p>
-              <p id="profile-joined" class="text-xs text-white/60">
-                Player since —
-              </p>
-            </div>
-          </div>
+				alt="Profile picture"
+				class="w-full h-full object-cover rounded-full"
+			/>
+			<label
+				for="avatar-input"
+				class="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
+				title="Change picture"
+			>
+				<svg
+				class="w-6 h-6 text-white"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				viewBox="0 0 24 24"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				>
+				<path
+					d="M3 7h4l2-3h6l2 3h4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"
+				/>
+				<circle cx="12" cy="13" r="4" />
+				</svg>
+			</label>
+			<input
+				type="file"
+				id="avatar-input"
+				accept="image/*"
+				class="hidden"
+			/>
+			</div>
+			<div>
+			<!-- populated by nav.ts -->
+			<h2 id="profile-name" class="text-3xl font-bold">Username</h2>
+			<p id="profile-mail" class="text-sm text-white/70">user@email</p>
+			<p id="profile-joined" class="text-xs text-white/60">
+				Player since —
+			</p>
+			</div>
+		</div>
 
-          <!-- TAB BAR -->
-          <nav
-            id="profile-tabs"
-            class="relative flex space-x-8 border-b border-white/30 text-white/70 overflow-x-auto"
-          >
-            <button
-              type="button"
-              data-tab="info"
-              class="tab-btn pb-2 cursor-pointer text-white"
-            >
-              Info
-            </button>
-            <button
-              type="button"
-              data-tab="stats"
-              class="tab-btn pb-2 cursor-pointer"
-            >
-              Stats
-            </button>
-            <button
-              type="button"
-              data-tab="history"
-              class="tab-btn pb-2 cursor-pointer"
-            >
-              History
-            </button>
+		<!-- TAB BAR -->
+		<nav
+			id="profile-tabs"
+			class="relative flex space-x-8 border-b border-white/30 text-white/70 overflow-x-auto"
+		>
+			<button
+			type="button"
+			data-tab="info"
+			class="tab-btn pb-2 cursor-pointer text-white"
+			>
+			Info
+			</button>
+			<button
+			type="button"
+			data-tab="stats"
+			class="tab-btn pb-2 cursor-pointer"
+			>
+			Stats
+			</button>
+			<button
+			type="button"
+			data-tab="history"
+			class="tab-btn pb-2 cursor-pointer"
+			>
+			History
+			</button>
 
-            <!-- sliding underline -->
-            <span
-              id="tab-underline"
-              class="absolute bottom-0 h-0.5 bg-amber-400 transition-all duration-300"
-            ></span>
-          </nav>
+			<!-- sliding underline -->
+			<span
+			id="tab-underline"
+			class="absolute bottom-0 h-0.5 bg-amber-400 transition-all duration-300"
+			></span>
+		</nav>
 
-          <!-- TAB PANELS -->
-          <div id="tab-panels" class="flex-1 overflow-y-auto pt-6">
-            <!-- INFO ─────────────────────────────────────────────────────────── -->
-            <section data-panel="info" class="panel">
-              <!-- heading row: toggle + edit -->
-              <div class="flex items-center justify-between mb-6">
-                <!-- collapsible toggle -->
-                <span
-                  class="flex items-center gap-2 text-xl font-semibold focus:outline-none select-none"
-                  >Profile&nbsp;Settings</span
-                >
+		<!-- TAB PANELS -->
+		<div id="tab-panels" class="flex-1 overflow-y-auto pt-6">
+			<!-- INFO ─────────────────────────────────────────────────────────── -->
+			<section data-panel="info" class="panel">
+			<!-- heading row: toggle + edit -->
+			<div class="flex items-center justify-between mb-6">
+				<!-- collapsible toggle -->
+				<span
+				class="flex items-center gap-2 text-xl font-semibold focus:outline-none select-none"
+				>Profile&nbsp;Settings</span
+				>
 
-                <!-- EDIT button (shows inputs) -->
-                <button
-                  id="settings-edit"
-                  class="text-amber-400 hover:underline font-semibold"
-                >
-                  Edit
-                </button>
-              </div>
+				<!-- EDIT button (shows inputs) -->
+				<button
+				id="settings-edit"
+				class="text-amber-400 hover:underline font-semibold"
+				>
+				Edit
+				</button>
+			</div>
 
-              <!-- fields block -->
-              <div id="profile-fields" class="space-y-8">
-                <!-- USERNAME -->
-                <div>
-                  <h4
-                    class="text-xs font-bold text-white/50 tracking-wide mb-1"
-                  >
-                    USERNAME
-                  </h4>
-                  <div class="flex items-center gap-4">
-                    <!-- view mode -->
-                    <span id="view-username" class="text-lg font-semibold"
-                      >Player</span
-                    >
-                    <!-- edit mode -->
-                    <input
-                      id="edit-username"
-                      type="text"
-                      class="edit-input hidden px-3 py-1 rounded bg-white/10 w-48"
-                    />
-                  </div>
-                </div>
+			<!-- fields block -->
+			<div id="profile-fields" class="space-y-8">
+				<!-- USERNAME -->
+				<div>
+				<h4
+					class="text-xs font-bold text-white/50 tracking-wide mb-1"
+				>
+					USERNAME
+				</h4>
+				<div class="flex items-center gap-4">
+					<!-- view mode -->
+					<span id="view-username" class="text-lg font-semibold"
+					>Player</span
+					>
+					<!-- edit mode -->
+					<input
+					id="edit-username"
+					type="text"
+					class="edit-input hidden px-3 py-1 rounded bg-white/10 w-48"
+					/>
+				</div>
+				</div>
 
-                <!-- EMAIL -->
-                <div>
-                  <h4
-                    class="text-xs font-bold text-white/50 tracking-wide mb-1"
-                  >
-                    EMAIL
-                  </h4>
-                  <div class="flex items-center gap-4">
-                    <span id="view-email" class="text-lg font-semibold"
-                      >email@example.com</span
-                    >
-                    <input
-                      id="edit-email"
-                      type="email"
-                      class="edit-input hidden px-3 py-1 rounded bg-white/10 w-60"
-                    />
-                  </div>
-                </div>
+				<!-- EMAIL -->
+				<div>
+				<h4
+					class="text-xs font-bold text-white/50 tracking-wide mb-1"
+				>
+					EMAIL
+				</h4>
+				<div class="flex items-center gap-4">
+					<span id="view-email" class="text-lg font-semibold"
+					>email@example.com</span
+					>
+					<input
+					id="edit-email"
+					type="email"
+					class="edit-input hidden px-3 py-1 rounded bg-white/10 w-60"
+					/>
+				</div>
+				</div>
 
-                <!-- PASSWORD (hidden in view-mode, 3 inputs in edit-mode) -->
-                <div>
-                  <h4
-                    class="text-xs font-bold text-white/50 tracking-wide mb-1"
-                  >
-                    PASSWORD
-                  </h4>
+				<!-- PASSWORD (hidden in view-mode, 3 inputs in edit-mode) -->
+				<div>
+				<h4
+					class="text-xs font-bold text-white/50 tracking-wide mb-1"
+				>
+					PASSWORD
+				</h4>
 
-                  <!-- nothing is shown in view-mode -->
-                  <span id="view-password" class="hidden"></span>
+				<!-- nothing is shown in view-mode -->
+				<span id="view-password" class="hidden"></span>
 
-                  <!-- edit-mode fields -->
-                  <div class="flex flex-col gap-2">
-                    <input
-                      id="edit-oldpass"
-                      type="password"
-                      placeholder="Current password"
-                      class="edit-input hidden px-3 py-1 rounded bg-white/10 w-48"
-                    />
-                    <input
-                      id="edit-newpass"
-                      type="password"
-                      placeholder="New password"
-                      class="edit-input hidden px-3 py-1 rounded bg-white/10 w-48"
-                    />
-                    <input
-                      id="edit-confpass"
-                      type="password"
-                      placeholder="Confirm password"
-                      class="edit-input hidden px-3 py-1 rounded bg-white/10 w-48"
-                    />
-                  </div>
-                </div>
+				<!-- edit-mode fields -->
+				<div class="flex flex-col gap-2">
+					<input
+					id="edit-oldpass"
+					type="password"
+					placeholder="Current password"
+					class="edit-input hidden px-3 py-1 rounded bg-white/10 w-48"
+					/>
+					<input
+					id="edit-newpass"
+					type="password"
+					placeholder="New password"
+					class="edit-input hidden px-3 py-1 rounded bg-white/10 w-48"
+					/>
+					<input
+					id="edit-confpass"
+					type="password"
+					placeholder="Confirm password"
+					class="edit-input hidden px-3 py-1 rounded bg-white/10 w-48"
+					/>
+				</div>
+				</div>
 
-                <!-- MEMBER SINCE (read-only) -->
-                <div>
-                  <h4
-                    class="text-xs font-bold text-white/50 tracking-wide mb-1"
-                  >
-                    MEMBER&nbsp;SINCE
-                  </h4>
-                  <span id="view-joined" class="text-lg font-semibold"
-                    >2025-06-04</span
-                  >
-                </div>
-              </div>
+				<!-- MEMBER SINCE (read-only) -->
+				<div>
+				<h4
+					class="text-xs font-bold text-white/50 tracking-wide mb-1"
+				>
+					MEMBER&nbsp;SINCE
+				</h4>
+				<span id="view-joined" class="text-lg font-semibold"
+					>2025-06-04</span
+				>
+				</div>
+			</div>
 
 				<!-- ── TWO-FACTOR AUTH SETUP BUTTON & STATUS ── -->
 				<div class="flex items-center gap-4 mb-8">
@@ -617,168 +652,168 @@
 					<p id="remove-2fa-error" class="text-red-400 text-sm mt-2 min-h-[1em]"></p>
 				</div>
 				</div>
-              <!-- Save / Cancel (only in edit mode) -->
-              <div id="settings-actions" class="mt-8 flex gap-4 hidden">
-                <button
-                  id="settings-save"
-                  class="px-5 py-2 rounded-full bg-emerald-500 hover:bg-emerald-600 font-semibold"
-                >
-                  Save
-                </button>
-                <button
-                  id="settings-cancel"
-                  class="px-5 py-2 rounded-full bg-white/10 hover:bg-white/20 font-semibold"
-                >
-                  Cancel
-                </button>
-              </div>
+			<!-- Save / Cancel (only in edit mode) -->
+			<div id="settings-actions" class="mt-8 flex gap-4 hidden">
+				<button
+				id="settings-save"
+				class="px-5 py-2 rounded-full bg-emerald-500 hover:bg-emerald-600 font-semibold"
+				>
+				Save
+				</button>
+				<button
+				id="settings-cancel"
+				class="px-5 py-2 rounded-full bg-white/10 hover:bg-white/20 font-semibold"
+				>
+				Cancel
+				</button>
+			</div>
 
-              <!-- tiny toast -->
-              <div
-                id="profile-toast"
-                class="fixed top-6 right-6 bg-emerald-500/90 text-white px-4 py-2 rounded-full shadow-lg text-sm opacity-0 pointer-events-none transition-opacity duration-300"
-              >
-                Saved&nbsp;✔
-              </div>
-            </section>
+			<!-- tiny toast -->
+			<div
+				id="profile-toast"
+				class="fixed top-6 right-6 bg-emerald-500/90 text-white px-4 py-2 rounded-full shadow-lg text-sm opacity-0 pointer-events-none transition-opacity duration-300"
+			>
+				Saved&nbsp;✔
+			</div>
+			</section>
 
-            <!-- STATS -->
-            <section data-panel="stats" class="panel hidden custom-scroll">
-              <h3 class="text-xl font-semibold mb-4">
-                Monthly average winning games
-              </h3>
-              <canvas id="monthly-chart" class="max-w-full mb-8"></canvas>
+			<!-- STATS -->
+			<section data-panel="stats" class="panel hidden custom-scroll">
+			<h3 class="text-xl font-semibold mb-4">
+				Monthly average winning games
+			</h3>
+			<canvas id="monthly-chart" class="max-w-full mb-8"></canvas>
 
-              <h3 class="text-xl font-semibold mb-4">
-                Life average winning games
-              </h3>
-              <canvas id="life-chart" class="w-56 h-56 mx-auto mb-8"></canvas>
+			<h3 class="text-xl font-semibold mb-4">
+				Life average winning games
+			</h3>
+			<canvas id="life-chart" class="w-56 h-56 mx-auto mb-8"></canvas>
 
-              <h3 class="text-xl font-semibold mb-4">
-                Goals scored vs conceded
-              </h3>
-              <canvas id="goals-chart" class="w-56 h-56 mx-auto mb-8"></canvas>
+			<h3 class="text-xl font-semibold mb-4">
+				Goals scored vs conceded
+			</h3>
+			<canvas id="goals-chart" class="w-56 h-56 mx-auto mb-8"></canvas>
 
-              <h3 class="text-xl font-semibold mb-4">
-                Monthly goals scored vs conceded
-              </h3>
-              <canvas id="hits-chart" class="max-w-full mb-8"></canvas>
+			<h3 class="text-xl font-semibold mb-4">
+				Monthly goals scored vs conceded
+			</h3>
+			<canvas id="hits-chart" class="max-w-full mb-8"></canvas>
 
-              <h3 class="text-xl font-semibold mb-4">Trophies</h3>
-              <div id="trophies"></div>
-            </section>
+			<h3 class="text-xl font-semibold mb-4">Trophies</h3>
+			<div id="trophies"></div>
+			</section>
 
-            <!-- HISTORY -->
-            <section data-panel="history" class="panel hidden">
-              <h3 class="text-xl font-semibold mb-4">Recent Games</h3>
-              <div class="overflow-y-auto max-h custom-scroll">
-                <table class="w-full text-sm">
-                  <thead>
-                    <tr
-                      class="text-left text-white/70 border-b border-white/30"
-                    >
-                      <th class="py-2">Match&nbsp;ID</th>
-                      <th class="py-2">Date</th>
-                      <th class="py-2">Opponent</th>
-                      <th class="py-2">Score</th>
-                      <th class="py-2">Result</th>
-                    </tr>
-                  </thead>
-                  <tbody id="history-body"></tbody>
-                </table>
-              </div>
-            </section>
+			<!-- HISTORY -->
+			<section data-panel="history" class="panel hidden">
+			<h3 class="text-xl font-semibold mb-4">Recent Games</h3>
+			<div class="overflow-y-auto max-h custom-scroll">
+				<table class="w-full text-sm">
+				<thead>
+					<tr
+					class="text-left text-white/70 border-b border-white/30"
+					>
+					<th class="py-2">Match&nbsp;ID</th>
+					<th class="py-2">Date</th>
+					<th class="py-2">Opponent</th>
+					<th class="py-2">Score</th>
+					<th class="py-2">Result</th>
+					</tr>
+				</thead>
+				<tbody id="history-body"></tbody>
+				</table>
+			</div>
+			</section>
 
-          </div>
-        </div>
-      </div>
+		</div>
+		</div>
+	</div>
 
-      <!-- ░░ PLAY POP-UP ░░ -->
-      <div
-        id="play-overlay"
-        class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden opacity-0 transition-opacity duration-300"
-      >
-        <div
-          class="relative w-full max-w-3xl p-10 rounded-3xl shadow-2xl bg-gradient-to-br from-cyan-600 via-blue-600 to-indigo-700 text-white flex flex-col gap-8"
-        >
-          <!-- close × -->
-          <button
-            id="play-close"
-            class="absolute top-4 right-4 text-white/70 hover:text-white"
-          >
-            <svg
-              class="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+	<!-- ░░ PLAY POP-UP ░░ -->
+	<div
+		id="play-overlay"
+		class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden opacity-0 transition-opacity duration-300"
+	>
+		<div
+		class="relative w-full max-w-3xl p-10 rounded-3xl shadow-2xl bg-gradient-to-br from-cyan-600 via-blue-600 to-indigo-700 text-white flex flex-col gap-8"
+		>
+		<!-- close × -->
+		<button
+			id="play-close"
+			class="absolute top-4 right-4 text-white/70 hover:text-white"
+		>
+			<svg
+			class="w-6 h-6"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2"
+			viewBox="0 0 24 24"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			>
+			<path d="M6 18L18 6M6 6l12 12" />
+			</svg>
+		</button>
 
-          <header class="text-center">
-            <h2 class="text-3xl font-bold mb-1">Choose a mode</h2>
-            <p class="text-sm text-white/70">Pick how you want to play</p>
-          </header>
+		<header class="text-center">
+			<h2 class="text-3xl font-bold mb-1">Choose a mode</h2>
+			<p class="text-sm text-white/70">Pick how you want to play</p>
+		</header>
 
-          <!-- 2 × 2 grid of mode cards (original layout) -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <!-- vs AI -->
-            <button
-              data-mode="ai"
-              class="mode-card flex flex-col items-center gap-3 p-6 rounded-2xl bg-white/10 hover:bg-white/15 transition"
-            >
-              <span class="text-5xl">🤖</span>
-              <span class="text-lg font-semibold">Vs&nbsp;AI</span>
-              <p class="text-xs text-white/70 text-center">
-                Practice against the computer
-              </p>
-            </button>
+		<!-- 2 × 2 grid of mode cards (original layout) -->
+		<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+			<!-- vs AI -->
+			<button
+			data-mode="ai"
+			class="mode-card flex flex-col items-center gap-3 p-6 rounded-2xl bg-white/10 hover:bg-white/15 transition"
+			>
+			<span class="text-5xl">🤖</span>
+			<span class="text-lg font-semibold">Vs&nbsp;AI</span>
+			<p class="text-xs text-white/70 text-center">
+				Practice against the computer
+			</p>
+			</button>
 
-            <!-- offline 1-on-1 -->
-            <button
-              data-mode="offline"
-              class="mode-card flex flex-col items-center gap-3 p-6 rounded-2xl bg-white/10 hover:bg-white/15 transition"
-            >
-              <span class="text-5xl">🎮</span>
-              <span class="text-lg font-semibold"
-                >1&nbsp;v&nbsp;1&nbsp;(offline)</span
-              >
-              <p class="text-xs text-white/70 text-center">
-                Two players on the same device
-              </p>
-            </button>
+			<!-- offline 1-on-1 -->
+			<button
+			data-mode="offline"
+			class="mode-card flex flex-col items-center gap-3 p-6 rounded-2xl bg-white/10 hover:bg-white/15 transition"
+			>
+			<span class="text-5xl">🎮</span>
+			<span class="text-lg font-semibold"
+				>1&nbsp;v&nbsp;1&nbsp;(offline)</span
+			>
+			<p class="text-xs text-white/70 text-center">
+				Two players on the same device
+			</p>
+			</button>
 
-            <!-- remote -->
-            <button
-			  id="remote-play"
-              data-mode="remote"
-              class="mode-card flex flex-col items-center gap-3 p-6 rounded-2xl bg-white/10 hover:bg-white/15 transition"
-            >
-              <span class="text-5xl">🌐</span>
-              <span class="text-lg font-semibold">Remote&nbsp;Play</span>
-              <p class="text-xs text-white/70 text-center">
-                Invite a friend or join matchmaking
-              </p>
-            </button>
+			<!-- remote -->
+			<button
+			id="remote-play"
+			data-mode="remote"
+			class="mode-card flex flex-col items-center gap-3 p-6 rounded-2xl bg-white/10 hover:bg-white/15 transition"
+			>
+			<span class="text-5xl">🌐</span>
+			<span class="text-lg font-semibold">Remote&nbsp;Play</span>
+			<p class="text-xs text-white/70 text-center">
+				Invite a friend or join matchmaking
+			</p>
+			</button>
 
-            <!-- tournament -->
-            <button
-              data-mode="tournament"
-              class="mode-card flex flex-col items-center gap-3 p-6 rounded-2xl bg-white/10 hover:bg-white/15 transition"
-            >
-              <span class="text-5xl">🏆</span>
-              <span class="text-lg font-semibold">Tournament</span>
-              <p class="text-xs text-white/70 text-center">
-                Bracket-style knockout fun
-              </p>
-            </button>
-          </div>
-        </div>
-      </div>
+			<!-- tournament -->
+			<button
+			data-mode="tournament"
+			class="mode-card flex flex-col items-center gap-3 p-6 rounded-2xl bg-white/10 hover:bg-white/15 transition"
+			>
+			<span class="text-5xl">🏆</span>
+			<span class="text-lg font-semibold">Tournament</span>
+			<p class="text-xs text-white/70 text-center">
+				Bracket-style knockout fun
+			</p>
+			</button>
+		</div>
+		</div>
+	</div>
 
 		<!-- Remote-Play Modal -->
 		<div id="remote-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden">
@@ -811,126 +846,127 @@
 		</div>
 		</div>
 
-      <!-- ░░ DIFFICULTY POP-UP ░░ -->
-      <div
-        id="difficulty-overlay"
-        class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden opacity-0 transition-opacity duration-300"
-      >
-        <div
-          id="difficulty-container"
-          class="relative w-full max-w-md p-8 rounded-3xl shadow-2xl bg-gradient-to-br from-purple-600 to-indigo-700 text-white flex flex-col items-center gap-6 transform scale-90 transition-transform duration-300"
-        >
-          <!-- close × -->
-          <button
-            id="difficulty-close"
-            class="absolute top-4 right-4 text-white/70 hover:text-white"
-          >
-            <svg
-              class="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+	<!-- ░░ DIFFICULTY POP-UP ░░ -->
+	<div
+		id="difficulty-overlay"
+		class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden opacity-0 transition-opacity duration-300"
+	>
+		<div
+		id="difficulty-container"
+		class="relative w-full max-w-md p-8 rounded-3xl shadow-2xl bg-gradient-to-br from-purple-600 to-indigo-700 text-white flex flex-col items-center gap-6 transform scale-90 transition-transform duration-300"
+		>
+		<!-- close × -->
+		<button
+			id="difficulty-close"
+			class="absolute top-4 right-4 text-white/70 hover:text-white"
+		>
+			<svg
+			class="w-6 h-6"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2"
+			viewBox="0 0 24 24"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			>
+			<path d="M6 18L18 6M6 6l12 12" />
+			</svg>
+		</button>
 
-          <h2 class="text-2xl font-bold">Select Difficulty</h2>
-          <div class="flex flex-col gap-4 w-full">
-            <button
-              data-diff="easy"
-              class="diff-btn w-full py-2 rounded-full bg-white/10 hover:bg-white/15 transition"
-            >
-              Easy
-            </button>
-            <button
-              data-diff="medium"
-              class="diff-btn w-full py-2 rounded-full bg-white/10 hover:bg-white/15 transition"
-            >
-              Medium
-            </button>
-            <button
-              data-diff="hard"
-              class="diff-btn w-full py-2 rounded-full bg-white/10 hover:bg-white/15 transition"
-            >
-              Training mode
-            </button>
-          </div>
-        </div>
-      </div>
-	  <!-- ░░ FRIENDS SIDEBAR ░░ -->
-      <aside id="friends-sidebar"
-            class="fixed right-0 top-16 bottom-0 w-80
-                    bg-black/30 backdrop-blur
-                    border-l border-white/20 flex flex-col z-[40]">
-        <h2 class="text-lg font-bold px-4 py-3 border-b border-white/20">
-          Friends
-        </h2>
-        <div id="friends-list"
-            class="flex-1 overflow-y-auto custom-scroll px-4 py-3 space-y-4">
-          <!-- rows injected by friends.ts -->
-        </div>
-      </aside>
-	  <!-- NEW friend-row template (one time in HTML) -->
-      <template id="friend-row-template">
-        <div class="bg-white/10 rounded-lg overflow-hidden
-                    transition-[max-height,opacity] duration-300"
-            style="max-height:56px">
-          <!-- visible row -->
-          <div class="flex items-center gap-3 p-2">
-            <img class="avatar w-8 h-8 rounded-full" src="" />
-            <div class="flex-1">
-              <p class="username text-sm font-semibold"></p>
-              <p class="email text-[10px] text-white/60"></p>
-            </div>
-            <button class="more-btn text-[10px] px-2 py-1 rounded-full
-                          bg-amber-500 hover:bg-amber-600">
-              more ▾
-            </button>
-          </div>
-          <!-- submenu -->
-          <div class="submenu px-2 pb-3 space-x-2 hidden">
-            <button class="sub px-2 py-1 text-[10px] bg-emerald-500 rounded-full">
-              Challenge
-            </button>
-            <button class="sub px-2 py-1 text-[10px] bg-cyan-500 rounded-full">
-              Stats
-            </button>
-            <button class="sub remove-btn px-2 py-1 text-[10px] bg-red-500 rounded-full
-                          active:scale-95 transition-transform duration-75">
-              Remove
-            </button>
-          </div>
-          <!-- confirm bar (hidden by default) -->
-          <div class="confirm-box px-2 pb-3 space-x-2 hidden">
-            <span class="text-[11px]">Remove friend?</span>
-            <button class="yes-btn px-2 py-[2px] text-[10px] rounded-full
-                          bg-red-500 hover:bg-red-600">Yes</button>
-            <button class="no-btn  px-2 py-[2px] text-[10px] rounded-full
-                          bg-white/10 hover:bg-white/20">No</button>
-          </div>
-        </div>
-      </template>
-      <!-- FRIENDS SIDEBAR TOAST -->
-      <div id="friends-toast"
-     class="fixed top-6 right-6 z-50
-            bg-emerald-500 text-white px-4 py-2 rounded-full shadow-lg text-sm
-            opacity-0 pointer-events-none transition-opacity duration-300"></div>
-      </div>
+		<h2 class="text-2xl font-bold">Select Difficulty</h2>
+		<div class="flex flex-col gap-4 w-full">
+			<button
+			data-diff="easy"
+			class="diff-btn w-full py-2 rounded-full bg-white/10 hover:bg-white/15 transition"
+			>
+			Easy
+			</button>
+			<button
+			data-diff="medium"
+			class="diff-btn w-full py-2 rounded-full bg-white/10 hover:bg-white/15 transition"
+			>
+			Medium
+			</button>
+			<button
+			data-diff="hard"
+			class="diff-btn w-full py-2 rounded-full bg-white/10 hover:bg-white/15 transition"
+			>
+			Training mode
+			</button>
+		</div>
+		</div>
+	</div>
+	<!-- ░░ FRIENDS SIDEBAR ░░ -->
+	<aside id="friends-sidebar"
+			class="fixed right-0 top-16 bottom-0 w-80
+					bg-black/30 backdrop-blur
+					border-l border-white/20 flex flex-col z-[40]">
+		<h2 class="text-lg font-bold px-4 py-3 border-b border-white/20">
+		Friends
+		</h2>
+		<div id="friends-list"
+			class="flex-1 overflow-y-auto custom-scroll px-4 py-3 space-y-4">
+		<!-- rows injected by friends.ts -->
+		</div>
+	</aside>
+	<!-- NEW friend-row template (one time in HTML) -->
+	<template id="friend-row-template">
+		<div class="bg-white/10 rounded-lg overflow-hidden
+					transition-[max-height,opacity] duration-300"
+			style="max-height:56px">
+		<!-- visible row -->
+		<div class="flex items-center gap-3 p-2">
+			<img class="avatar w-8 h-8 rounded-full" src="" />
+			<div class="flex-1">
+			<p class="username text-sm font-semibold"></p>
+			<p class="email text-[10px] text-white/60"></p>
+			</div>
+			<button class="more-btn text-[10px] px-2 py-1 rounded-full
+						bg-amber-500 hover:bg-amber-600">
+			more ▾
+			</button>
+		</div>
+		<!-- submenu -->
+		<div class="submenu px-2 pb-3 space-x-2 hidden">
+			<button class="sub px-2 py-1 text-[10px] bg-emerald-500 rounded-full">
+			Challenge
+			</button>
+			<button class="sub px-2 py-1 text-[10px] bg-cyan-500 rounded-full">
+			Stats
+			</button>
+			<button class="sub remove-btn px-2 py-1 text-[10px] bg-red-500 rounded-full
+						active:scale-95 transition-transform duration-75">
+			Remove
+			</button>
+		</div>
+		<!-- confirm bar (hidden by default) -->
+		<div class="confirm-box px-2 pb-3 space-x-2 hidden">
+			<span class="text-[11px]">Remove friend?</span>
+			<button class="yes-btn px-2 py-[2px] text-[10px] rounded-full
+						bg-red-500 hover:bg-red-600">Yes</button>
+			<button class="no-btn  px-2 py-[2px] text-[10px] rounded-full
+						bg-white/10 hover:bg-white/20">No</button>
+		</div>
+		</div>
+	</template>
+	<!-- FRIENDS SIDEBAR TOAST -->
+	<div id="friends-toast"
+	class="fixed top-6 right-6 z-50
+			bg-emerald-500 text-white px-4 py-2 rounded-full shadow-lg text-sm
+			opacity-0 pointer-events-none transition-opacity duration-300"></div>
+	</div>
 
 
-    </div>
-    <!-- MODE-CARD & DIFFICULTY STYLES (unchanged) -->
+	</div>
+	<!-- MODE-CARD & DIFFICULTY STYLES (unchanged) -->
 
-    <!-- compiled scripts -->
-    <script type="module" src="./dist/auth.js"></script>
-    <!-- NEW -->
-    <script type="module" src="./dist/nav.js"></script>
-    <script type="module" src="./dist/stats.js"></script>
-    <script type="module" src="./dist/main.js"></script>
-    <script type="module" src="./dist/friends.js"></script>
-  </body>
+	<!-- compiled scripts -->
+	<script type="module" src="./dist/auth.js"></script>
+	<!-- NEW -->
+	<script type="module" src="./dist/nav.js"></script>
+	<script type="module" src="./dist/stats.js"></script>
+	<script type="module" src="./dist/main.js"></script>
+	<script type="module" src="./dist/friends.js"></script>
+	<script type="module" src="./dist/notifications.js"></script>
+</body>
 </html>
