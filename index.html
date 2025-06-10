@@ -218,102 +218,66 @@
 	<!-- ░░ NAVBAR ░░ -->
 	<div id="app" class="flex flex-col min-h-screen hidden">
 	<header class="sticky top-0 bg-black/50 backdrop-blur-md z-50">
-		<nav
-		class="relative max-w-5xl mx-auto px-4 flex items-center justify-between h-16"
-		>
-		<a href="#" class="text-3xl font-extrabold">⚡ ft_transcendence</a>
+		<nav class="fixed inset-x-0 top-0 z-50 h-16
+            bg-gradient-to-r from-slate-900/70 via-slate-800/60 to-slate-900/70
+            backdrop-blur-md border-b border-white/10 shadow-lg shadow-fuchsia-800/40">
+  <div class="flex w-full h-full items-center px-4 sm:px-5 lg:px-6">
+    <a href="/"                                                          
+       class="ml-2 text-3xl font-extrabold tracking-widest          
+              bg-gradient-to-r from-fuchsia-400 via-pink-500 to-rose-500
+              bg-clip-text text-transparent">
+      ft_transcendence
+    </a>
 
-		<button id="burger" class="sm:hidden text-white">
-			<svg
-			class="w-8 h-8"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			viewBox="0 0 24 24"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			>
-			<path d="M4 6h16M4 12h16M4 18h16" />
-			</svg>
-		</button>
+    <button id="burger" class="ml-auto sm:hidden text-white">
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2"
+           viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
 
-		<!-- nav-menu gets mobile layout classes toggled in nav.ts -->
-		<ul id="nav-menu" class="hidden sm:flex sm:space-x-8">
-			<!-- inside #nav-menu -->
-			<!-- ░░ BELL + DROPDOWN ░░ -->
-			<li class="relative">
-			<!-- bell button -->
-			<button id="nav-notif"
-					class="relative hover:text-pink-200 transition-transform duration-200 hover:scale-105">
-				<!-- bell icon -->
-				<svg class="w-6 h-6" fill="none" viewBox="0 0 24 24"
-					stroke="currentColor" stroke-width="2">
-				<path stroke-linecap="round" stroke-linejoin="round"
-						d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11
-						a6 6 0 00-5-5.917V4a1 1 0 10-2 0v1.083A6 6 0 006 11v3.159
-						c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0h6z"/>
-				</svg>
+    <ul id="nav-menu"
+        class="hidden sm:flex sm:space-x-8 ml-auto mr-4">           
+      <li class="relative">
+        <button id="nav-notif"
+                class="relative hover:text-pink-200 transition-transform duration-200 hover:scale-105">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+               stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11
+                     a6 6 0 00-5-5.917V4a1 1 0 10-2 0v1.083A6 6 0 006 11v3.159
+                     c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0h6z"/>
+          </svg>
+          <span id="notif-badge"
+                class="absolute -top-1 -right-1 w-4 h-4 rounded-full
+                       bg-red-500 text-[10px] font-bold flex items-center
+                       justify-center text-white opacity-0 pointer-events-none
+                       transition-opacity duration-300"></span>
+        </button>
 
-				<!-- badge -->
-				<span id="notif-badge"
-					class="absolute -top-1 -right-1
-							w-4 h-4 rounded-full bg-red-500 text-[10px] font-bold
-							flex items-center justify-center text-white
-							opacity-0 pointer-events-none
-							transition-opacity duration-300"></span>
-			</button>
+        <div id="notif-panel"
+             class="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-72 hidden
+                    max-h-80 overflow-y-auto custom-scroll bg-black/30 backdrop-blur
+                    border-l border-white/20 border rounded-xl p-4 space-y-3 z-[55]">
+          <p class="text-center text-sm text-white/70">No notifications yet.</p>
+        </div>
+      </li>
 
-			<!-- dropdown -->
-			<div id="notif-panel"
-				class="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-72 hidden
-				max-h-80 overflow-y-auto custom-scroll bg-black/30 backdrop-blur
-				border-l border-white/20 border rounded-xl p-4 space-y-3 z-[55]">
-				<!-- rows injected by notifications.ts -->
-				<p class="text-center text-sm text-white/70">No notifications yet.</p>
-			</div>
-			</li>
-			
-			<li>
-			<button
-				class="hover:text-pink-200 transition-transform duration-200 hover:scale-105"
-				data-nav="home"
-			>
-				Home
-			</button>
-			</li>
-			<li>
-			<button
-				id="nav-play"
-				class="hover:text-pink-200 transition-transform duration-200 hover:scale-105"
-			>
-				Play
-			</button>
-			</li>
-			<li>
-			<button
-				id="nav-profile"
-				class="hover:text-pink-200 transition-transform duration-200 hover:scale-105"
-			>
-				Profile
-			</button>
-			</li>
-			<li>
-			<button
-				id="nav-signout"
-				class="hover:text-pink-200 transition-transform duration-200 hover:scale-105"
-			>
-				Sign&nbsp;Out
-			</button>
-			</li>
-		</ul>
-		<!-- TOASTS -->
-		<div
-			id="login-toast"
-			class="fixed top-24 right-6 bg-emerald-500/90 text-white px-4 py-2 rounded-full shadow-lg text-sm opacity-0 pointer-events-none transition-opacity duration-300"
-		>
-			Logged in&nbsp;✔
-		</div>
-		</nav>
+      <li><button class="hover:text-pink-300 text-[22px] transition-transform duration-200 hover:scale-105" data-nav="home">Home</button></li>
+      <li><button id="nav-play" class="hover:text-pink-200 text-[22px] transition-transform duration-200 hover:scale-105">Play</button></li>
+      <li><button id="nav-profile" class="hover:text-pink-200 text-[22px] transition-transform duration-200 hover:scale-105">Profile</button></li>
+      <li><button id="nav-signout" class="hover:text-pink-200 text-[22px] transition-transform duration-200 hover:scale-105">Sign&nbsp;Out</button></li>
+    </ul>
+  </div>
+
+  <div id="login-toast"
+       class="fixed top-24 right-6 bg-emerald-500/90 text-white px-4 py-2
+              rounded-full shadow-lg text-sm opacity-0 pointer-events-none
+              transition-opacity duration-300">
+    Logged in&nbsp;✔
+  </div>
+</nav>
+
 	</header>
 
 
@@ -897,18 +861,13 @@
 		</div>
 	</div>
 	<!-- ░░ FRIENDS SIDEBAR ░░ -->
-	<aside id="friends-sidebar"
-			class="fixed right-0 top-16 bottom-0 w-80
-					bg-black/30 backdrop-blur
-					border-l border-white/20 flex flex-col z-[40]">
-		<h2 class="text-lg font-bold px-4 py-3 border-b border-white/20">
-		Friends
-		</h2>
-		<div id="friends-list"
-			class="flex-1 overflow-y-auto custom-scroll px-4 py-3 space-y-4">
-		<!-- rows injected by friends.ts -->
-		</div>
-	</aside>
+	<aside id="friends-sidebar" class="fixed right-0 top-16 bottom-0 w-80 bg-black/30 backdrop-blur border-l border-white/20 flex flex-col z-[40] transform translate-x-full transition-transform duration-300 lg:translate-x-0">
+  <h2 class="text-lg font-bold px-4 py-3 border-b border-white/20">Friends</h2>
+  <div id="friends-list" class="flex-1 overflow-y-auto custom-scroll px-4 py-3 space-y-4"></div>
+</aside>
+
+<button id="friends-toggle" class="fixed right-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-l-lg text-xl flex items-center justify-center bg-black/40 backdrop-blur lg:hidden z-[41]">❮</button>
+
 	<!-- NEW friend-row template (one time in HTML) -->
 	<template id="friend-row-template">
 		<div class="bg-white/10 rounded-lg overflow-hidden
