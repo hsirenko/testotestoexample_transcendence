@@ -2,6 +2,8 @@
 /* =================================================================*/
 
 import { HOST } from "./config.js";
+import { openFriendStats } from "./friendstats.js";
+
 
 /* 1 ░ mock toggle + dummy users -----------------------------------*/
 const USE_MOCK_DATA = false;
@@ -94,6 +96,7 @@ function render(friends: any[]): void {
         const submenu = row.querySelector<HTMLDivElement>(".submenu")!;
         const confirm = row.querySelector<HTMLDivElement>(".confirm-box")!;
         const removeBtn = row.querySelector<HTMLButtonElement>(".remove-btn")!;
+        const stats = row.querySelector<HTMLButtonElement>(".stats-btn")!;
         const yesBtn = row.querySelector<HTMLButtonElement>(".yes-btn")!;
         const noBtn = row.querySelector<HTMLButtonElement>(".no-btn")!;
 
@@ -107,6 +110,11 @@ function render(friends: any[]): void {
                 ? submenu.scrollHeight + 56 + "px"
                 : "56px";
             moreBtn.textContent = open ? "less ▲" : "more ▾";
+        });
+
+        /* step-1  Remove → show confirm bar */
+        stats.addEventListener("click", () => {
+            openFriendStats(friendId, f);
         });
 
         /* step-1  Remove → show confirm bar */
@@ -154,6 +162,7 @@ function render(friends: any[]): void {
 
         list.appendChild(frag);
     });
+    
 }
 
 /* 4 ░ public loader + auto-init ----------------------------------*/
@@ -198,3 +207,4 @@ if (document.readyState !== "loading") {
 } else {
     document.addEventListener("DOMContentLoaded", initFriendsSidebarToggle);
 }
+
