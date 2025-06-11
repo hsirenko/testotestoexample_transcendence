@@ -863,6 +863,19 @@
 	<!-- ░░ FRIENDS SIDEBAR ░░ -->
 	<aside id="friends-sidebar" class="fixed right-0 top-16 bottom-0 w-80 bg-black/30 backdrop-blur border-l border-white/20 flex flex-col z-[40] transform translate-x-full transition-transform duration-300 lg:translate-x-0">
   <h2 class="text-lg font-bold px-4 py-3 border-b border-white/20">Friends</h2>
+  <!-- add-friend bar -->
+	<div class="flex items-center gap-2 px-4 pb-3 pt-2 border-b border-white/20">
+	<input id="addfriend-input"
+			type="text"
+			placeholder="Username…"
+			class="flex-1 hidden bg-white/10 px-3 py-1 rounded-full
+					text-sm placeholder-white/60 focus:outline-none" />
+	<button id="addfriend-btn"
+			class="px-3 py-1 rounded-full bg-amber-500 hover:bg-amber-600
+					text-sm font-semibold">
+		Add&nbsp;
+	</button>
+	</div>
   <div id="friends-list" class="flex-1 overflow-y-auto custom-scroll px-4 py-3 space-y-4"></div>
 </aside>
 
@@ -890,7 +903,7 @@
 			<button class="sub px-2 py-1 text-[10px] bg-emerald-500 rounded-full">
 			Challenge
 			</button>
-			<button class="sub px-2 py-1 text-[10px] bg-cyan-500 rounded-full">
+			<button class="sub stats-btn px-2 py-1 text-[10px] bg-cyan-500 rounded-full">
 			Stats
 			</button>
 			<button class="sub remove-btn px-2 py-1 text-[10px] bg-red-500 rounded-full
@@ -915,6 +928,53 @@
 			opacity-0 pointer-events-none transition-opacity duration-300"></div>
 	</div>
 
+	<!-- ░░ FRIEND-STATS OVERLAY ░░ -->
+	<div id="friendstats-overlay"
+		class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center
+				z-[60] hidden opacity-0 transition-opacity duration-300">
+	<div class="relative w-full max-w-3xl h-[90vh]
+				bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600
+				text-white p-8 rounded-3xl shadow-2xl flex flex-col">
+
+		<!-- close × -->
+		<button id="friendstats-close"
+				class="absolute top-4 right-4 text-white/70 hover:text-white">
+		<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2"
+			viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+			<path d="M6 18L18 6M6 6l12 12"/>
+		</svg>
+		</button>
+
+		<!-- header -->
+		<div class="flex items-center gap-6 mb-8">
+		<div class="w-24 h-24 rounded-full p-[3px]
+					bg-gradient-to-br from-cyan-400 via-fuchsia-500 to-amber-400 shrink-0">
+			<img id="friendstats-avatar"
+				src="https://i.pravatar.cc/150?u=placeholder"
+				class="w-full h-full object-cover rounded-full"/>
+		</div>
+		<div>
+			<h2 id="friendstats-name"  class="text-3xl font-bold">Friend</h2>
+			<p  id="friendstats-email" class="text-sm  text-white/70">friend@email</p>
+		</div>
+		</div>
+
+		<!-- scrollable stats area -->
+		<div class="flex-1 overflow-y-auto pt-2 custom-scroll">
+		<h3 class="text-xl font-semibold mb-4">Monthly average winning games</h3>
+		<canvas id="fs-monthly-chart" class="max-w-full mb-8"></canvas>
+
+		<h3 class="text-xl font-semibold mb-4">Life average winning games</h3>
+		<canvas id="fs-life-chart"    class="w-56 h-56 mx-auto mb-8"></canvas>
+
+		<h3 class="text-xl font-semibold mb-4">Goals scored vs conceded</h3>
+		<canvas id="fs-goals-chart"   class="w-56 h-56 mx-auto mb-8"></canvas>
+
+		<h3 class="text-xl font-semibold mb-4">Monthly goals scored vs conceded</h3>
+		<canvas id="fs-hits-chart"    class="max-w-full mb-8"></canvas>
+		</div>
+	</div>
+	</div>
 
 	</div>
 	<!-- MODE-CARD & DIFFICULTY STYLES (unchanged) -->
@@ -927,5 +987,7 @@
 	<script type="module" src="./dist/main.js"></script>
 	<script type="module" src="./dist/friends.js"></script>
 	<script type="module" src="./dist/notifications.js"></script>
+	<script type="module" src="./dist/friendstats.js"></script>
+	<script type="module" src="./dist/addfriend.js"></script>
 </body>
 </html>
