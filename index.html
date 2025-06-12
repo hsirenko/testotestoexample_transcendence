@@ -61,6 +61,16 @@
 		scrollbar-width: thin;
 		scrollbar-color: rgba(251, 191, 36, 0.9) transparent;
 	}
+	.floating-input:focus + .floating-label,
+	.floating-input:not(:placeholder-shown) + .floating-label {
+	  top: -1.05rem;           /* raise label above outline */
+	  font-size: 0.75rem;     /* text-xs   */
+	  color: #6366f1;         /* indigo-500 */
+	  left: 5px;
+	}
+	body.game-playing #friends-sidebar{
+	  transform: translateX(100%) !important;   /* slides out → keeps `duration-300` */
+	}
 	</style>
 </head>
 
@@ -77,26 +87,34 @@
 		class="bg-black/60 backdrop-blur p-8 rounded-3xl flex flex-col gap-4 w-full max-w-sm"
 	>
 		<h2 class="text-2xl font-extrabold text-center mb-2">Sign in</h2>
-		<input
-		type="email"
-		id="email"
-		placeholder="Email"
-		required
-		class="px-4 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none"
-		/>
-		<input
-		type="password"
-		id="password"
-		placeholder="Password"
-		required
-		class="px-4 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none"
-		/>
-		<input
-		type="text"
-		id="twofa-token"
-		placeholder="2FA Code"
-		class="px-4 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none hidden"
-		/>
+	 <div class="relative w-full">
+	   <input id="email" type="email" required placeholder=" "
+	          class="floating-input peer w-full rounded-md border border-white/30
+	                 bg-transparent px-3 py-4 text-white
+	                 focus:border-indigo-400 focus:outline-none" />
+	   <label for="email"
+	          class="floating-label absolute left-3 top-4.5 pointer-events-none
+	                 text-gray-400 transition-all duration-200">Email</label>
+	 </div>
+	 <div class="relative w-full">
+	   <input id="password" type="password" required placeholder=" "
+	          class="floating-input peer w-full rounded-md border border-white/30
+	                 bg-transparent px-3 py-4 text-white
+	                 focus:border-indigo-400 focus:outline-none" />
+	   <label for="password"
+	          class="floating-label absolute left-3 top-4.5 pointer-events-none
+	                 text-gray-400 transition-all duration-200">Password</label>
+	 </div>
+	 <div id="twofa-wrapper" class="relative w-full hidden">
+	   <input id="twofa-token" type="text" inputmode="numeric" pattern="[0-9]{6}"
+	          maxlength="6" placeholder=" "
+	          class="floating-input peer w-full rounded-md border border-white/30
+	                 bg-transparent px-3 py-4 text-white
+	                 focus:border-indigo-400 focus:outline-none" />
+	   <label for="twofa-token"
+	          class="floating-label absolute left-3 top-4.5 pointer-events-none
+	                 text-gray-400 transition-all duration-200">2-Factor code</label>
+	 </div>
 
 		<p id="login-error" class="text-xs text-red-400 min-h-[1em]"></p>
 
@@ -152,34 +170,42 @@
 	>
 		<h2 class="text-2xl font-extrabold text-center mb-2">Create account</h2>
 
-		<input
-		type="text"
-		id="su-username"
-		placeholder="Username"
-		required
-		class="px-4 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none"
-		/>
-		<input
-		type="email"
-		id="su-email"
-		placeholder="Email"
-		required
-		class="px-4 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none"
-		/>
-		<input
-		type="password"
-		id="su-password"
-		placeholder="Password"
-		required
-		class="px-4 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none"
-		/>
-		<input
-		type="password"
-		id="su-password2"
-		placeholder="Confirm password"
-		required
-		class="px-4 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none"
-		/>
+		 <div class="relative w-full">
+		   <input id="su-username" type="text" required placeholder=" "
+		          class="floating-input peer w-full rounded-md border border-white/30
+		                 bg-transparent px-3 py-4 text-white
+		                 focus:border-indigo-400 focus:outline-none" />
+		   <label for="su-username"
+		          class="floating-label absolute left-3 top-4.5 pointer-events-none
+		                 text-gray-400 transition-all duration-200">Username</label>
+		 </div>		
+		 <div class="relative w-full">
+		   <input id="su-email" type="email" required placeholder=" "
+		          class="floating-input peer w-full rounded-md border border-white/30
+		                 bg-transparent px-3 py-4 text-white
+		                 focus:border-indigo-400 focus:outline-none" />
+		   <label for="su-email"
+		          class="floating-label absolute left-3 top-4.5 pointer-events-none
+		                 text-gray-400 transition-all duration-200">Email</label>
+		 </div>		
+		 <div class="relative w-full">
+		   <input id="su-password" type="password" required placeholder=" "
+		          class="floating-input peer w-full rounded-md border border-white/30
+		                 bg-transparent px-3 py-4 text-white
+		                 focus:border-indigo-400 focus:outline-none" />
+		   <label for="su-password"
+		          class="floating-label absolute left-3 top-4.5 pointer-events-none
+		                 text-gray-400 transition-all duration-200">Password</label>
+		 </div>		
+		 <div class="relative w-full">
+		   <input id="su-password2" type="password" required placeholder=" "
+		          class="floating-input peer w-full rounded-md border border-white/30
+		                 bg-transparent px-3 py-4 text-white
+		                 focus:border-indigo-400 focus:outline-none" />
+		   <label for="su-password2"
+		          class="floating-label absolute left-3 top-4.5 pointer-events-none
+		                 text-gray-400 transition-all duration-200">Confirm&nbsp;password</label>
+		 </div>
 
 		<p id="signup-error" class="text-xs text-red-400 min-h-[1em]"></p>
 
@@ -853,7 +879,11 @@
 		</div>
 	</div>
 	<!-- ░░ FRIENDS SIDEBAR ░░ -->
-	<aside id="friends-sidebar" class="fixed right-0 top-16 bottom-0 w-80 bg-black/30 backdrop-blur border-l border-white/20 flex flex-col z-[40] transform translate-x-full transition-transform duration-300 lg:translate-x-0">
+	<aside id="friends-sidebar"
+       class="fixed right-0 top-16 bottom-0 w-80 bg-black/30 backdrop-blur
+              border-l border-white/20 flex flex-col z-[40]
+              transform translate-x-full transition-transform duration-300
+              2xl:translate-x-0">
   <h2 class="text-lg font-bold px-4 py-3 border-b border-white/20">Friends</h2>
   <!-- add-friend bar -->
 	<div class="flex items-center gap-2 px-4 pb-3 pt-2 border-b border-white/20">
@@ -871,7 +901,10 @@
   <div id="friends-list" class="flex-1 overflow-y-auto custom-scroll px-4 py-3 space-y-4"></div>
 </aside>
 
-<button id="friends-toggle" class="fixed right-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-l-lg text-xl flex items-center justify-center bg-black/40 backdrop-blur lg:hidden z-[41]">❮</button>
+<button id="friends-toggle"
+        class="fixed right-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-l-lg
+               text-xl flex items-center justify-center bg-black/40 backdrop-blur
+               2xl:hidden z-[41]">❮</button>
 
 	<!-- NEW friend-row template (one time in HTML) -->
 	<template id="friend-row-template">
