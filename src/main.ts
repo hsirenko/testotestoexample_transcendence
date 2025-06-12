@@ -2,10 +2,12 @@
 import {
   ClientMsgJoin,
   ClientMsgMove,
+  ClientMsgStart,
+  ErrorMsg,
   StateMsg,
   GameOverMsg,
   ServerMsg
-} from './types/ws';
+} from './types/ws.js';
 import { HOST } from './config.js';
 
 const WORLD_WIDTH  = 800;
@@ -41,9 +43,6 @@ const CanvasHtml = document.getElementById(
 const ctx = CanvasHtml.getContext('2d')!;
 const sLeft = document.getElementById('score-left')!;
 const sRight = document.getElementById('score-right')!;
-const startBtn = document.getElementById(
-  'start-btn'
-) as HTMLButtonElement;
 
 let left: Paddle;
 let right: Paddle;
@@ -149,6 +148,16 @@ function loop(now: number): void {
   lastTime = now;
 
   if (playing) {
+	// 2) In remote mode, send “move” messages every frame for held keys
+    if (remoteMode && socket?.readyState === WebSocket.OPEN) {
+	//   console.log("HERE!!\n");
+      if (keys['w'] || keys['ArrowUp']) {
+        socket.send(JSON.stringify({ type: 'move', dir: 'up' } as ClientMsgMove));
+      }
+      if (keys['s'] || keys['ArrowDown']) {
+        socket.send(JSON.stringify({ type: 'move', dir: 'down' } as ClientMsgMove));
+      }
+    }
     if (!remoteMode) {
       // only run physics when not remote
       update(dt);
@@ -156,7 +165,6 @@ function loop(now: number): void {
     // always re-draw the last known state
     render();
   }
-
   requestAnimationFrame(loop);
 }
 
@@ -352,13 +360,13 @@ window.setAIRefresh = (sec: number): void => {
 
 window.setGameMode = (mode: 'pvp' | 'ai'): void => {
   // ① un-hide the game area (welcome.ts’s helper)
+  cleanupRemote();
   (window as any).showGameArea?.();
   document.getElementById('win-message')?.remove();
   playing = false;
   gameMode = mode;
   LScore = RScore = 0;
   updateScore();
-  startBtn.classList.add('hidden');
   resetObjects();
   resizeCanvas();
   startCountdown(3, beginPlay);
@@ -366,6 +374,26 @@ window.setGameMode = (mode: 'pvp' | 'ai'): void => {
 
 /* WIN MESSAGE, MOBILE CONTROLS, COUNTDOWN, etc. */
 /* … (leave your existing implementations here unchanged) … */
+
+function waitForBothPlayers() {
+	const waitingOverlay = document.createElement('div');
+	waitingOverlay.id = 'waiting-overlay';
+	Object.assign(waitingOverlay.style, {
+		position: 'fixed',
+		inset: '0',
+		display: 'flex',
+		alignItems: 'center',
+		justifyContent: 'center',
+		fontSize: '4rem',
+		fontWeight: '800',
+		color: '#fff',
+		backdropFilter: 'blur(3px)',
+		zIndex: '100',
+		pointerEvents: 'none'
+	} as Partial<CSSStyleDeclaration>);
+	waitingOverlay.textContent = "Waiting for the other player to join :P";
+	document.body.appendChild(waitingOverlay);
+}
 
 function startCountdown(sec: number, callback: () => void): void {
   let remaining = sec;
@@ -496,7 +524,6 @@ function handleWin(): void {
         overlay!.remove();
         LScore = RScore = 0;
         updateScore();
-        startBtn.classList.add("hidden");
 
         resetObjects();
         resizeCanvas();
@@ -513,67 +540,82 @@ function beginPlay(): void {
   (window as any).refreshMobilePads?.();
 }
 
-// ── WS hookup ──
-// function connectWebSocket() {
-//   console.log(`[client] 🎾 connecting to ws://${HOST}:3000/ws/game`);
-//   socket = new WebSocket(`ws://${HOST}:3000/ws/game`);
+function startGameRemote()
+{
+	const game = document.getElementById("game-container") as HTMLElement;
+	const WSec = document.getElementById("welcome-section") as HTMLElement;
+    WSec.classList.add("hidden");
+    game.classList.remove("hidden");
+    game.classList.add("animate__animated", "animate__zoomIn");
+	// startCountdown(3, beginPlay);
+	// beginPlay();
+}
 
-//   socket.onopen = () => {
-// 	// ─── NEW: kick off the game loop on the client ───
-//     // startBtn.classList.add('hidden');            // hide the ▶ button
-//     // resetObjects();                              // reset ball & paddles
-//     // resizeCanvas();                              // size & position everything
-//     // updateScore();                               // clear the score display
-//     // beginPlay();                                 // set playing=true & fire off loop()
-// 	console.log('[client] ⚡ ws open, sending join for', gameId);
-// 	// 1) Show the canvas & start exactly the same flow as "Play offline"
-// 	window.setGameMode('pvp');
-//     const join: ClientMsgJoin = { type: 'join', gameId };
-//     socket!.send(JSON.stringify(join));
-//   };
+document.getElementById('nav-home')!.addEventListener('click', () => {
+  cleanupRemote();
+});
 
-//   socket.onmessage = ev => {
-// 	// console.log('[client] ⬅️ ws message', ev.data);
-//     const msg = JSON.parse(ev.data) as ServerMsg;
-//     if (msg.type === 'state') {
-//       [left, right] = msg.paddles;
-//       ball = msg.ball;
-//       LScore = msg.scores.left;
-//       RScore = msg.scores.right;
-//       updateScore();
-//       render();
-//     } else if ((msg as GameOverMsg).type === 'gameOver') {
-//       alert(`${(msg as GameOverMsg).winner.toUpperCase()} wins!`);
-//       window.location.reload();
-//     }
-//   };
-//   socket.onerror = err => console.error('[client] ⚠️ ws error', err);
-//   socket.onclose = ev => console.log('[client] ❌ ws closed', ev);
-// }
+document.getElementById('nav-play')!.addEventListener('click', () => {
+  cleanupRemote();
+});
+
+document.getElementById('nav-profile')!.addEventListener('click', () => {
+  cleanupRemote();
+});
+
+document.getElementById('nav-signout')!.addEventListener('click', () => {
+  cleanupRemote();
+});
+
+function cleanupRemote() {
+  if (socket) {
+    socket.close();
+    socket = null;
+  }
+  remoteMode = false;
+  // remove any waiting/countdown overlays left behind
+  document.getElementById('waiting-overlay')?.remove();
+  document.getElementById('countdown-overlay')?.remove();
+  // hide remote modal if it’s still up
+  document.getElementById('remote-modal')?.classList.add('hidden');
+}
 
 function connectWebSocket() {
   console.log(`[client] 🎾 connecting to ws://${HOST}:3000/ws/game`);
   socket = new WebSocket(`ws://${HOST}:3000/ws/game`);
-
   socket.onopen = () => {
-    // 1) reveal the canvas
-    (window as any).showGameArea?.();
-
-    // 2) run the same startup logic as offline/AI modes
-    startBtn.classList.add('hidden');
-    resetObjects();
-    resizeCanvas();
-    updateScore();
-    beginPlay();
-
     // 3) send our join message
     console.log('[client] ⚡ ws open, sending join for', gameId);
     const join: ClientMsgJoin = { type: 'join', gameId };
+	console.log(JSON.stringify(join));
     socket!.send(JSON.stringify(join));
   };
 
   socket.onmessage = ev => {
     const msg = JSON.parse(ev.data) as ServerMsg;
+	  // 1) got the “ready” signal from the server?
+	if (msg.type === 'error')
+	{
+		alert("WTF MAN :D")
+	}
+	if (msg.type === 'ready') {
+		console.log('[client] 🔔 ready received — starting countdown')
+		const waitingOverlay = document.getElementById("waiting-overlay");
+		const modal = document.getElementById('remote-modal')!;
+		startGameRemote();
+		resetObjects();
+		resizeCanvas();
+		updateScore();
+		modal.classList.add('hidden');
+		waitingOverlay?.remove();
+		startCountdown(3, () => {
+		// 2) after the countdown, kick off local loop…
+			beginPlay()
+			// 3) …and tell the server to actually start its physics
+			socket!.send(JSON.stringify({ type: 'start' } as ClientMsgStart))
+		})
+		return
+	}
     if (msg.type === 'state') {
       // compute scale factors from server coords → canvas pixels
       const sx = CanvasHtml.width  / WORLD_WIDTH;
@@ -600,6 +642,8 @@ function connectWebSocket() {
       render();
     }
     else if ((msg as GameOverMsg).type === 'gameOver') {
+	  // stop listening & close
+      socket!.close();
       alert(`${(msg as GameOverMsg).winner.toUpperCase()} wins!`);
       window.location.reload();
     }
@@ -607,26 +651,6 @@ function connectWebSocket() {
 
   socket.onerror = err => console.error('[client] ⚠️ ws error', err);
   socket.onclose = ev  => console.log('[client] ❌ ws closed', ev);
-}
-
-export function initRemote(): void {
-  remoteMode = true;
-  startBtn.classList.add('hidden');
-  const input = prompt(
-    'Remote mode: enter Game ID to join, or leave blank to host'
-  );
-  if (!input) {
-    fetch(`http://${HOST}:3000/api/game`, { method: 'POST' })
-      .then(r => r.json())
-      .then((d: { gameId: string }) => {
-        gameId = d.gameId;
-        alert(`New Game ID:\n${gameId}\nShare this with your friend.`);
-        connectWebSocket();
-      });
-  } else {
-    gameId = input;
-    connectWebSocket();
-  }
 }
 
 export function initRemoteModal(): void {
@@ -643,6 +667,7 @@ export function initRemoteModal(): void {
 
   // Show the modal
   modal.classList.remove('hidden');
+  modal.style.zIndex = "101";
 
   // Cleanup previous state
   sectCreate.classList.add('hidden');
@@ -660,17 +685,12 @@ export function initRemoteModal(): void {
     sectCreate.classList.remove('hidden');
 	// NEW: reveal the canvas + countdown behind the modal
   	(window as any).showGameArea?.();
+	resetObjects();
+	resizeCanvas();
+	render();
+	updateScore();
+	waitForBothPlayers();
   };
-//   btnCreate.onclick = async () => {
-// 	const res = await fetch('http://localhost:3000/api/game',{ method:'POST' });
-// 	const { gameId: id } = await res.json() as { gameId:string };
-// 	gameId     = id;
-// 	remoteMode = true;
-// 	modal.classList.add('hidden');    // ← hide the overlay
-// 	connectWebSocket();
-// 	inputId.value = data.gameId;
-// 	sectCreate.classList.remove('hidden');
-// 	};
 
   // Copy button
   copyBtn.onclick = () => {
@@ -700,6 +720,10 @@ export function initRemoteModal(): void {
     modal.classList.add('hidden');
   };
 }
+
+window.addEventListener('beforeunload', () => {
+  cleanupRemote();
+});
 
 // initial game setup
 resetObjects();
