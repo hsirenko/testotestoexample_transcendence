@@ -8,7 +8,8 @@ const PADDLE_W = 12;
 const PADDLE_H = 80;
 const BALL_R = 10;
 const PADDLE_SPEED = 5;    // px per step
-const BALL_SPEED   = 300;  // px per second
+const BALL_SPEED   = 150;  // px per second
+const WIN_SCORE    = 30;
 
 const PAD_GAP = 24;
 
@@ -16,7 +17,8 @@ type Vec = { x: number; y: number };
 
 export interface ClientMsgJoin { type: 'join'; gameId: string }
 export interface ClientMsgMove { type: 'move'; dir: 'up' | 'down' }
-export type ClientMsg = ClientMsgJoin | ClientMsgMove;
+export interface ClientMsgStart { type: 'start' }
+export type ClientMsg = ClientMsgJoin | ClientMsgMove | ClientMsgStart;
 
 export interface Paddle { x: number; y: number; w: number; h: number }
 export interface Ball   { x: number; y: number; v: Vec; r: number }
@@ -31,10 +33,6 @@ export interface GameOverMsg { type: 'gameOver'; winner: 'left'|'right' }
 
 export class Game {
   public players = new Map<'left'|'right', WebSocket>();
-//   public paddles = {
-//     left:  { x: PADDLE_W,       y: HEIGHT/2 - PADDLE_H/2, w: PADDLE_W, h: PADDLE_H },
-//     right: { x: WIDTH-PADDLE_W*2, y: HEIGHT/2 - PADDLE_H/2, w: PADDLE_W, h: PADDLE_H },
-//   };
   public paddles = {
     left:  { x: PAD_GAP,               y: HEIGHT/2 - PADDLE_H/2, w: PADDLE_W, h: PADDLE_H },
     right: { x: WIDTH - PAD_GAP - PADDLE_W, y: HEIGHT/2 - PADDLE_H/2, w: PADDLE_W, h: PADDLE_H },
@@ -78,8 +76,17 @@ export class Game {
     });
 
     // 4) Score?
-    if (this.ball.x < 0)  { this.scores.right++; this.reset(); }
-    if (this.ball.x > WIDTH) { this.scores.left++;  this.reset(); }
+    // 4) Score?
+    if (this.ball.x < 0) {
+      this.scores.right++;
+      if (this.scores.right >= WIN_SCORE) return this.end('right');
+      this.reset();
+    }
+    else if (this.ball.x > WIDTH) {
+      this.scores.left++;
+      if (this.scores.left >= WIN_SCORE) return this.end('left');
+      this.reset();
+    }
 
     // 5) Broadcast state
     this.broadcastState();

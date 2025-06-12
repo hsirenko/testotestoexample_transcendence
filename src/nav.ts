@@ -9,7 +9,6 @@ import { populateProfileViews,
          setActiveTab, 
 		 refreshProfileHeader }          from "./profile-setting.js";
 import "./welcome.js";
-import { initRemote } from './main.js';
 import { initRemoteModal } from './main.js';
 import { HOST } from './config.js';
 

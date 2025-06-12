@@ -14,7 +14,7 @@ import type { FastifyRequest } from 'fastify';
 import type { WebSocket } from 'ws';
 import { nanoid } from 'nanoid';
 import { games } from './gameManager';
-import { Game, ClientMsgJoin, ClientMsgMove } from './game';
+import { Game, ClientMsgJoin, ClientMsgMove, ClientMsgStart } from './game';
 import type { RawData } from 'ws';
 
 const fastify = Fastify({
@@ -90,25 +90,42 @@ const start = async () => {
 		console.log('[server] ↔ real WS connection');
 		socket.on('message', (raw: RawData) => {
 			console.log('[server] ← raw message:', raw.toString());
-			const msg = JSON.parse(raw.toString()) as ClientMsgJoin | ClientMsgMove;
+			const msg = JSON.parse(raw.toString()) as ClientMsgJoin | ClientMsgMove | ClientMsgStart;
 
 			// first message must be a `join`
 			if (msg.type === 'join') {
+				currentGame = games.get(msg.gameId)!;
+				if (!currentGame) {
+					socket.send(JSON.stringify({ type: 'error', message: 'No such game.' }));
+					return socket.close();
+				}
+				// If there are already two players, reject the third
+				if (currentGame.players.size >= 2) {
+					socket.send(JSON.stringify({ type: 'error', message: 'Game is full.' }));
+					return socket.close();
+				}
 				console.log(`[server] ➥ join request for ${msg.gameId}`);
 				// if this game doesn't exist yet, bail out (or create it)
-				currentGame = games.get(msg.gameId)!;
 				side = currentGame.players.size === 0 ? 'left' : 'right';
 				currentGame.players.set(side, socket);
 				console.log(`[server] … assigned side=${side}, players=${[...currentGame.players.keys()]}`);
 				// start when two players have joined
-				if (currentGame.players.size === 2)
-				{
-					console.log(`[server] ✅ both players joined, starting game ${currentGame.id}`);
-					currentGame.start();
-				}	
+				if (currentGame.players.size === 2) {
+					console.log(`✅ both players joined, broadcasting ready for ${currentGame.id}`)
+					const ready = JSON.stringify({ type: 'ready' })
+					for (const ws2 of currentGame.players.values()) {
+						ws2.send(ready)
+					}
+				}
 				return;
 			}
-
+				// only start the physics loop when a client explicitly says so
+			if (msg.type === 'start') {
+		-   	// ignored until now
+				console.log(`▶️ start requested for ${currentGame.id}`)
+				currentGame.start()
+				return;
+			}
 			// subsequent messages are paddle moves
 			if (msg.type === 'move') {
 				console.log(`[server] ➥ move ${side} ${msg.dir}`);
@@ -117,6 +134,7 @@ const start = async () => {
 		});
 
 		socket.on('close', () => {
+			if (!currentGame || !side) return;
 			console.log('(ws) connection closed');
 			// if one player disconnects, forfeit to the other
 			if (currentGame) {
