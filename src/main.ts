@@ -1,399 +1,355 @@
-//frontend/src/main.ts
 import {
-    ClientMsgJoin,
-    ClientMsgMove,
-    ClientMsgStart,
-    ErrorMsg,
-    StateMsg,
-    GameOverMsg,
-    ServerMsg,
+  ClientMsgJoin,
+  ClientMsgMove,
+  ClientMsgStart,
+  StateMsg,
+  GameOverMsg,
+  ServerMsg,
 } from "./types/ws.js";
 import { HOST } from "./config.js";
 
-const WORLD_WIDTH = 800;
+/* ---------- NEW AI IMPORTS -------------------------------------- */
+import {
+  nextAIPaddleY,
+  setAIRefresh as setAIRefreshAI,
+} from "./ai.js";
+
+/* ------------------------------------------------------------------
+ * Game constants (unchanged)
+ * ----------------------------------------------------------------*/
+const WORLD_WIDTH  = 800;
 const WORLD_HEIGHT = 600;
 
-const GSpeed = 1.25; // all game speed
-const BallSpeed = 330; // ball speed in px/s
-const MobileWidth = 640;
-const PadSpeed = window.innerWidth <= MobileWidth ? 0.75 : 0.45; // paddle speed height / s
-let BallSize = window.innerWidth <= MobileWidth ? 5 : 10; // ball size
-const PadW = window.innerWidth <= MobileWidth ? 10 : 12; // paddle width
-const PadH = window.innerWidth <= MobileWidth ? 60 : 80; // paddle height
-const PadGap = 24; // distance between left paddle and edge
+const GSpeed     = 1.25;           // global game speed multiplier
+const BallSpeed  = 330;            // ball speed in px/s
+const MobileW    = 640;
+const PadSpeed   = window.innerWidth <= MobileW ? 0.75 : 0.45; // height / s
+let   BallSize   = window.innerWidth <= MobileW ? 5 : 10;
+const PadW       = window.innerWidth <= MobileW ? 10 : 12;
+const PadH       = window.innerWidth <= MobileW ? 60 : 80;
+const PadGap     = 24;
 
-const LpadCol = "#22d3ee"; // left paddle color
-const RpadCol = "#fbbf24"; // right paddle color
-const BallCol = "#f472b6";
-const LineCol = "#f3f4f6";
+const ColLPad = "#22d3ee";
+const ColRPad = "#fbbf24";
+const ColBall = "#f472b6";
+const ColLine = "#f3f4f6";
 
-const TimeToIncSpeed = 12; // seconds before speed increments
-const IncRate = 0.1; // speed increment rate
-const WinScrore = 3; // win score threshold
+const TimeToIncSpeed = 12;   // seconds until speed increases
+const IncRate        = 0.1;  // increment per second after the above
+const WinScore       = 3;    // points to win
 
-/* ═════════════ TYPES ═════════════ */
-interface Vec {
-    x: number;
-    y: number;
-}
-interface Paddle extends Vec {
-    w: number;
-    h: number;
-}
-interface Ball extends Vec {
-    v: Vec;
-    r: number;
-}
+/* ------------------------------------------------------------------
+ * Types
+ * ----------------------------------------------------------------*/
+interface Vec { x: number; y: number }
+interface Paddle extends Vec { w: number; h: number }
+interface Ball   extends Vec { v: Vec; r: number }
 
+/* ------------------------------------------------------------------
+ * Canvas + DOM handles
+ * ----------------------------------------------------------------*/
 const CanvasHtml = document.getElementById("pong-canvas") as HTMLCanvasElement;
-const ctx = CanvasHtml.getContext("2d")!;
-const sLeft = document.getElementById("score-left")!;
-const sRight = document.getElementById("score-right")!;
+const ctx        = CanvasHtml.getContext("2d")!;
+const sLeft      = document.getElementById("score-left")!;
+const sRight     = document.getElementById("score-right")!;
 
-let left: Paddle;
+/* ------------------------------------------------------------------
+ * Game-state variables
+ * ----------------------------------------------------------------*/
+let left:  Paddle;
 let right: Paddle;
-let ball: Ball;
+let ball:  Ball;
+
 let LScore = 0;
 let RScore = 0;
-let playing = false;
+
+let playing   = false;
 let gameMode: "pvp" | "ai" = "pvp";
-let lastTime = performance.now();
+let lastTime  = performance.now();
 
-// AI settings (unused in remote mode)
-const AI_MAX_SPEED = 0.9;
-let AI_REFRESH = 0.05;
-let aiAccumulator = 0;
 let roundElapsed = 0;
-let prevSpeed = GSpeed;
+let prevSpeed    = GSpeed;
 
-// Remote‐play state
+/* ------------------------------------------------------------------
+ * Remote-play state
+ * ----------------------------------------------------------------*/
 let socket: WebSocket | null = null;
-let remoteMode = false;
-let gameId = "";
+let remoteMode  = false;
+let gameId      = "";
+let ownGameId: string | null = null;
+let hasJoined   = false;
 
-// Shared key state (unused for right paddle in remote mode)
+/* Shared key state (for human control) ---------------------------- */
 const keys: Record<string, boolean> = {};
 
-/* key listeners for W/S and ArrowUp/ArrowDown */
+/* Key listeners – W/S + Arrows ----------------------------------- */
 for (const type of ["keydown", "keyup"] as const) {
-    window.addEventListener(type, (evt: Event) => {
-        const e = evt as KeyboardEvent;
-        if (!["w", "s", "ArrowUp", "ArrowDown"].includes(e.key)) return;
-        const active = document.activeElement as HTMLElement | null;
-        if (
-            active &&
-            (["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName) ||
-                active.isContentEditable)
-        )
-            return;
-        e.preventDefault();
-        keys[e.key] = type === "keydown";
+  window.addEventListener(type, (evt) => {
+    const e = evt as KeyboardEvent;
+    if (!["w", "s", "ArrowUp", "ArrowDown"].includes(e.key)) return;
 
-        // ── REMOTE: send paddle-move events ──
-        if (
-            remoteMode &&
-            socket?.readyState === WebSocket.OPEN &&
-            type === "keydown"
-        ) {
-            // map both W/ArrowUp→up, S/ArrowDown→down
-            const dir: "up" | "down" =
-                e.key === "w" || e.key === "ArrowUp" ? "up" : "down";
-            const mv: ClientMsgMove = { type: "move", dir };
-            socket.send(JSON.stringify(mv));
-        }
-    });
+    /* ignore if user is typing in an input */
+    const active = document.activeElement as HTMLElement | null;
+    if (
+      active &&
+      (["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName) ||
+       active.isContentEditable)
+    ) return;
+
+    e.preventDefault();
+    keys[e.key] = type === "keydown";
+
+    /* Remote paddle-move messages */
+    if (
+      remoteMode &&
+      socket?.readyState === WebSocket.OPEN &&
+      type === "keydown"
+    ) {
+      const dir: "up" | "down" =
+        e.key === "w" || e.key === "ArrowUp" ? "up" : "down";
+      const mv: ClientMsgMove = { type: "move", dir };
+      socket.send(JSON.stringify(mv));
+    }
+  });
 }
 
+/* Helpers --------------------------------------------------------- */
 const clamp = (v: number, lo: number, hi: number) =>
-    v < lo ? lo : v > hi ? hi : v;
+  v < lo ? lo : v > hi ? hi : v;
 
+/* ------------------------------------------------------------------
+ * Setup / reset helpers
+ * ----------------------------------------------------------------*/
 export function resetObjects(): void {
-    const scale = window.innerWidth <= MobileWidth ? 0.7 : 1;
-    BallSize = window.innerWidth <= MobileWidth ? 7 : 10;
-    left = { x: PadGap, y: 0, w: PadW * scale, h: PadH * scale };
-    right = { x: 0, y: 0, w: PadW * scale, h: PadH * scale };
-    ball = { x: 0, y: 0, v: { x: 0, y: 0 }, r: BallSize };
-    roundElapsed = 0;
-    prevSpeed = GSpeed;
+  const scale = window.innerWidth <= MobileW ? 0.7 : 1;
+  BallSize    = window.innerWidth <= MobileW ? 7 : 10;
+
+  left  = { x: PadGap, y: 0, w: PadW * scale, h: PadH * scale };
+  right = { x: 0,      y: 0, w: PadW * scale, h: PadH * scale };
+  ball  = { x: 0, y: 0, v: { x: 0, y: 0 }, r: BallSize };
+
+  roundElapsed = 0;
+  prevSpeed    = GSpeed;
 }
 
 function resetPositions(dir: 1 | -1): void {
-    left.y = (CanvasHtml.height - left.h) / 2;
-    right.y = (CanvasHtml.height - right.h) / 2;
-    ball.x = CanvasHtml.width / 2;
-    ball.y = CanvasHtml.height / 2;
-    const speed = BallSpeed * GSpeed;
-    const angle = (Math.random() - 0.5) * (Math.PI / 3);
-    ball.v.x = dir * speed * Math.cos(angle);
-    ball.v.y = speed * Math.sin(angle);
-    roundElapsed = 0;
-    prevSpeed = GSpeed;
+  left.y  = (CanvasHtml.height - left.h) / 2;
+  right.y = (CanvasHtml.height - right.h) / 2;
+
+  ball.x = CanvasHtml.width  / 2;
+  ball.y = CanvasHtml.height / 2;
+
+  const speed = BallSpeed * GSpeed;
+  const angle = (Math.random() - 0.5) * (Math.PI / 3);
+
+  ball.v.x = dir * speed * Math.cos(angle);
+  ball.v.y =       speed * Math.sin(angle);
+
+  roundElapsed = 0;
+  prevSpeed    = GSpeed;
 }
 
 export function resizeCanvas(): void {
-    CanvasHtml.width = CanvasHtml.clientWidth;
-    CanvasHtml.height = CanvasHtml.clientHeight;
-    right.x = CanvasHtml.width - PadGap - right.w;
-    resetPositions(Math.random() < 0.5 ? 1 : -1);
-    render();
+  CanvasHtml.width  = CanvasHtml.clientWidth;
+  CanvasHtml.height = CanvasHtml.clientHeight;
+  right.x           = CanvasHtml.width - PadGap - right.w;
+  resetPositions(Math.random() < 0.5 ? 1 : -1);
+  render();
 }
 
-// function loop(now: number): void {
-//   const dt = (now - lastTime) / 1000;
-//   lastTime = now;
-//   if (playing && !remoteMode) {
-//     update(dt);
-//     render();
-//   }
-//   requestAnimationFrame(loop);
-// }
-
+/* ------------------------------------------------------------------
+ * Animation loop
+ * ----------------------------------------------------------------*/
 function loop(now: number): void {
-    const dt = (now - lastTime) / 1000;
-    lastTime = now;
+  const dt = (now - lastTime) / 1000;
+  lastTime = now;
 
-    if (playing) {
-        // 2) In remote mode, send “move” messages every frame for held keys
-        if (remoteMode && socket?.readyState === WebSocket.OPEN) {
-            //   console.log("HERE!!\n");
-            if (keys["w"] || keys["ArrowUp"]) {
-                socket.send(
-                    JSON.stringify({ type: "move", dir: "up" } as ClientMsgMove)
-                );
-            }
-            if (keys["s"] || keys["ArrowDown"]) {
-                socket.send(
-                    JSON.stringify({
-                        type: "move",
-                        dir: "down",
-                    } as ClientMsgMove)
-                );
-            }
-        }
-        if (!remoteMode) {
-            // only run physics when not remote
-            update(dt);
-        }
-        // always re-draw the last known state
-        render();
+  if (playing) {
+    /* Remote – continuously send held keys */
+    if (remoteMode && socket?.readyState === WebSocket.OPEN) {
+      if (keys["w"] || keys["ArrowUp"]) {
+        socket.send(JSON.stringify({ type: "move", dir: "up" } as ClientMsgMove));
+      }
+      if (keys["s"] || keys["ArrowDown"]) {
+        socket.send(JSON.stringify({ type: "move", dir: "down" } as ClientMsgMove));
+      }
     }
-    requestAnimationFrame(loop);
+
+    if (!remoteMode) update(dt);   // physics only locally
+    render();                      // always draw latest state
+  }
+
+  requestAnimationFrame(loop);
 }
 
+/* ------------------------------------------------------------------
+ * Physics + game rules
+ * ----------------------------------------------------------------*/
 function update(dt: number): void {
-    roundElapsed += dt;
-    const currSpeed =
-        GSpeed + Math.max(0, roundElapsed - TimeToIncSpeed) * IncRate;
-    if (currSpeed !== prevSpeed) {
-        const scale = currSpeed / prevSpeed;
-        ball.v.x *= scale;
-        ball.v.y *= scale;
-        prevSpeed = currSpeed;
+  /* --- Speed ramping -------------------------------------------------- */
+  roundElapsed += dt;
+  const currSpeed =
+    GSpeed + Math.max(0, roundElapsed - TimeToIncSpeed) * IncRate;
+
+  if (currSpeed !== prevSpeed) {
+    const scale = currSpeed / prevSpeed;
+    ball.v.x   *= scale;
+    ball.v.y   *= scale;
+    prevSpeed   = currSpeed;
+  }
+
+  const paddleV = CanvasHtml.height * PadSpeed * currSpeed;
+
+  /* --- Left paddle (player – W/S) ------------------------------------- */
+  if (keys["w"]) left.y -= paddleV * dt;
+  if (keys["s"]) left.y += paddleV * dt;
+  left.y = clamp(left.y, 0, CanvasHtml.height - left.h);
+
+  /* --- Right paddle (PvP or AI) -------------------------------------- */
+  if (!remoteMode) {
+    if (gameMode === "pvp") {
+      if (keys["ArrowUp"])   right.y -= paddleV * dt;
+      if (keys["ArrowDown"]) right.y += paddleV * dt;
+    } else {  // AI mode
+        right.y = nextAIPaddleY(ball, right, dt, CanvasHtml.height, paddleV);
+    //   const move = computeMove(ball, right, dt, CanvasHtml.height);
+    //   if (move.up)   right.y -= paddleV * AI_MAX_SPEED * dt;
+    //   if (move.down) right.y += paddleV * AI_MAX_SPEED * dt;
     }
-    const paddleV = CanvasHtml.height * PadSpeed * currSpeed;
+    right.y = clamp(right.y, 0, CanvasHtml.height - right.h);
+  }
 
-    // left paddle (W/S)
-    if (keys["w"]) left.y -= paddleV * dt;
-    if (keys["s"]) left.y += paddleV * dt;
-    left.y = clamp(left.y, 0, CanvasHtml.height - left.h);
+  /* --- Ball ----------------------------------------------------------- */
+  ball.x += ball.v.x * dt;
+  ball.y += ball.v.y * dt;
 
-    // right paddle (local pvp or AI only if not remote)
-    if (!remoteMode) {
-        if (gameMode === "pvp") {
-            if (keys["ArrowUp"]) right.y -= paddleV * dt;
-            if (keys["ArrowDown"]) right.y += paddleV * dt;
-        } else {
-            aiAccumulator += dt;
-            if (aiAccumulator >= AI_REFRESH) {
-                aiAccumulator -= AI_REFRESH;
-                computeAIDecision();
-            }
-            if (keys["ArrowUp"]) right.y -= paddleV * AI_MAX_SPEED * dt;
-            if (keys["ArrowDown"]) right.y += paddleV * AI_MAX_SPEED * dt;
-        }
-        right.y = clamp(right.y, 0, CanvasHtml.height - right.h);
+  if (ball.y - BallSize < 0 || ball.y + BallSize > CanvasHtml.height) {
+    ball.v.y *= -1;
+    ball.y    = clamp(ball.y, BallSize, CanvasHtml.height - BallSize);
+  }
+
+  const hitPaddle = (p: Paddle, side: "left" | "right"): boolean => {
+    const inY = ball.y >= p.y && ball.y <= p.y + p.h;
+    if (!inY) return false;
+
+    if (
+      side === "left"  && ball.v.x < 0 && ball.x - BallSize <= p.x + p.w
+    ) {
+      ball.x = p.x + p.w + BallSize;
+      return true;
     }
-
-    // ball physics
-    ball.x += ball.v.x * dt;
-    ball.y += ball.v.y * dt;
-    if (ball.y - BallSize < 0 || ball.y + BallSize > CanvasHtml.height) {
-        ball.v.y *= -1;
-        ball.y = clamp(ball.y, BallSize, CanvasHtml.height - BallSize);
+    if (
+      side === "right" && ball.v.x > 0 && ball.x + BallSize >= p.x
+    ) {
+      ball.x = p.x - BallSize;
+      return true;
     }
+    return false;
+  };
 
-    const hitPaddle = (p: Paddle, side: "left" | "right"): boolean => {
-        const inY = ball.y >= p.y && ball.y <= p.y + p.h;
-        if (!inY) return false;
-        if (side === "left" && ball.v.x < 0 && ball.x - BallSize <= p.x + p.w) {
-            ball.x = p.x + p.w + BallSize;
-            return true;
-        }
-        if (side === "right" && ball.v.x > 0 && ball.x + BallSize >= p.x) {
-            ball.x = p.x - BallSize;
-            return true;
-        }
-        return false;
-    };
+  if (hitPaddle(left, "left") || hitPaddle(right, "right")) {
+    const p   = ball.v.x < 0 ? left : right;
+    const rel = (ball.y - (p.y + p.h / 2)) / (p.h / 2);
+    const ang = rel * (Math.PI / 3);
+    const spd = BallSpeed * currSpeed;
+    const dir = ball.v.x < 0 ? 1 : -1;
 
-    if (hitPaddle(left, "left") || hitPaddle(right, "right")) {
-        const p = ball.v.x < 0 ? left : right;
-        const rel = (ball.y - (p.y + p.h / 2)) / (p.h / 2);
-        const ang = rel * (Math.PI / 3);
-        const spd = BallSpeed * currSpeed;
-        const dir = ball.v.x < 0 ? 1 : -1;
-        ball.v.x = dir * spd * Math.cos(ang);
-        ball.v.y = spd * Math.sin(ang);
-    }
+    ball.v.x = dir * spd * Math.cos(ang);
+    ball.v.y =       spd * Math.sin(ang);
+  }
 
-    const pauseAndReset = (dir: 1 | -1) => {
-        playing = false;
-        ball.v.x = ball.v.y = 0;
-        resetPositions(dir);
-        setTimeout(() => {
-            lastTime = performance.now();
-            playing = true;
-        }, 1000);
-    };
+  /* --- Scoring -------------------------------------------------------- */
+  const pauseAndReset = (dir: 1 | -1) => {
+    playing  = false;
+    ball.v.x = ball.v.y = 0;
+    resetPositions(dir);
+    setTimeout(() => {
+      lastTime = performance.now();
+      playing  = true;
+    }, 1000);
+  };
 
-    if (ball.x + BallSize < 0) {
-        RScore++;
-        updateScore();
-        RScore >= WinScrore ? handleWin() : pauseAndReset(1);
-    } else if (ball.x - BallSize > CanvasHtml.width) {
-        LScore++;
-        updateScore();
-        LScore >= WinScrore ? handleWin() : pauseAndReset(-1);
-    }
+  if (ball.x + BallSize < 0) {
+    RScore++;
+    updateScore();
+    RScore >= WinScore ? handleWin(false) : pauseAndReset(1);
+  } else if (ball.x - BallSize > CanvasHtml.width) {
+    LScore++;
+    updateScore();
+    LScore >= WinScore ? handleWin(false) : pauseAndReset(-1);
+  }
 }
 
+/* ------------------------------------------------------------------
+ * Scoreboard helper
+ * ----------------------------------------------------------------*/
 export function updateScore(): void {
-    sLeft.textContent = String(LScore);
-    sRight.textContent = String(RScore);
+  sLeft.textContent  = String(LScore);
+  sRight.textContent = String(RScore);
 }
 
-function computeAIDecision(): void {
-    if (ball.v.x <= 0) {
-        keys["ArrowUp"] = false;
-        keys["ArrowDown"] = false;
-        return;
-    }
-    let bx = ball.x,
-        by = ball.y,
-        vx = ball.v.x,
-        vy = ball.v.y;
-    while (true) {
-        const dtX = (right.x - bx) / vx;
-        const nextY = by + vy * dtX;
-        if (nextY >= BallSize && nextY <= CanvasHtml.height - BallSize) {
-            by = nextY;
-            break;
-        }
-        if (vy > 0) {
-            const dtW = (CanvasHtml.height - BallSize - by) / vy;
-            bx += vx * dtW;
-            by = CanvasHtml.height - BallSize;
-            vy = -vy;
-        } else {
-            const dtW = (BallSize - by) / vy;
-            bx += vx * dtW;
-            by = BallSize;
-            vy = -vy;
-        }
-    }
-    const paddleCenter = right.y + right.h / 2;
-    if (by < paddleCenter - 5) {
-        keys["ArrowUp"] = true;
-        keys["ArrowDown"] = false;
-    } else if (by > paddleCenter + 5) {
-        keys["ArrowUp"] = false;
-        keys["ArrowDown"] = true;
-    } else {
-        keys["ArrowUp"] = false;
-        keys["ArrowDown"] = false;
-    }
-}
-
+/* ------------------------------------------------------------------
+ * Rendering
+ * ----------------------------------------------------------------*/
 export function render(): void {
-    ctx.clearRect(0, 0, CanvasHtml.width, CanvasHtml.height);
-    drawNet();
-    drawPaddle(left, LpadCol);
-    drawPaddle(right, RpadCol);
-    drawBall();
+  ctx.clearRect(0, 0, CanvasHtml.width, CanvasHtml.height);
+  drawNet();
+  drawPaddle(left,  ColLPad);
+  drawPaddle(right, ColRPad);
+  drawBall();
 }
 
 function drawNet(): void {
-    ctx.fillStyle = LineCol;
-    const w = 4,
-        h = 18,
-        gap = 12,
-        x = CanvasHtml.width / 2 - w / 2;
-    for (let y = 0; y < CanvasHtml.height; y += h + gap) {
-        ctx.fillRect(x, y, w, h);
-    }
+  ctx.fillStyle = ColLine;
+  const w = 4, h = 18, gap = 12, x = CanvasHtml.width / 2 - w / 2;
+  for (let y = 0; y < CanvasHtml.height; y += h + gap)
+    ctx.fillRect(x, y, w, h);
 }
 
 function drawPaddle(p: Paddle, col: string): void {
-    ctx.fillStyle = col;
-    ctx.fillRect(p.x, p.y, p.w, p.h);
+  ctx.fillStyle = col;
+  ctx.fillRect(p.x, p.y, p.w, p.h);
 }
 
 function drawBall(): void {
-    ctx.fillStyle = BallCol;
-    ctx.beginPath();
-    ctx.arc(ball.x, ball.y, BallSize, 0, Math.PI * 2);
-    ctx.fill();
+  ctx.fillStyle = ColBall;
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, BallSize, 0, Math.PI * 2);
+  ctx.fill();
 }
 
-/* ═════════════ GLOBAL FUNCTIONS ═════════════ */
+/* ------------------------------------------------------------------
+ * Global helpers exposed on window
+ * ----------------------------------------------------------------*/
 declare global {
-    interface Window {
-        setAIRefresh: (sec: number) => void;
-        setGameMode: (m: "pvp" | "ai") => void;
-    }
+  interface Window {
+    setAIRefresh: (sec: number) => void;
+    setGameMode:  (m: "pvp" | "ai") => void;
+  }
 }
 
-window.setAIRefresh = (sec: number): void => {
-    AI_REFRESH = sec;
-    aiAccumulator = 0;
-};
+/* Implement the AI refresh setter via the new module */
+window.setAIRefresh = setAIRefreshAI;
 
+/* setGameMode (unchanged, except no AI vars here) ------------------ */
 window.setGameMode = (mode: "pvp" | "ai"): void => {
-    // ① un-hide the game area (welcome.ts’s helper)
-    cleanupRemote();
-    (window as any).showGameArea?.();
-    document.getElementById("win-message")?.remove();
-    playing = false;
-    gameMode = mode;
-    LScore = RScore = 0;
-    updateScore();
-    resetObjects();
-    resizeCanvas();
-    startCountdown(3, beginPlay);
+  cleanupRemote();
+  (window as any).showGameArea?.();
+  document.getElementById("win-message")?.remove();
+
+  playing  = false;
+  gameMode = mode;
+
+  LScore = RScore = 0;
+  updateScore();
+
+  resetObjects();
+  resizeCanvas();
+  startCountdown(3, beginPlay);
 };
 
 /* WIN MESSAGE, MOBILE CONTROLS, COUNTDOWN, etc. */
 /* … (leave your existing implementations here unchanged) … */
-
-function waitForBothPlayers() {
-    const waitingOverlay = document.createElement("div");
-    waitingOverlay.id = "waiting-overlay";
-    Object.assign(waitingOverlay.style, {
-        position: "fixed",
-        inset: "0",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: "4rem",
-        fontWeight: "800",
-        color: "#fff",
-        backdropFilter: "blur(3px)",
-        zIndex: "100",
-        pointerEvents: "none",
-    } as Partial<CSSStyleDeclaration>);
-    waitingOverlay.textContent = "Waiting for the other player to join :P";
-    document.body.appendChild(waitingOverlay);
-}
 
 function startCountdown(sec: number, callback: () => void): void {
     let remaining = sec;
@@ -428,7 +384,7 @@ function startCountdown(sec: number, callback: () => void): void {
 }
 
 /* ═════════════ WIN MESSAGE ═════════════ */
-function handleWin(): void {
+function handleWin(remote: boolean): void {
     playing = false;
     //reshow that shit
     document.body.classList.remove("game-playing");
@@ -535,15 +491,32 @@ function handleWin(): void {
 }
 
 function beginPlay(): void {
-    playing = true;
+  playing  = true;
+  document.body.classList.add("game-playing");
+  lastTime = performance.now();
+  requestAnimationFrame(loop);
+  (window as any).refreshMobilePads?.();
+}
+/* ═════════════ REMOTE MODE ═════════════ */
 
-    //hide friends shit
-    document.body.classList.add("game-playing");
-
-    lastTime = performance.now();
-    aiAccumulator = 0;
-    requestAnimationFrame(loop);
-    (window as any).refreshMobilePads?.();
+function waitForBothPlayers() {
+    const waitingOverlay = document.createElement("div");
+    waitingOverlay.id = "waiting-overlay";
+    Object.assign(waitingOverlay.style, {
+        position: "fixed",
+        inset: "0",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "4rem",
+        fontWeight: "800",
+        color: "#fff",
+        backdropFilter: "blur(3px)",
+        zIndex: "100",
+        pointerEvents: "none",
+    } as Partial<CSSStyleDeclaration>);
+    waitingOverlay.textContent = "Waiting for the other player to join :P";
+    document.body.appendChild(waitingOverlay);
 }
 
 function startGameRemote() {
@@ -588,14 +561,23 @@ function cleanupRemote() {
 }
 
 function connectWebSocket() {
+	if (socket && socket.readyState === WebSocket.OPEN) return;
+	if (ownGameId && gameId === ownGameId && !hasJoined) {
+    // the creator should *only* wait for the other player, not re-join themselves
+    	hasJoined = true;
+	} else if (ownGameId && gameId === ownGameId && hasJoined) {
+		return;
+	}
     console.log(`[client] 🎾 connecting to ws://${HOST}:3000/ws/game`);
     socket = new WebSocket(`ws://${HOST}:3000/ws/game`);
     socket.onopen = () => {
         // 3) send our join message
-        console.log("[client] ⚡ ws open, sending join for", gameId);
-        const join: ClientMsgJoin = { type: "join", gameId };
-        console.log(JSON.stringify(join));
-        socket!.send(JSON.stringify(join));
+        // console.log("[client] ⚡ ws open, sending join for", gameId);
+		if (!hasJoined) {
+			hasJoined = true;
+			const join: ClientMsgJoin = { type: "join", gameId };
+			socket!.send(JSON.stringify(join));
+		}
     };
 
     socket.onmessage = (ev) => {
@@ -651,8 +633,9 @@ function connectWebSocket() {
         } else if ((msg as GameOverMsg).type === "gameOver") {
             // stop listening & close
             socket!.close();
+			console.log(`${(msg as GameOverMsg).winner} - SCORES: ${LScore} - ${RScore}`);
             alert(`${(msg as GameOverMsg).winner.toUpperCase()} wins!`);
-            window.location.reload();
+            // window.location.reload();
         }
     };
 
@@ -662,8 +645,8 @@ function connectWebSocket() {
 
 export function initRemoteModal(): void {
     const modal = document.getElementById("remote-modal")!;
-    const btnCreate = document.getElementById("remote-create-btn")!;
-    const btnJoin = document.getElementById("remote-join-btn")!;
+    const btnCreate = document.getElementById("remote-create-btn")! as HTMLButtonElement;
+    const btnJoin = document.getElementById("remote-join-btn")! as HTMLButtonElement;
     const sectCreate = document.getElementById("remote-created")!;
     const sectJoin = document.getElementById("remote-join")!;
     const inputId = document.getElementById(
@@ -686,6 +669,8 @@ export function initRemoteModal(): void {
 
     // Create game
     btnCreate.onclick = async () => {
+	    btnCreate.disabled = true;
+	   	btnJoin.disabled   = true;
         const res = await fetch(`http://${HOST}:3000/api/game`, {
             method: "POST",
         });
@@ -724,6 +709,7 @@ export function initRemoteModal(): void {
         if (!id) return alert("Please enter a Game ID");
         gameId = id;
         remoteMode = true;
+		ownGameId = null;
         modal.classList.add("hidden");
         connectWebSocket();
     };
