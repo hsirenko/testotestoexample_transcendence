@@ -244,29 +244,27 @@
 	<!-- ░░ NAVBAR ░░ -->
 	<div id="app" class="flex flex-col min-h-screen hidden">
 	<header class="sticky top-0 bg-black/50 backdrop-blur-md z-50">
-		<nav class="fixed inset-x-0 top-0 z-50 h-16
+		<!--  ───────── NAVBAR  ─────────  -->
+<!-- ───────── NAVBAR ───────── -->
+<nav class="fixed inset-x-0 top-0 z-50 h-16
             bg-gradient-to-r from-slate-900/70 via-slate-800/60 to-slate-900/70
             backdrop-blur-md border-b border-white/10 shadow-lg shadow-fuchsia-800/40">
   <div class="flex w-full h-full items-center px-4 sm:px-5 lg:px-6">
-    <a href="/"                                                          
-       class="ml-2 text-3xl font-extrabold tracking-widest          
+    <!-- Brand ---------------------------------------------------------->
+    <a href="/"
+       class="text-3xl font-extrabold tracking-widest
               bg-gradient-to-r from-fuchsia-400 via-pink-500 to-rose-500
               bg-clip-text text-transparent">
       ft_transcendence
     </a>
 
-    <button id="burger" class="ml-auto sm:hidden text-white">
-      <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2"
-           viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M4 6h16M4 12h16M4 18h16"/>
-      </svg>
-    </button>
-
-    <ul id="nav-menu"
-        class="hidden sm:flex sm:space-x-8 ml-auto mr-4">           
-      <li class="relative">
+    <!-- Bell + Burger wrapper  (pushed right on mobile, normal on ≥ sm) -->
+    <div class="ml-auto flex items-center space-x-3">
+      <!-- NOTIFICATION BELL (vertically centred) ---------------------->
+      <div id="bell-wrap" class="relative flex items-center">
         <button id="nav-notif"
-                class="relative hover:text-pink-200 transition-transform duration-200 hover:scale-105">
+                class="hover:text-pink-200 transition-transform duration-200 hover:scale-105">
+          <!-- bell icon -->
           <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24"
                stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round"
@@ -274,6 +272,7 @@
                      a6 6 0 00-5-5.917V4a1 1 0 10-2 0v1.083A6 6 0 006 11v3.159
                      c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0h6z"/>
           </svg>
+          <!-- unread badge -->
           <span id="notif-badge"
                 class="absolute -top-1 -right-1 w-4 h-4 rounded-full
                        bg-red-500 text-[10px] font-bold flex items-center
@@ -281,28 +280,42 @@
                        transition-opacity duration-300"></span>
         </button>
 
+        <!-- dropdown panel -->
         <div id="notif-panel"
-             class="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-72 hidden
+             class="absolute right-0 sm:left-1/2 sm:-translate-x-1/2 top-full mt-2 w-72 hidden
                     max-h-80 overflow-y-auto custom-scroll bg-black/30 backdrop-blur
-                    border-l border-white/20 border rounded-xl p-4 space-y-3 z-[55]">
+                    border rounded-xl p-4 space-y-3 z-[55]">
           <p class="text-center text-sm text-white/70">No notifications yet.</p>
         </div>
-      </li>
+      </div>
 
-      <li><button id="nav-home" class="hover:text-pink-300 text-[22px] transition-transform duration-200 hover:scale-105" data-nav="home">Home</button></li>
-      <li><button id="nav-play" class="hover:text-pink-200 text-[22px] transition-transform duration-200 hover:scale-105">Play</button></li>
-      <li><button id="nav-profile" class="hover:text-pink-200 text-[22px] transition-transform duration-200 hover:scale-105">Profile</button></li>
-      <li><button id="nav-signout" class="hover:text-pink-200 text-[22px] transition-transform duration-200 hover:scale-105">Sign&nbsp;Out</button></li>
+      <!-- BURGER (mobile only) -------------------------------------->
+      <button id="burger"
+              class="sm:hidden hover:text-pink-200 transition-transform duration-200 hover:scale-105">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2"
+             viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- MAIN MENU ----------------------------------------------------->
+    <ul id="nav-menu"
+        class="absolute left-0 top-full w-full bg-slate-900/95
+               hidden flex-col items-center py-5 space-y-4
+               sm:static sm:w-auto sm:flex sm:flex-row sm:items-center
+               sm:space-y-0 sm:space-x-8 sm:bg-transparent sm:py-0 sm:ml-6">
+      <li><button id="nav-home"    class="hover:text-pink-300" data-nav="home">Home</button></li>
+      <li><button id="nav-play"    class="hover:text-pink-200" data-nav="play">Play</button></li>
+      <li><button id="nav-profile" class="hover:text-pink-200" data-nav="profile">Profile</button></li>
+      <li><button id="nav-signout" class="hover:text-pink-200" data-nav="signout">Sign Out</button></li>
     </ul>
   </div>
-
-  <div id="login-toast"
-       class="fixed top-24 right-6 bg-emerald-500/90 text-white px-4 py-2
-              rounded-full shadow-lg text-sm opacity-0 pointer-events-none
-              transition-opacity duration-300">
-    Logged in&nbsp;✔
-  </div>
 </nav>
+<!-- ─────────────────────────────────────────────────────────────── -->
+
+<!--  ────────────────────────────────────────────────────────────────  -->
+
 
 	</header>
 
