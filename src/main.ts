@@ -70,6 +70,8 @@ let prevSpeed = GSpeed;
 let socket: WebSocket | null = null;
 let remoteMode = false;
 let gameId = "";
+let ownGameId: string | null = null;
+let hasJoined = false;
 
 // Shared key state (unused for right paddle in remote mode)
 const keys: Record<string, boolean> = {};
@@ -259,11 +261,11 @@ function update(dt: number): void {
     if (ball.x + BallSize < 0) {
         RScore++;
         updateScore();
-        RScore >= WinScrore ? handleWin() : pauseAndReset(1);
+        RScore >= WinScrore ? handleWin(false) : pauseAndReset(1);
     } else if (ball.x - BallSize > CanvasHtml.width) {
         LScore++;
         updateScore();
-        LScore >= WinScrore ? handleWin() : pauseAndReset(-1);
+        LScore >= WinScrore ? handleWin(false) : pauseAndReset(-1);
     }
 }
 
@@ -375,26 +377,6 @@ window.setGameMode = (mode: "pvp" | "ai"): void => {
 /* WIN MESSAGE, MOBILE CONTROLS, COUNTDOWN, etc. */
 /* … (leave your existing implementations here unchanged) … */
 
-function waitForBothPlayers() {
-    const waitingOverlay = document.createElement("div");
-    waitingOverlay.id = "waiting-overlay";
-    Object.assign(waitingOverlay.style, {
-        position: "fixed",
-        inset: "0",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: "4rem",
-        fontWeight: "800",
-        color: "#fff",
-        backdropFilter: "blur(3px)",
-        zIndex: "100",
-        pointerEvents: "none",
-    } as Partial<CSSStyleDeclaration>);
-    waitingOverlay.textContent = "Waiting for the other player to join :P";
-    document.body.appendChild(waitingOverlay);
-}
-
 function startCountdown(sec: number, callback: () => void): void {
     let remaining = sec;
     const overlay = document.createElement("div");
@@ -428,7 +410,7 @@ function startCountdown(sec: number, callback: () => void): void {
 }
 
 /* ═════════════ WIN MESSAGE ═════════════ */
-function handleWin(): void {
+function handleWin(remote: boolean): void {
     playing = false;
     //reshow that shit
     document.body.classList.remove("game-playing");
@@ -546,6 +528,28 @@ function beginPlay(): void {
     (window as any).refreshMobilePads?.();
 }
 
+/* ═════════════ REMOTE MODE ═════════════ */
+
+function waitForBothPlayers() {
+    const waitingOverlay = document.createElement("div");
+    waitingOverlay.id = "waiting-overlay";
+    Object.assign(waitingOverlay.style, {
+        position: "fixed",
+        inset: "0",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "4rem",
+        fontWeight: "800",
+        color: "#fff",
+        backdropFilter: "blur(3px)",
+        zIndex: "100",
+        pointerEvents: "none",
+    } as Partial<CSSStyleDeclaration>);
+    waitingOverlay.textContent = "Waiting for the other player to join :P";
+    document.body.appendChild(waitingOverlay);
+}
+
 function startGameRemote() {
     const game = document.getElementById("game-container") as HTMLElement;
     const WSec = document.getElementById("welcome-section") as HTMLElement;
@@ -588,14 +592,23 @@ function cleanupRemote() {
 }
 
 function connectWebSocket() {
+	if (socket && socket.readyState === WebSocket.OPEN) return;
+	if (ownGameId && gameId === ownGameId && !hasJoined) {
+    // the creator should *only* wait for the other player, not re-join themselves
+    	hasJoined = true;
+	} else if (ownGameId && gameId === ownGameId && hasJoined) {
+		return;
+	}
     console.log(`[client] 🎾 connecting to ws://${HOST}:3000/ws/game`);
     socket = new WebSocket(`ws://${HOST}:3000/ws/game`);
     socket.onopen = () => {
         // 3) send our join message
-        console.log("[client] ⚡ ws open, sending join for", gameId);
-        const join: ClientMsgJoin = { type: "join", gameId };
-        console.log(JSON.stringify(join));
-        socket!.send(JSON.stringify(join));
+        // console.log("[client] ⚡ ws open, sending join for", gameId);
+		if (!hasJoined) {
+			hasJoined = true;
+			const join: ClientMsgJoin = { type: "join", gameId };
+			socket!.send(JSON.stringify(join));
+		}
     };
 
     socket.onmessage = (ev) => {
@@ -651,6 +664,7 @@ function connectWebSocket() {
         } else if ((msg as GameOverMsg).type === "gameOver") {
             // stop listening & close
             socket!.close();
+			console.log(`${(msg as GameOverMsg).winner} - SCORES: ${LScore} - ${RScore}`);
             alert(`${(msg as GameOverMsg).winner.toUpperCase()} wins!`);
             window.location.reload();
         }
@@ -662,8 +676,8 @@ function connectWebSocket() {
 
 export function initRemoteModal(): void {
     const modal = document.getElementById("remote-modal")!;
-    const btnCreate = document.getElementById("remote-create-btn")!;
-    const btnJoin = document.getElementById("remote-join-btn")!;
+    const btnCreate = document.getElementById("remote-create-btn")! as HTMLButtonElement;
+    const btnJoin = document.getElementById("remote-join-btn")! as HTMLButtonElement;
     const sectCreate = document.getElementById("remote-created")!;
     const sectJoin = document.getElementById("remote-join")!;
     const inputId = document.getElementById(
@@ -686,6 +700,8 @@ export function initRemoteModal(): void {
 
     // Create game
     btnCreate.onclick = async () => {
+	    btnCreate.disabled = true;
+	   	btnJoin.disabled   = true;
         const res = await fetch(`http://${HOST}:3000/api/game`, {
             method: "POST",
         });
@@ -724,6 +740,7 @@ export function initRemoteModal(): void {
         if (!id) return alert("Please enter a Game ID");
         gameId = id;
         remoteMode = true;
+		ownGameId = null;
         modal.classList.add("hidden");
         connectWebSocket();
     };
