@@ -811,13 +811,39 @@
 	</div>
 
 
+	<!-- <style>
+  @import url("https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&display=swap");
+
+  .font-handwriting { font-family: "Gloria Hallelujah", cursive; }
+
+  .chip{
+    height: 40px;
+    padding: 0 1rem;
+    border-radius: 0.75rem;
+    background: rgba(255,255,255,.10);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .875rem; font-weight: 600; letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+  .game{
+    height: 32px;
+    padding: 0 .75rem;
+    border-radius: 0.75rem;
+    background: rgba(255,255,255,.10);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .75rem; font-weight: 600; letter-spacing: .05em;
+  }
+</style> -->
+
+
 <!-- ░░ TOURNAMENT OVERLAY ░░ -->
 <section id="tournament-overlay"
          class="fixed inset-0 z-40 flex items-center justify-center
                 bg-black/60 backdrop-blur-sm hidden opacity-0">
-  <div id="tournament-container"
-       class="w-[90vw] max-w-2xl space-y-6 rounded-2xl bg-violet-800/95
-              p-8 shadow-2xl transition">
+	<div id="tournament-container"
+		class="w-[90vw] max-w-4xl
+				space-y-6 rounded-2xl bg-violet-800/95
+				p-8 shadow-2xl transition">
 
     <!-- header -->
     <div class="flex items-center justify-between">
@@ -866,78 +892,117 @@
       </button>
       <p id="tour-error" class="text-sm text-red-400 text-center"></p>
     </div>
+	
+<style>
+/* shrink the vertical bracket so it never overflows */
+@media (max-width:640px){
+  #tour-bracket-vert{
+    --scale: calc(min(92vw / 360, 88vh / 620));
+    transform-origin: top center;
+    transform: scale(var(--scale));
+  }
+}
+</style>
 
-    <!-- STEP 2 – 4-player bracket lobby -->
+
+<!-- STEP 2 – 4-player bracket lobby -->
 <div id="tour-step-bracket" class="hidden space-y-6">
   <h3 class="text-lg font-semibold text-center">4-Player Bracket</h3>
 
-  <!-- ░░ H-BRACKET ░░ -->
-<div id="tour-bracket" class="relative mx-auto w-full max-w-3xl">
+  <!-- BRACKET -------------------------------------------------------- -->
+	<div id="tour-bracket"
+		class="relative mx-auto w-[750px] h-[460px] font-handwriting hidden md:block">  
 
-  <!-- SVG connectors (light lines, stretch with container) -->
-  <svg class="absolute inset-0 h-full w-full pointer-events-none"
-       viewBox="0 0 360 200" preserveAspectRatio="none">
-    <!-- Game 1 -->
-    <path d="M110 30 H220"  stroke="white" stroke-opacity="0.25" stroke-width="2"/>
-    <path d="M110 70 H220"  stroke="white" stroke-opacity="0.25" stroke-width="2"/>
-    <path d="M220 30 V70"   stroke="white" stroke-opacity="0.25" stroke-width="2"/>
-    <!-- winner of Game 1 ➜ centre -->
-    <path d="M220 50 H290"  stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+	<svg class="absolute inset-0 w-full h-full pointer-events-none"
+		viewBox="0 0 750 460" preserveAspectRatio="xMidYMid meet">
 
-    <!-- Game 2 -->
-    <path d="M110 130 H220" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
-    <path d="M110 170 H220" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
-    <path d="M220 130 V170" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
-    <!-- winner of Game 2 ➜ centre -->
-    <path d="M220 150 H290" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+		<!-- Game 1 ---------------------------------------------------- -->
+		<path d="M120  50 H280" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+		<path d="M120 140 H280" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+		<path d="M280  50 V140" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+		<!-- winner of G1 ➜ centre -->
+		<path d="M280  95 H500" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
 
-    <!-- centre winners converge ➜ final -->
-    <path d="M290 50 V150"  stroke="white" stroke-opacity="0.25" stroke-width="2"/>
-    <path d="M290 100 H340" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
-  </svg>
+		<!-- Game 2 ---------------------------------------------------- -->
+		<path d="M120 310 H280" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+		<path d="M120 400 H280" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+		<path d="M280 310 V400" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+		<!-- winner of G2 ➜ centre -->
+		<path d="M280 355 H500" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
 
-  <!-- Grid holds the five visible cards -->
-  <div class="grid
-              grid-cols-[auto_auto_auto]   /* players | centre | final */
-              grid-rows-[repeat(4,auto)]
-              gap-x-8 gap-y-8">
+		<!-- centre winners converge ➜ grand-final -------------------- -->
+		<path d="M500  95 V355" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+		<path d="M500 225 H690" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+	</svg>
 
-    <!-- Game 1 players (rows 0-1) -->
-    <div class="h-10 px-4 rounded-xl bg-white/10 text-sm
-           font-semibold tracking-wide flex items-center justify-center" data-slot="0">YOU</div>
-    <div></div><div></div>
+	<!-- players (unchanged) -->
+	<div data-slot="0" class="chip absolute left-0   top-[41px]">YOU</div>
+	<div data-slot="1" class="chip absolute left-0   top-[130px]">—</div>
+	<div data-slot="2" class="chip absolute left-0   top-[300px]">—</div>
+	<div data-slot="3" class="chip absolute left-0   top-[385px]">—</div>
 
-    <div class="h-10 px-4 rounded-xl bg-white/10 text-sm
-           font-semibold tracking-wide flex items-center justify-center" data-slot="1">—</div>
-    <div class="h-10 px-4 rounded-xl bg-white/10 text-sm
-           font-semibold tracking-wide flex items-center justify-center w-28" data-slot="5">—</div> <!-- winner G1 -->
-    <div></div>
+	<!-- winners – new left offset --------------------------------- -->
+	<div data-slot="4" class="chip absolute left-[300px] top-[73px]  w-[200px]">Winner of Game 1</div>
+	<div data-slot="5" class="chip absolute left-[300px] top-[360px] w-[200px]">Winner of Game 2</div>
 
-    <!-- Game 2 players (rows 2-3) -->
-    <div class="h-10 px-4 rounded-xl bg-white/10 text-sm
-           font-semibold tracking-wide flex items-center justify-center" data-slot="2">—</div>
-    <div></div><div></div>
-
-    <div class="h-10 px-4 rounded-xl bg-white/10 text-sm
-           font-semibold tracking-wide flex items-center justify-center" data-slot="3">—</div>
-    <div class="h-10 px-4 rounded-xl bg-white/10 text-sm
-           font-semibold tracking-wide flex items-center justify-center w-28" data-slot="6">—</div> <!-- winner G2 -->
-    <div></div>
-
-    <!-- Grand-final (centre row, rightmost col) -->
-    <div class="col-span-3 flex justify-end pr-[2px]">
-      <div class="h-10 px-4 rounded-xl bg-white/10 text-sm
-           font-semibold tracking-wide flex items-center justify-center w-32" data-slot="4">—</div>
-    </div>
-  </div>
-</div>
-
+	<!-- champion – new left offset -------------------------------- -->
+	<div data-slot="6" class="chip absolute left-[710px] top-[213px] w-[320px]">Winner</div>
+	</div>
 
 
   <p id="bracket-hint" class="text-sm text-center text-white/70">
     Waiting for 3 more players…
   </p>
 </div>
+
+<!-- VERTICAL BRACKET ──────────────────────────────────────────── -->
+<div id="tour-bracket-vert"
+     class="relative w-[360px] h-[620px] font-handwriting
+            block md:hidden mx-auto">        <!-- visible only ≤ 640px -->
+
+  <!-- connecting lines -->
+  <svg class="absolute inset-0 w-full h-full pointer-events-none"
+       viewBox="0 0 360 620" preserveAspectRatio="xMidYMid meet"
+       stroke="white" stroke-opacity=".25" stroke-width="2">
+
+    <!-- quarter-finals (top row) -->
+    <path d="M140  60 V140" />       <!-- P0 down      -->
+    <path d="M220  60 V140" />       <!-- P1 down      -->
+    <path d="M140 140 H220" />       <!-- join P0-P1   -->
+
+    <path d="M140 200 V280" />       <!-- P2 down      -->
+    <path d="M220 200 V280" />       <!-- P3 down      -->
+    <path d="M140 280 H220" />       <!-- join P2-P3   -->
+
+    <!-- semi-finals to centre -->
+    <path d="M180 140 V280" />       <!-- centre vert  -->
+    <path d="M140 300 H180" />       <!-- winner L → C -->
+    <path d="M220 300 H180" />       <!-- winner R → C -->
+
+    <!-- centre to grand-final -->
+    <path d="M180 300 V500" />
+    <path d="M100 500 H260" />       <!-- long horiz   -->
+
+    <!-- champion line straight down -->
+    <path d="M180 500 V580" />
+  </svg>
+
+  <!-- players ---------------------------------------------------- -->
+  <div data-slot="0" class="chip absolute left-0   top-[20px]  w-[140px]">YOU</div>
+  <div data-slot="1" class="chip absolute right-0 top-[20px]  w-[140px]">—</div>
+
+  <div data-slot="2" class="chip absolute left-0   top-[160px] w-[140px]">—</div>
+  <div data-slot="3" class="chip absolute right-0 top-[160px] w-[140px]">—</div>
+
+  <!-- winners ---------------------------------------------------- -->
+  <div data-slot="4" class="chip absolute left-0   top-[300px] w-[140px]">Winner of Game 1</div>
+  <div data-slot="5" class="chip absolute right-0 top-[300px] w-[140px]">Winner of Game 2</div>
+
+  <!-- champion --------------------------------------------------- -->
+  <div data-slot="6" class="chip absolute left-1/2 -translate-x-1/2
+                           top-[600px] w-[200px] text-center">champion</div>
+</div>
+
 
   </div> <!-- end tournament-container -->
 </section> <!-- end tournament-overlay -->
