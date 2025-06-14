@@ -41,7 +41,7 @@ async function addFriend(username: string) {
     const res = await fetch(`http://${HOST}:3000/api/users/add-friend`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...auth() },
-      body: JSON.stringify({ target_username: username }), // see backend change below
+      body: JSON.stringify({ username }), // see backend change below
     });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(body.error || res.statusText);

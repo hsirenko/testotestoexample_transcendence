@@ -155,7 +155,7 @@ document.querySelectorAll<HTMLButtonElement>(".diff-btn").forEach(btn =>
   btn.addEventListener("click", () => {
     const diff = btn.dataset.diff as "easy"|"medium"|"hard";
     hide(diffOv, diffBox);
-    const rate = diff === "easy" ? 1.0 : diff === "medium" ? 0.5 : 0.01;
+    const rate = diff === "easy" ? 1.5 : diff === "medium" ? 1 : 0.5;
     (window as any).setAIRefresh(rate);
     (window as any).setGameMode("ai");
   })
