@@ -40,26 +40,34 @@ export default async function friendsRoutes(fastify: FastifyInstance) {
   });
 
   // 3. Send friend request
-  fastify.post('/api/users/add-friend',
-    { preHandler: authMiddleware },
-    async (req: FastifyRequest, reply: FastifyReply) => {
-  const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
-    const { target_id } = req.body as { target_id: number };
+  fastify.post('/api/users/add-friend', {
+  preHandler: authMiddleware
+  }, async (req: FastifyRequest, reply: FastifyReply) => {
+    const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
+    const { username } = req.body as { username: string };
 
-    if (!target_id || target_id === userId) {
-      return reply.status(400).send({ error: 'Invalid target user ID' });
+    if (!username || typeof username !== 'string') {
+      return reply.status(400).send({ error: 'Invalid target username' });
     }
 
-    const userExists = db.prepare('SELECT id FROM users WHERE id = ?').get(target_id);
-    if (!userExists) {
+    // Fetch the target user's ID using their username
+    const targetUser = db.prepare(`SELECT id FROM users WHERE username = ?`).get(username);
+
+    if (!targetUser) {
       return reply.status(404).send({ error: 'User not found' });
+    }
+
+    const targetId = targetUser.id;
+
+    if (targetId === userId) {
+      return reply.status(400).send({ error: 'You cannot add yourself as a friend' });
     }
 
     const existing = db.prepare(`
       SELECT * FROM friends
       WHERE (sender_id = ? AND receiver_id = ?)
-         OR (sender_id = ? AND receiver_id = ?)
-    `).get(userId, target_id, target_id, userId);
+        OR (sender_id = ? AND receiver_id = ?)
+    `).get(userId, targetId, targetId, userId);
 
     if (existing) {
       return reply.status(400).send({ error: 'Friend request already exists or you are already friends' });
@@ -68,7 +76,7 @@ export default async function friendsRoutes(fastify: FastifyInstance) {
     db.prepare(`
       INSERT INTO friends (sender_id, receiver_id, status)
       VALUES (?, ?, 'pending')
-    `).run(userId, target_id);
+    `).run(userId, targetId);
 
     return reply.send({ message: 'Friend request sent' });
   });
