@@ -55,6 +55,20 @@ export default async function challengeRoutes(fastify: FastifyInstance) {
       .run(action, now, challenge_id);
 
     if (action === 'accept') {
+      const isChallengerInMatch = db.prepare(`
+        SELECT id FROM matches
+        WHERE (player1_id = ? OR player2_id = ?) AND winner_id IS NULL
+      `).get(challenge.challenger_id, challenge.challenger_id);
+
+      const isChallengedInMatch = db.prepare(`
+        SELECT id FROM matches
+        WHERE (player1_id = ? OR player2_id = ?) AND winner_id IS NULL
+      `).get(challenge.challenged_id, challenge.challenged_id);
+
+      if (isChallengerInMatch || isChallengedInMatch) {
+        return reply.status(400).send({ error: 'One or both players are already in an active match' });
+      }
+
       const result = db.prepare(`
         INSERT INTO matches (player1_id, player2_id)
         VALUES (?, ?)
