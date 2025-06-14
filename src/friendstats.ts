@@ -28,6 +28,7 @@ const api = (fid: number) => {
     winsMonthly:   `${root}/monthly-wins`,
     goalsLifetime: `${root}/goals`,
     goalsMonthly:  `${root}/monthly-goals`,
+    trophies:      `${root}/trophies`,
   };
 };
 
@@ -115,15 +116,37 @@ async function drawMonthlyGoals(url: string) {
   });
 }
 
+
+type TrophySum = { total: number };
+
+async function drawTrophies(url: string) {
+  const container = document.getElementById("fs-trophies") as HTMLElement | null;
+  if (!container) return;                           // silently skip if markup missing
+
+  const total = await get<TrophySum>(url)
+                  .then(d => d.total)
+                  .catch(() => 0);                  // fallback
+
+  container.innerHTML = `
+    <div class="flex flex-col items-center justify-center gap-2 p-6
+                rounded-2xl bg-white/10 backdrop-blur border border-white/20">
+      <span class="text-6xl">🏆</span>
+      <span class="text-4xl font-extrabold">${total}</span>
+      <p class="text-sm text-white/70">Total trophies</p>
+    </div>`;
+}
+
+
 /* ------------------------------------------------------------------ */
 /* public API                                                         */
 async function buildAll(fid: number) {
-  const { winsLifetime, winsMonthly, goalsLifetime, goalsMonthly } = api(fid);
+  const { winsLifetime, winsMonthly, goalsLifetime, goalsMonthly, trophies} = api(fid);
   await Promise.all([
     drawMonthlyWins(winsMonthly),
     drawLifePie   (winsLifetime),
     drawGoalsPie  (goalsLifetime),
     drawMonthlyGoals(goalsMonthly),
+    drawTrophies     (trophies),
   ]);
 }
 
