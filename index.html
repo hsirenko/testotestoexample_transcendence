@@ -810,9 +810,142 @@
 		</div>
 	</div>
 
+
+<!-- ░░ TOURNAMENT OVERLAY ░░ -->
+<section id="tournament-overlay"
+         class="fixed inset-0 z-40 flex items-center justify-center
+                bg-black/60 backdrop-blur-sm hidden opacity-0">
+  <div id="tournament-container"
+       class="w-[90vw] max-w-2xl space-y-6 rounded-2xl bg-violet-800/95
+              p-8 shadow-2xl transition">
+
+    <!-- header -->
+    <div class="flex items-center justify-between">
+      <h2 class="text-2xl font-bold">Tournament</h2>
+      <button id="tour-close" class="text-2xl hover:text-red-400">✕</button>
+    </div>
+
+    <!-- STEP 0 – choose -->
+    <div id="tour-step-main" class="space-y-4">
+      <button id="tour-create-btn"
+              class="w-full rounded-xl bg-emerald-600 py-3 font-semibold
+                     hover:bg-emerald-700 transition">
+        Create new tournament
+      </button>
+      <button id="tour-join-btn"
+              class="w-full rounded-xl bg-indigo-600 py-3 font-semibold
+                     hover:bg-indigo-700 transition">
+        Join with a code
+      </button>
+    </div>
+
+    <!-- STEP 1A – created -->
+		<div id="tour-step-created" class="hidden space-y-4 text-center">
+		<p class="text-lg">Share this code with your friends:</p>
+		<div id="tour-created-code"
+			class="mx-auto w-fit rounded-xl bg-white/10 px-6 py-3
+					text-3xl font-mono tracking-widest"></div>
+		<button id="tour-copy-code"
+				class="rounded-xl bg-white/20 px-4 py-2 hover:bg-white/30">
+			Copy code
+		</button>
+		</div>
+
+
+    <!-- STEP 1B – join -->
+    <div id="tour-step-join" class="hidden space-y-4">
+      <input id="tour-code-input" type="text"
+             placeholder="Enter tournament code"
+             class="w-full rounded-lg bg-white/10 px-4 py-3 text-center
+                    uppercase tracking-widest outline-none
+                    focus:ring-2 focus:ring-violet-400">
+      <button id="tour-confirm-join-btn"
+              class="w-full rounded-xl bg-emerald-600 py-3 font-semibold
+                     hover:bg-emerald-700 transition">
+        Join
+      </button>
+      <p id="tour-error" class="text-sm text-red-400 text-center"></p>
+    </div>
+
+    <!-- STEP 2 – 4-player bracket lobby -->
+<div id="tour-step-bracket" class="hidden space-y-6">
+  <h3 class="text-lg font-semibold text-center">4-Player Bracket</h3>
+
+  <!-- ░░ H-BRACKET ░░ -->
+<div id="tour-bracket" class="relative mx-auto w-full max-w-3xl">
+
+  <!-- SVG connectors (light lines, stretch with container) -->
+  <svg class="absolute inset-0 h-full w-full pointer-events-none"
+       viewBox="0 0 360 200" preserveAspectRatio="none">
+    <!-- Game 1 -->
+    <path d="M110 30 H220"  stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+    <path d="M110 70 H220"  stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+    <path d="M220 30 V70"   stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+    <!-- winner of Game 1 ➜ centre -->
+    <path d="M220 50 H290"  stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+
+    <!-- Game 2 -->
+    <path d="M110 130 H220" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+    <path d="M110 170 H220" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+    <path d="M220 130 V170" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+    <!-- winner of Game 2 ➜ centre -->
+    <path d="M220 150 H290" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+
+    <!-- centre winners converge ➜ final -->
+    <path d="M290 50 V150"  stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+    <path d="M290 100 H340" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+  </svg>
+
+  <!-- Grid holds the five visible cards -->
+  <div class="grid
+              grid-cols-[auto_auto_auto]   /* players | centre | final */
+              grid-rows-[repeat(4,auto)]
+              gap-x-8 gap-y-8">
+
+    <!-- Game 1 players (rows 0-1) -->
+    <div class="h-10 px-4 rounded-xl bg-white/10 text-sm
+           font-semibold tracking-wide flex items-center justify-center" data-slot="0">YOU</div>
+    <div></div><div></div>
+
+    <div class="h-10 px-4 rounded-xl bg-white/10 text-sm
+           font-semibold tracking-wide flex items-center justify-center" data-slot="1">—</div>
+    <div class="h-10 px-4 rounded-xl bg-white/10 text-sm
+           font-semibold tracking-wide flex items-center justify-center w-28" data-slot="5">—</div> <!-- winner G1 -->
+    <div></div>
+
+    <!-- Game 2 players (rows 2-3) -->
+    <div class="h-10 px-4 rounded-xl bg-white/10 text-sm
+           font-semibold tracking-wide flex items-center justify-center" data-slot="2">—</div>
+    <div></div><div></div>
+
+    <div class="h-10 px-4 rounded-xl bg-white/10 text-sm
+           font-semibold tracking-wide flex items-center justify-center" data-slot="3">—</div>
+    <div class="h-10 px-4 rounded-xl bg-white/10 text-sm
+           font-semibold tracking-wide flex items-center justify-center w-28" data-slot="6">—</div> <!-- winner G2 -->
+    <div></div>
+
+    <!-- Grand-final (centre row, rightmost col) -->
+    <div class="col-span-3 flex justify-end pr-[2px]">
+      <div class="h-10 px-4 rounded-xl bg-white/10 text-sm
+           font-semibold tracking-wide flex items-center justify-center w-32" data-slot="4">—</div>
+    </div>
+  </div>
+</div>
+
+
+
+  <p id="bracket-hint" class="text-sm text-center text-white/70">
+    Waiting for 3 more players…
+  </p>
+</div>
+
+  </div> <!-- end tournament-container -->
+</section> <!-- end tournament-overlay -->
+
+
 		<!-- Remote-Play Modal -->
 		<div id="remote-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden">
-		<div class="relative bg-white p-8 rounded-2xl w-full max-w-md text-black">
+		<div class="relative bg-white p-8 rounded-2xl w-full max-w-md sm:max-w-lg lg:max-w-2xl text-black">
 			<!-- close × -->
 			<button id="remote-close" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
 			&times;

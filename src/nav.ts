@@ -2,15 +2,15 @@
  * ------------------------------------------
  *  Inline-profile editor code was moved to profile-setting.ts
  */
-
 import { initStatsTab }          from "./stats.js";
 import { initHistoryTab }        from "./history.js";
 import { populateProfileViews,
-         setActiveTab, 
-		 refreshProfileHeader }          from "./profile-setting.js";
-import "./welcome.js";
-import { initRemoteModal } from './main.js';
-import { HOST } from './config.js';
+  setActiveTab, 
+  refreshProfileHeader }          from "./profile-setting.js";
+  import "./welcome.js";
+  import { initRemoteModal } from './main.js';
+  import { HOST } from './config.js';
+  import { initTournamentModal } from "./tournament.js";
 
 /* ───── shorthand ───── */
 const $ = <T extends HTMLElement = HTMLElement>(sel: string) =>
@@ -142,7 +142,7 @@ document.querySelectorAll<HTMLButtonElement>('.mode-card').forEach(card => {
       initRemoteModal();
     }
 	else {
-      alert(`Mode “${mode}” coming soon!`);
+      initTournamentModal();
     }
   });
 });
