@@ -415,64 +415,64 @@ function handleWin(remote: boolean): void {
         const style = document.createElement("style");
         style.id = "win-style";
         style.textContent = `
-  #win-message.overlay{
-    position:absolute;
-    inset:0;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    pointer-events:auto;
-    backdrop-filter:blur(4px);
-  }
-  #win-message .msg-box{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:1rem;
-    background:linear-gradient(145deg,rgba(34,211,238,.25),rgba(251,191,36,.25));
-    border:3px solid #fff;
-    padding:2rem 2.5rem;
-    border-radius:14px;
-    box-shadow:0 0 25px rgba(255,255,255,.06),0 0 8px rgba(0,0,0,.4) inset;
-    text-align:center;
-  }
-  #win-message .winner{
-    font-size:1.5rem;
-    font-weight:800;
-    color:#fff;
-    text-shadow:0 0 8px #fff;
-  }
-  #play-again{
-    margin-top:1rem;
-    padding:.55rem 2rem;
-    font-size:1.1rem;
-    font-weight:700;
-    border:none;
-    border-radius:10px;
-    background:#f472b6;
-    color:#fff;
-    cursor:pointer;
-    transition:transform .2s,filter .2s;
-  }
-  #play-again:hover{
-    transform:scale(1.05);
-    filter:brightness(1.15);
-  }
+		#win-message.overlay{
+			position:absolute;
+			inset:0;
+			display:flex;
+			align-items:center;
+			justify-content:center;
+			pointer-events:auto;
+			backdrop-filter:blur(4px);
+		}
+		#win-message .msg-box{
+			display:flex;
+			flex-direction:column;
+			align-items:center;
+			gap:1rem;
+			background:linear-gradient(145deg,rgba(34,211,238,.25),rgba(251,191,36,.25));
+			border:3px solid #fff;
+			padding:2rem 2.5rem;
+			border-radius:14px;
+			box-shadow:0 0 25px rgba(255,255,255,.06),0 0 8px rgba(0,0,0,.4) inset;
+			text-align:center;
+		}
+		#win-message .winner{
+			font-size:1.5rem;
+			font-weight:800;
+			color:#fff;
+			text-shadow:0 0 8px #fff;
+		}
+		#play-again{
+			margin-top:1rem;
+			padding:.55rem 2rem;
+			font-size:1.1rem;
+			font-weight:700;
+			border:none;
+			border-radius:10px;
+			background:#f472b6;
+			color:#fff;
+			cursor:pointer;
+			transition:transform .2s,filter .2s;
+		}
+		#play-again:hover{
+			transform:scale(1.05);
+			filter:brightness(1.15);
+		}
 
-  /* Desktop refinements */
-  @media (min-width:640px){
-    #win-message .msg-box{
-      flex-direction:row;
-      gap:2rem;
-    }
-    #win-message .winner{ font-size:3rem; }
-    #play-again{
-      margin-top:0;
-      padding:.6rem 2.5rem;
-      font-size:1.25rem;
-    }
-  }
-`;
+		/* Desktop refinements */
+		@media (min-width:640px){
+			#win-message .msg-box{
+			flex-direction:row;
+			gap:2rem;
+			}
+			#win-message .winner{ font-size:3rem; }
+			#play-again{
+			margin-top:0;
+			padding:.6rem 2.5rem;
+			font-size:1.25rem;
+			}
+		}
+		`;
         document.head.appendChild(style);
     }
 
@@ -498,6 +498,11 @@ function beginPlay(): void {
   (window as any).refreshMobilePads?.();
 }
 /* ═════════════ REMOTE MODE ═════════════ */
+
+const auth = (): HeadersInit => {
+  const t = localStorage.getItem("token");
+  return t ? { Authorization: `Bearer ${t}` } : {};
+};
 
 function waitForBothPlayers() {
     const waitingOverlay = document.createElement("div");
@@ -568,8 +573,17 @@ function connectWebSocket() {
 	} else if (ownGameId && gameId === ownGameId && hasJoined) {
 		return;
 	}
+	const pauseAndReset = (dir: 1 | -1) => {
+		playing  = false;
+		ball.v.x = ball.v.y = 0;
+		resetPositions(dir);
+		setTimeout(() => {
+		lastTime = performance.now();
+		playing  = true;
+		}, 1000);
+	};
     console.log(`[client] 🎾 connecting to ws://${HOST}:3000/ws/game`);
-    socket = new WebSocket(`ws://${HOST}:3000/ws/game`);
+    socket = new WebSocket(`ws://${HOST}:3000/ws/game?token=${localStorage.getItem('token')}`);
     socket.onopen = () => {
         // 3) send our join message
         // console.log("[client] ⚡ ws open, sending join for", gameId);
@@ -607,10 +621,10 @@ function connectWebSocket() {
             return;
         }
         if (msg.type === "state") {
+			if (!playing) return;
             // compute scale factors from server coords → canvas pixels
             const sx = CanvasHtml.width / WORLD_WIDTH;
             const sy = CanvasHtml.height / WORLD_HEIGHT;
-
             // scale paddles
             const [PL, PR] = msg.paddles;
             left = { x: PL.x * sx, y: PL.y * sy, w: PL.w * sx, h: PL.h * sy };
@@ -625,11 +639,19 @@ function connectWebSocket() {
                 r: B.r * sx,
             };
 
+			if (msg.scores.left !== LScore || msg.scores.right !== RScore) {
+				LScore = msg.scores.left;
+				RScore = msg.scores.right;
+				updateScore();
+				const dir = msg.scores.left > LScore ? 1 : -1;
+				// console.log("HERE\n");
+				pauseAndReset(dir);
+			}
             // update score and draw
-            LScore = msg.scores.left;
-            RScore = msg.scores.right;
-            updateScore();
-            render();
+            // LScore = msg.scores.left;
+            // RScore = msg.scores.right;
+			// updateScore();
+            // render();
         } else if ((msg as GameOverMsg).type === "gameOver") {
             // stop listening & close
             socket!.close();
@@ -673,6 +695,7 @@ export function initRemoteModal(): void {
 	   	btnJoin.disabled   = true;
         const res = await fetch(`http://${HOST}:3000/api/game`, {
             method: "POST",
+			headers: auth()
         });
         const data = (await res.json()) as { gameId: string };
         gameId = data.gameId;
