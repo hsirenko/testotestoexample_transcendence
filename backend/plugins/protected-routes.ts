@@ -10,6 +10,7 @@ import twoFactorVerifyRoutes from '../routes/2fa-verify';
 import twoFactorRemoveRoutes from '../routes/2fa-remove';
 import friendsStatsRoutes from '../routes/friendsStats';
 import gameRoutes from '../routes/gameRoutes';
+import notifRoutes from '../routes/notifications';
 
 export default async function protectedRoutes(fastify: FastifyInstance) {
   // Add auth middleware to all routes in this plugin
@@ -25,4 +26,5 @@ export default async function protectedRoutes(fastify: FastifyInstance) {
   await fastify.register(twoFactorRemoveRoutes);
   await fastify.register(friendsStatsRoutes);
   await fastify.register(gameRoutes);
+  await fastify.register(notifRoutes);
 } 

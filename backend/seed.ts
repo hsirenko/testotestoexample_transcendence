@@ -112,8 +112,8 @@ import db from './utils/db';
 // console.log("✅ 10 dummy matches inserted.");
 
 
-const senderId = 50;
-const receiverId = 38;
+const senderId = 38;
+const receiverId = 49;
 
 // Check if they're already friends
 const existing = db.prepare(`
@@ -122,13 +122,37 @@ const existing = db.prepare(`
      OR (sender_id = ? AND receiver_id = ?)
 `).get(senderId, receiverId, receiverId, senderId);
 
-if (!existing) {
-  db.prepare(`
-    INSERT INTO friends (sender_id, receiver_id, status)
-    VALUES (?, ?, 'accepted')
-  `).run(senderId, receiverId);
+// if (existing) {
+//   db.prepare(`
+//     DELETE FROM friends
+//     WHERE (sender_id = ? AND receiver_id = ?)
+//        OR (sender_id = ? AND receiver_id = ?)
+//   `).run(senderId, receiverId, receiverId, senderId);
+//   console.log(`✅ Friend entry inserted between users ${senderId} and ${receiverId}`);
+//   }
+//   else {
+//   console.log(`⚠️  Users ${senderId} and ${receiverId} are already friends or pending`);
+// }
 
-  console.log(`✅ Friend entry inserted between users ${senderId} and ${receiverId}`);
-} else {
-  console.log(`⚠️  Users ${senderId} and ${receiverId} are already friends or pending`);
-}
+// if (true) {
+//   db.prepare(`
+//     DELETE FROM notifications
+//     WHERE (user_id = ?)
+//   `).run(receiverId);
+//   console.log(`✅ Friend entry inserted between users ${senderId} and ${receiverId}`);
+//   }
+//   else {
+//   console.log(`⚠️  Users ${senderId} and ${receiverId} are already friends or pending`);
+// }
+
+
+// if (!existing) {
+//   db.prepare(`
+//     INSERT INTO friends (sender_id, receiver_id, status)
+//     VALUES (?, ?, 'accepted')
+//   `).run(senderId, receiverId);
+
+//   console.log(`✅ Friend entry inserted between users ${senderId} and ${receiverId}`);
+// } else {
+//   console.log(`⚠️  Users ${senderId} and ${receiverId} are already friends or pending`);
+// }

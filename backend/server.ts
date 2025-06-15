@@ -8,6 +8,7 @@ import fastifyOauth2 from '@fastify/oauth2';
 import googleAuthRoutes from './routes/googleAuth';
 import dotenv from 'dotenv';
 import gameSocketRoutes from './routes/gameSocketRoutes';
+import notifSocketRoutes from './routes/notificationSocketRoutes';
 
 //Backend game
 import websocketPlugin from '@fastify/websocket';
@@ -65,10 +66,11 @@ const start = async () => {
     await fastify.register(loginRoutes);
 	await fastify.register(googleAuthRoutes);
 	await fastify.register(gameSocketRoutes);
+	await fastify.register(notifSocketRoutes);
 	
 
     // Protected routes
-    await fastify.register(protectedRoutes);
+    await fastify.register(protectedRoutes, { encapsulate: false });
 
     // Start the server
     await fastify.listen({ port: 3000, host: '0.0.0.0' });
