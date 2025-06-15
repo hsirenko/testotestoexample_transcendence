@@ -48,7 +48,7 @@ function showToast(msg: string, isError = false): void {
     }, 2_000);
 }
 
-async function fetchFriends(): Promise<any[]> {
+export async function fetchFriends(): Promise<any[]> {
     if (USE_MOCK_DATA) return MOCK_FRIENDS;
 
     try {

@@ -1,876 +1,1071 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>ft_transcendence</title>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>ft_transcendence</title>
 
-	<!-- Chart.js for the graphs -->
-	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+        <!-- Chart.js for the graphs -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-	<!-- Tailwind CSS – CDN “browser” build -->
-	<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-	<link
-	rel="stylesheet"
-	href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
-	/>
+        <!-- Tailwind CSS – CDN “browser” build -->
+        <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+        />
 
-	<!-- ───────────── Sleek scrollbars (fuchsia main, amber inner) -->
-	<style>
-	@import url("https://fonts.googleapis.com/css2?family=Baloo+2&display=swap");
+        <!-- ───────────── Sleek scrollbars (fuchsia main, amber inner) -->
+        <style>
+            @import url("https://fonts.googleapis.com/css2?family=Baloo+2&display=swap");
 
-	body {
-		font-family: "Baloo 2", cursive;
-	}
+            body {
+                font-family: "Baloo 2", cursive;
+            }
 
-	/* Main scroll area in the profile page */
-	#tab-panels::-webkit-scrollbar {
-		width: 10px;
-	}
-	#tab-panels::-webkit-scrollbar-track {
-		background: rgba(255, 255, 255, 0.07);
-		border-radius: 10px;
-	}
-	#tab-panels::-webkit-scrollbar-thumb {
-		background: rgba(232, 60, 140, 0.85);
-		border-radius: 10px;
-	}
-	#tab-panels:hover::-webkit-scrollbar-thumb {
-		background: rgba(232, 60, 140, 1);
-	}
-	#tab-panels {
-		scrollbar-width: thin;
-		scrollbar-color: rgba(232, 60, 140, 0.9) rgba(255, 255, 255, 0.07);
-	}
+            /* Main scroll area in the profile page */
+            #tab-panels::-webkit-scrollbar {
+                width: 10px;
+            }
+            #tab-panels::-webkit-scrollbar-track {
+                background: rgba(255, 255, 255, 0.07);
+                border-radius: 10px;
+            }
+            #tab-panels::-webkit-scrollbar-thumb {
+                background: rgba(232, 60, 140, 0.85);
+                border-radius: 10px;
+            }
+            #tab-panels:hover::-webkit-scrollbar-thumb {
+                background: rgba(232, 60, 140, 1);
+            }
+            #tab-panels {
+                scrollbar-width: thin;
+                scrollbar-color: rgba(232, 60, 140, 0.9)
+                    rgba(255, 255, 255, 0.07);
+            }
 
-	/* Amber variant for anything with .custom-scroll */
-	.custom-scroll::-webkit-scrollbar {
-		width: 8px;
-	}
-	.custom-scroll::-webkit-scrollbar-track {
-		background: transparent;
-	}
-	.custom-scroll::-webkit-scrollbar-thumb {
-		background: rgba(251, 191, 36, 0.9);
-		border-radius: 8px;
-	}
-	.custom-scroll:hover::-webkit-scrollbar-thumb {
-		background: rgba(253, 224, 71, 1);
-	}
-	.custom-scroll {
-		scrollbar-width: thin;
-		scrollbar-color: rgba(251, 191, 36, 0.9) transparent;
-	}
-	.floating-input:focus + .floating-label,
-	.floating-input:not(:placeholder-shown) + .floating-label {
-	top: -1.05rem;           /* raise label above outline */
-	font-size: 0.75rem;     /* text-xs   */
-	color: #6366f1;         /* indigo-500 */
-	left: 5px;
-	}
-	body.game-playing #friends-sidebar{
-	transform: translateX(100%) !important;   /* slides out → keeps `duration-300` */
-	}
-	</style>
-</head>
+            /* Amber variant for anything with .custom-scroll */
+            .custom-scroll::-webkit-scrollbar {
+                width: 8px;
+            }
+            .custom-scroll::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            .custom-scroll::-webkit-scrollbar-thumb {
+                background: rgba(251, 191, 36, 0.9);
+                border-radius: 8px;
+            }
+            .custom-scroll:hover::-webkit-scrollbar-thumb {
+                background: rgba(253, 224, 71, 1);
+            }
+            .custom-scroll {
+                scrollbar-width: thin;
+                scrollbar-color: rgba(251, 191, 36, 0.9) transparent;
+            }
+            .floating-input:focus + .floating-label,
+            .floating-input:not(:placeholder-shown) + .floating-label {
+                top: -1.05rem; /* raise label above outline */
+                font-size: 0.75rem; /* text-xs   */
+                color: #6366f1; /* indigo-500 */
+                left: 5px;
+            }
+            body.game-playing #friends-sidebar {
+                transform: translateX(
+                    100%
+                ) !important; /* slides out → keeps `duration-300` */
+            }
+        </style>
+    </head>
 
-<body
-	class="min-h-screen flex flex-col bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white selection:bg-pink-400/40"
->
-	<!-- ░░ LOGIN OVERLAY ░░ -->
-	<div
-	id="login-overlay"
-	class="fixed inset-0 bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white flex items-center justify-center z-[70]"
-	>
-	<form
-		id="login-form"
-		class="bg-black/60 backdrop-blur p-8 rounded-3xl flex flex-col gap-4 w-full max-w-sm"
-	>
-		<h2 class="text-2xl font-extrabold text-center mb-2">Sign in</h2>
-	<div class="relative w-full">
-	<input id="email" type="email" required placeholder=" "
-			class="floating-input peer w-full rounded-md border border-white/30
-					bg-transparent px-3 py-4 text-white
-					focus:border-indigo-400 focus:outline-none" />
-	<label for="email"
-			class="floating-label absolute left-3 top-4.5 pointer-events-none
-					text-gray-400 transition-all duration-200">Email</label>
-	</div>
-	<div class="relative w-full">
-	<input id="password" type="password" required placeholder=" "
-			class="floating-input peer w-full rounded-md border border-white/30
-					bg-transparent px-3 py-4 text-white
-					focus:border-indigo-400 focus:outline-none" />
-	<label for="password"
-			class="floating-label absolute left-3 top-4.5 pointer-events-none
-					text-gray-400 transition-all duration-200">Password</label>
-	</div>
-	<div id="twofa-wrapper" class="relative w-full hidden">
-	<input id="twofa-token" type="text" inputmode="numeric" pattern="[0-9]{6}"
-			maxlength="6" placeholder=" "
-			class="floating-input peer w-full rounded-md border border-white/30
-					bg-transparent px-3 py-4 text-white
-					focus:border-indigo-400 focus:outline-none" />
-	<label for="twofa-token"
-			class="floating-label absolute left-3 top-4.5 pointer-events-none
-					text-gray-400 transition-all duration-200">2-Factor code</label>
-	</div>
+    <body
+        class="min-h-screen flex flex-col bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white selection:bg-pink-400/40"
+    >
+        <!-- ░░ LOGIN OVERLAY ░░ -->
+        <div
+            id="login-overlay"
+            class="fixed inset-0 bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white flex items-center justify-center z-[70]"
+        >
+            <form
+                id="login-form"
+                class="bg-black/60 backdrop-blur p-8 rounded-3xl flex flex-col gap-4 w-full max-w-sm"
+            >
+                <h2 class="text-2xl font-extrabold text-center mb-2">
+                    Sign in
+                </h2>
+                <div class="relative w-full">
+                    <input
+                        id="email"
+                        type="email"
+                        required
+                        placeholder=" "
+                        class="floating-input peer w-full rounded-md border border-white/30 bg-transparent px-3 py-4 text-white focus:border-indigo-400 focus:outline-none"
+                    />
+                    <label
+                        for="email"
+                        class="floating-label absolute left-3 top-4.5 pointer-events-none text-gray-400 transition-all duration-200"
+                        >Email</label
+                    >
+                </div>
+                <div class="relative w-full">
+                    <input
+                        id="password"
+                        type="password"
+                        required
+                        placeholder=" "
+                        class="floating-input peer w-full rounded-md border border-white/30 bg-transparent px-3 py-4 text-white focus:border-indigo-400 focus:outline-none"
+                    />
+                    <label
+                        for="password"
+                        class="floating-label absolute left-3 top-4.5 pointer-events-none text-gray-400 transition-all duration-200"
+                        >Password</label
+                    >
+                </div>
+                <div id="twofa-wrapper" class="relative w-full hidden">
+                    <input
+                        id="twofa-token"
+                        type="text"
+                        inputmode="numeric"
+                        pattern="[0-9]{6}"
+                        maxlength="6"
+                        placeholder=" "
+                        class="floating-input peer w-full rounded-md border border-white/30 bg-transparent px-3 py-4 text-white focus:border-indigo-400 focus:outline-none"
+                    />
+                    <label
+                        for="twofa-token"
+                        class="floating-label absolute left-3 top-4.5 pointer-events-none text-gray-400 transition-all duration-200"
+                        >2-Factor code</label
+                    >
+                </div>
 
-		<p id="login-error" class="text-xs text-red-400 min-h-[1em]"></p>
+                <p
+                    id="login-error"
+                    class="text-xs text-red-400 min-h-[1em]"
+                ></p>
 
-		<!-- Forgot-password (no action yet) -->
-		<button
-		type="button"
-		id="forgot-btn"
-		class="text-xs self-end text-amber-400 hover:underline mt-[-4px]"
-		>
-		Forgot password?
-		</button>
+                <!-- Forgot-password (no action yet) -->
+                <button
+                    type="button"
+                    id="forgot-btn"
+                    class="text-xs self-end text-amber-400 hover:underline mt-[-4px]"
+                >
+                    Forgot password?
+                </button>
 
-		<button
-		type="submit"
-		class="py-2 rounded-full bg-amber-500 hover:bg-amber-600 font-semibold"
-		>
-		Login
-		</button>
-		<!-- Google sign-in (does nothing yet) -->
-		<button
-		type="button"
-		id="google-login-btn"
-		class="flex items-center justify-center gap-2 py-2 rounded-full bg-white text-black hover:bg-white/90 font-medium"
-		>
-		<!-- Google “G” logo (simple SVG) -->
-		<svg viewBox="0 0 24 24" class="w-5 h-5">
-			<path
-			fill="#EA4335"
-			d="M12 11.8v4.4h6.2c-.3 1.6-1.9 4.8-6.2 4.8a7.2 7.2 0 1 1 0-14.4 6.63 6.63 0 0 1 4.7 1.8l3.2-3.1A11.79 11.79 0 0 0 12 2.4a9.6 9.6 0 0 0 0 19.2c5.5 0 9.2-3.9 9.2-9.4 0-.6 0-1-.1-1.4H12z"
-			/>
-		</svg>
-		Continue with Google
-		</button>
+                <button
+                    type="submit"
+                    class="py-2 rounded-full bg-amber-500 hover:bg-amber-600 font-semibold"
+                >
+                    Login
+                </button>
+                <!-- Google sign-in (does nothing yet) -->
+                <button
+                    type="button"
+                    id="google-login-btn"
+                    class="flex items-center justify-center gap-2 py-2 rounded-full bg-white text-black hover:bg-white/90 font-medium"
+                >
+                    <!-- Google “G” logo (simple SVG) -->
+                    <svg viewBox="0 0 24 24" class="w-5 h-5">
+                        <path
+                            fill="#EA4335"
+                            d="M12 11.8v4.4h6.2c-.3 1.6-1.9 4.8-6.2 4.8a7.2 7.2 0 1 1 0-14.4 6.63 6.63 0 0 1 4.7 1.8l3.2-3.1A11.79 11.79 0 0 0 12 2.4a9.6 9.6 0 0 0 0 19.2c5.5 0 9.2-3.9 9.2-9.4 0-.6 0-1-.1-1.4H12z"
+                        />
+                    </svg>
+                    Continue with Google
+                </button>
 
-		<!-- Switch to sign-up -->
-		<p class="text-xs text-center">
-		Don’t have an account?
-		<a href="#" id="show-signup" class="text-amber-400 hover:underline"
-			>Sign up</a
-		>
-		</p>
-	</form>
-	</div>
+                <!-- Switch to sign-up -->
+                <p class="text-xs text-center">
+                    Don’t have an account?
+                    <a
+                        href="#"
+                        id="show-signup"
+                        class="text-amber-400 hover:underline"
+                        >Sign up</a
+                    >
+                </p>
+            </form>
+        </div>
 
-	<!-- ░░ SIGN-UP OVERLAY ░░ -->
-	<div
-	id="signup-overlay"
-	class="fixed inset-0 bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white flex items-center justify-center z-[70] hidden"
-	>
-	<form
-		id="signup-form"
-		class="bg-black/60 backdrop-blur p-8 rounded-3xl flex flex-col gap-4 w-full max-w-sm"
-	>
-		<h2 class="text-2xl font-extrabold text-center mb-2">Create account</h2>
+        <!-- ░░ SIGN-UP OVERLAY ░░ -->
+        <div
+            id="signup-overlay"
+            class="fixed inset-0 bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white flex items-center justify-center z-[70] hidden"
+        >
+            <form
+                id="signup-form"
+                class="bg-black/60 backdrop-blur p-8 rounded-3xl flex flex-col gap-4 w-full max-w-sm"
+            >
+                <h2 class="text-2xl font-extrabold text-center mb-2">
+                    Create account
+                </h2>
 
-		<div class="relative w-full">
-		<input id="su-username" type="text" required placeholder=" "
-				class="floating-input peer w-full rounded-md border border-white/30
-						bg-transparent px-3 py-4 text-white
-						focus:border-indigo-400 focus:outline-none" />
-		<label for="su-username"
-				class="floating-label absolute left-3 top-4.5 pointer-events-none
-						text-gray-400 transition-all duration-200">Username</label>
-		</div>		
-		<div class="relative w-full">
-		<input id="su-email" type="email" required placeholder=" "
-				class="floating-input peer w-full rounded-md border border-white/30
-						bg-transparent px-3 py-4 text-white
-						focus:border-indigo-400 focus:outline-none" />
-		<label for="su-email"
-				class="floating-label absolute left-3 top-4.5 pointer-events-none
-						text-gray-400 transition-all duration-200">Email</label>
-		</div>		
-		<div class="relative w-full">
-		<input id="su-password" type="password" required placeholder=" "
-				class="floating-input peer w-full rounded-md border border-white/30
-						bg-transparent px-3 py-4 text-white
-						focus:border-indigo-400 focus:outline-none" />
-		<label for="su-password"
-				class="floating-label absolute left-3 top-4.5 pointer-events-none
-						text-gray-400 transition-all duration-200">Password</label>
-		</div>		
-		<div class="relative w-full">
-		<input id="su-password2" type="password" required placeholder=" "
-				class="floating-input peer w-full rounded-md border border-white/30
-						bg-transparent px-3 py-4 text-white
-						focus:border-indigo-400 focus:outline-none" />
-		<label for="su-password2"
-				class="floating-label absolute left-3 top-4.5 pointer-events-none
-						text-gray-400 transition-all duration-200">Confirm&nbsp;password</label>
-		</div>
+                <div class="relative w-full">
+                    <input
+                        id="su-username"
+                        type="text"
+                        required
+                        placeholder=" "
+                        class="floating-input peer w-full rounded-md border border-white/30 bg-transparent px-3 py-4 text-white focus:border-indigo-400 focus:outline-none"
+                    />
+                    <label
+                        for="su-username"
+                        class="floating-label absolute left-3 top-4.5 pointer-events-none text-gray-400 transition-all duration-200"
+                        >Username</label
+                    >
+                </div>
+                <div class="relative w-full">
+                    <input
+                        id="su-email"
+                        type="email"
+                        required
+                        placeholder=" "
+                        class="floating-input peer w-full rounded-md border border-white/30 bg-transparent px-3 py-4 text-white focus:border-indigo-400 focus:outline-none"
+                    />
+                    <label
+                        for="su-email"
+                        class="floating-label absolute left-3 top-4.5 pointer-events-none text-gray-400 transition-all duration-200"
+                        >Email</label
+                    >
+                </div>
+                <div class="relative w-full">
+                    <input
+                        id="su-password"
+                        type="password"
+                        required
+                        placeholder=" "
+                        class="floating-input peer w-full rounded-md border border-white/30 bg-transparent px-3 py-4 text-white focus:border-indigo-400 focus:outline-none"
+                    />
+                    <label
+                        for="su-password"
+                        class="floating-label absolute left-3 top-4.5 pointer-events-none text-gray-400 transition-all duration-200"
+                        >Password</label
+                    >
+                </div>
+                <div class="relative w-full">
+                    <input
+                        id="su-password2"
+                        type="password"
+                        required
+                        placeholder=" "
+                        class="floating-input peer w-full rounded-md border border-white/30 bg-transparent px-3 py-4 text-white focus:border-indigo-400 focus:outline-none"
+                    />
+                    <label
+                        for="su-password2"
+                        class="floating-label absolute left-3 top-4.5 pointer-events-none text-gray-400 transition-all duration-200"
+                        >Confirm&nbsp;password</label
+                    >
+                </div>
 
-		<p id="signup-error" class="text-xs text-red-400 min-h-[1em]"></p>
+                <p
+                    id="signup-error"
+                    class="text-xs text-red-400 min-h-[1em]"
+                ></p>
 
-		<button
-		type="submit"
-		class="py-2 rounded-full bg-amber-500 hover:bg-amber-600 font-semibold"
-		>
-		Sign up
-		</button>
-		<!-- Google sign-in (does nothing yet) -->
-		<button
-		type="button"
-		id="google-signup-btn"
-		class="flex items-center justify-center gap-2 py-2 rounded-full bg-white text-black hover:bg-white/90 font-medium"
-		>
-		<!-- Google “G” logo (simple SVG) -->
-		<svg viewBox="0 0 24 24" class="w-5 h-5">
-			<path
-			fill="#EA4335"
-			d="M12 11.8v4.4h6.2c-.3 1.6-1.9 4.8-6.2 4.8a7.2 7.2 0 1 1 0-14.4 6.63 6.63 0 0 1 4.7 1.8l3.2-3.1A11.79 11.79 0 0 0 12 2.4a9.6 9.6 0 0 0 0 19.2c5.5 0 9.2-3.9 9.2-9.4 0-.6 0-1-.1-1.4H12z"
-			/>
-		</svg>
-		Continue with Google
-		</button>
+                <button
+                    type="submit"
+                    class="py-2 rounded-full bg-amber-500 hover:bg-amber-600 font-semibold"
+                >
+                    Sign up
+                </button>
+                <!-- Google sign-in (does nothing yet) -->
+                <button
+                    type="button"
+                    id="google-signup-btn"
+                    class="flex items-center justify-center gap-2 py-2 rounded-full bg-white text-black hover:bg-white/90 font-medium"
+                >
+                    <!-- Google “G” logo (simple SVG) -->
+                    <svg viewBox="0 0 24 24" class="w-5 h-5">
+                        <path
+                            fill="#EA4335"
+                            d="M12 11.8v4.4h6.2c-.3 1.6-1.9 4.8-6.2 4.8a7.2 7.2 0 1 1 0-14.4 6.63 6.63 0 0 1 4.7 1.8l3.2-3.1A11.79 11.79 0 0 0 12 2.4a9.6 9.6 0 0 0 0 19.2c5.5 0 9.2-3.9 9.2-9.4 0-.6 0-1-.1-1.4H12z"
+                        />
+                    </svg>
+                    Continue with Google
+                </button>
 
-		<!-- Switch back to login -->
-		<p class="text-xs text-center">
-		Already have an account?
-		<a href="#" id="show-login" class="text-amber-400 hover:underline"
-			>Sign in</a
-		>
-		</p>
-	</form>
-	</div>
+                <!-- Switch back to login -->
+                <p class="text-xs text-center">
+                    Already have an account?
+                    <a
+                        href="#"
+                        id="show-login"
+                        class="text-amber-400 hover:underline"
+                        >Sign in</a
+                    >
+                </p>
+            </form>
+        </div>
 
-	<!-- ░░ NAVBAR ░░ -->
-	<div id="app" class="flex flex-col min-h-screen hidden">
-	<header class="sticky top-0 bg-black/50 backdrop-blur-md z-50">
-		<!--  ───────── NAVBAR  ─────────  -->
-<!-- ───────── NAVBAR ───────── -->
-<nav class="fixed inset-x-0 top-0 z-50 h-16 font-extrabold
-			bg-gradient-to-r from-slate-900/70 via-slate-800/60 to-slate-900/70
-			backdrop-blur-md border-b border-white/10 shadow-lg shadow-fuchsia-800/40">
-<div class="flex w-full h-full items-center px-4 sm:px-5 lg:px-6">
-	<!-- Brand ---------------------------------------------------------->
-	<a href="/"
-	class="text-3xl font-extrabold tracking-widest
-			bg-gradient-to-r from-fuchsia-400 via-pink-500 to-rose-500
-			bg-clip-text text-transparent">
-	ft_transcendence
-	</a>
+        <!-- ░░ NAVBAR ░░ -->
+        <div id="app" class="flex flex-col min-h-screen hidden">
+            <header class="sticky top-0 bg-black/50 backdrop-blur-md z-50">
+                <!--  ───────── NAVBAR  ─────────  -->
+                <!-- ───────── NAVBAR ───────── -->
+                <nav
+                    class="fixed inset-x-0 top-0 z-50 h-16 font-extrabold bg-gradient-to-r from-slate-900/70 via-slate-800/60 to-slate-900/70 backdrop-blur-md border-b border-white/10 shadow-lg shadow-fuchsia-800/40"
+                >
+                    <div
+                        class="flex w-full h-full items-center px-4 sm:px-5 lg:px-6"
+                    >
+                        <!-- Brand ---------------------------------------------------------->
+                        <a
+                            href="/"
+                            class="text-3xl font-extrabold tracking-widest bg-gradient-to-r from-fuchsia-400 via-pink-500 to-rose-500 bg-clip-text text-transparent"
+                        >
+                            ft_transcendence
+                        </a>
 
-	<!-- Bell + Burger wrapper  (pushed right on mobile, normal on ≥ sm) -->
-	<div class="ml-auto flex items-center space-x-3">
-	<!-- NOTIFICATION BELL (vertically centred) ---------------------->
-	<div id="bell-wrap" class="relative flex items-center">
-		<button id="nav-notif"
-				class="hover:text-pink-200 transition-transform duration-200 hover:scale-105">
-		<!-- bell icon -->
-		<svg class="w-6 h-6" fill="none" viewBox="0 0 24 24"
-			stroke="currentColor" stroke-width="2">
-			<path stroke-linecap="round" stroke-linejoin="round"
-				d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11
+                        <!-- Bell + Burger wrapper  (pushed right on mobile, normal on ≥ sm) -->
+                        <div class="ml-auto flex items-center space-x-3">
+                            <!-- NOTIFICATION BELL (vertically centred) ---------------------->
+                            <div
+                                id="bell-wrap"
+                                class="relative flex items-center"
+                            >
+                                <button
+                                    id="nav-notif"
+                                    class="hover:text-pink-200 transition-transform duration-200 hover:scale-105"
+                                >
+                                    <!-- bell icon -->
+                                    <svg
+                                        class="w-6 h-6"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11
 					a6 6 0 00-5-5.917V4a1 1 0 10-2 0v1.083A6 6 0 006 11v3.159
-					c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0h6z"/>
-		</svg>
-		<!-- unread badge -->
-		<span id="notif-badge"
-				class="absolute -top-1 -right-1 w-4 h-4 rounded-full
-					bg-red-500 text-[10px] font-bold flex items-center
-					justify-center text-white opacity-0 pointer-events-none
-					transition-opacity duration-300"></span>
-		</button>
+					c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0h6z"
+                                        />
+                                    </svg>
+                                    <!-- unread badge -->
+                                    <span
+                                        id="notif-badge"
+                                        class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-[10px] font-bold flex items-center justify-center text-white opacity-0 pointer-events-none transition-opacity duration-300"
+                                    ></span>
+                                </button>
 
-		<!-- dropdown panel -->
-		<div id="notif-panel"
-			class="absolute right-0 sm:left-1/2 sm:-translate-x-1/2 top-full mt-2 w-72 hidden
-			max-h-80 overflow-y-auto custom-scroll
-			bg-slate-900/95
-			rounded-xl border border-white/20
-			p-4 space-y-3 shadow-lg z-[55]">
-		<p class="text-center text-sm text-white/70">No notifications yet.</p>
-		</div>
-	</div>
+                                <!-- dropdown panel -->
+                                <div
+                                    id="notif-panel"
+                                    class="absolute right-0 sm:left-1/2 sm:-translate-x-1/2 top-full mt-2 w-72 hidden max-h-80 overflow-y-auto custom-scroll bg-slate-900/95 rounded-xl border border-white/20 p-4 space-y-3 shadow-lg z-[55]"
+                                >
+                                    <p
+                                        class="text-center text-sm text-white/70"
+                                    >
+                                        No notifications yet.
+                                    </p>
+                                </div>
+                            </div>
 
-	<!-- BURGER (mobile only) -------------------------------------->
-	<button id="burger"
-			class="sm:hidden hover:text-pink-200 transition-transform duration-200 hover:scale-105">
-		<svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2"
-			viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-		<path d="M4 6h16M4 12h16M4 18h16"/>
-		</svg>
-	</button>
-	</div>
+                            <!-- BURGER (mobile only) -------------------------------------->
+                            <button
+                                id="burger"
+                                class="sm:hidden hover:text-pink-200 transition-transform duration-200 hover:scale-105"
+                            >
+                                <svg
+                                    class="w-8 h-8"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    viewBox="0 0 24 24"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <path d="M4 6h16M4 12h16M4 18h16" />
+                                </svg>
+                            </button>
+                        </div>
 
-	<!-- MAIN MENU ----------------------------------------------------->
-	<ul id="nav-menu"
-		class="absolute left-0 top-full w-full bg-slate-900/95
-			hidden flex-col items-center py-5 space-y-4
-			sm:static sm:w-auto sm:flex sm:flex-row sm:items-center
-			sm:space-y-0 sm:space-x-8 sm:bg-transparent sm:py-0 sm:ml-6">
-	<li><button id="nav-home"    class="hover:text-pink-300" data-nav="home">Home</button></li>
-	<li><button id="nav-play"    class="hover:text-pink-200" data-nav="play">Play</button></li>
-	<li><button id="nav-profile" class="hover:text-pink-200" data-nav="profile">Profile</button></li>
-	<li><button id="nav-signout" class="hover:text-pink-200" data-nav="signout">Sign Out</button></li>
-	</ul>
-</div>
-</nav>
-<!-- ─────────────────────────────────────────────────────────────── -->
+                        <!-- MAIN MENU ----------------------------------------------------->
+                        <ul
+                            id="nav-menu"
+                            class="absolute left-0 top-full w-full bg-slate-900/95 hidden flex-col items-center py-5 space-y-4 sm:static sm:w-auto sm:flex sm:flex-row sm:items-center sm:space-y-0 sm:space-x-8 sm:bg-transparent sm:py-0 sm:ml-6"
+                        >
+                            <li>
+                                <button
+                                    id="nav-home"
+                                    class="hover:text-pink-300"
+                                    data-nav="home"
+                                >
+                                    Home
+                                </button>
+                            </li>
+                            <li>
+                                <button
+                                    id="nav-play"
+                                    class="hover:text-pink-200"
+                                    data-nav="play"
+                                >
+                                    Play
+                                </button>
+                            </li>
+                            <li>
+                                <button
+                                    id="nav-profile"
+                                    class="hover:text-pink-200"
+                                    data-nav="profile"
+                                >
+                                    Profile
+                                </button>
+                            </li>
+                            <li>
+                                <button
+                                    id="nav-signout"
+                                    class="hover:text-pink-200"
+                                    data-nav="signout"
+                                >
+                                    Sign Out
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+                <!-- ─────────────────────────────────────────────────────────────── -->
 
-<!--  ────────────────────────────────────────────────────────────────  -->
+                <!--  ────────────────────────────────────────────────────────────────  -->
+            </header>
 
+            <!-- ░░ GAME AREA ░░ -->
+            <main class="flex-grow flex items-center justify-center p-8">
+                <div
+                    id="game-container"
+                    class="relative w-full max-w-4xl aspect-video bg-gray-900/70 rounded-3xl shadow-2xl overflow-hidden"
+                >
+                    <canvas
+                        id="pong-canvas"
+                        class="w-full h-full rounded-3xl"
+                    ></canvas>
 
-	</header>
+                    <!-- SCOREBOARD -->
+                    <div
+                        id="scoreboard"
+                        class="absolute top-4 left-1/2 -translate-x-1/2 text-4xl font-extrabold flex gap-3 drop-shadow-[0_0_8px_rgb(0_0_0/0.9)] select-none z-10"
+                    >
+                        <span id="score-left" class="text-cyan-300">0</span>
+                        <span>:</span>
+                        <span id="score-right" class="text-amber-300">0</span>
+                    </div>
+                </div>
+            </main>
+            <!-- ░░ PROFILE MINI-PAGE ░░ -->
+            <div
+                id="profile-overlay"
+                class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden opacity-0 transition-opacity duration-300"
+            >
+                <div
+                    class="relative w-full max-w-3xl h-[90vh] bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white p-8 rounded-3xl shadow-2xl flex flex-col"
+                >
+                    <!-- close × -->
+                    <button
+                        id="profile-close"
+                        class="absolute top-4 right-4 text-white/70 hover:text-white"
+                    >
+                        <svg
+                            class="w-6 h-6"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            viewBox="0 0 24 24"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
 
+                    <!-- header -->
+                    <div class="flex items-center gap-6 mb-8">
+                        <div
+                            class="group relative w-24 h-24 rounded-full p-[3px] bg-gradient-to-br from-cyan-400 via-fuchsia-500 to-amber-400 shrink-0"
+                        >
+                            <img
+                                id="avatar-img"
+                                src="https://i.pravatar.cc/150?u=user"
+                                alt="Profile picture"
+                                class="w-full h-full object-cover rounded-full"
+                            />
+                            <label
+                                for="avatar-input"
+                                class="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                                title="Change picture"
+                            >
+                                <svg
+                                    class="w-6 h-6 text-white"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    viewBox="0 0 24 24"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <path
+                                        d="M3 7h4l2-3h6l2 3h4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"
+                                    />
+                                    <circle cx="12" cy="13" r="4" />
+                                </svg>
+                            </label>
+                            <input
+                                type="file"
+                                id="avatar-input"
+                                accept="image/*"
+                                class="hidden"
+                            />
+                        </div>
+                        <div>
+                            <!-- populated by nav.ts -->
+                            <h2 id="profile-name" class="text-3xl font-bold">
+                                Username
+                            </h2>
+                            <p id="profile-mail" class="text-sm text-white/70">
+                                user@email
+                            </p>
+                            <p
+                                id="profile-joined"
+                                class="text-xs text-white/60"
+                            >
+                                Player since —
+                            </p>
+                        </div>
+                    </div>
 
+                    <!-- TAB BAR -->
+                    <nav
+                        id="profile-tabs"
+                        class="relative flex space-x-8 border-b border-white/30 text-white/70 overflow-x-auto"
+                    >
+                        <button
+                            type="button"
+                            data-tab="info"
+                            class="tab-btn pb-2 cursor-pointer text-white"
+                        >
+                            Info
+                        </button>
+                        <button
+                            type="button"
+                            data-tab="stats"
+                            class="tab-btn pb-2 cursor-pointer"
+                        >
+                            Stats
+                        </button>
+                        <button
+                            type="button"
+                            data-tab="history"
+                            class="tab-btn pb-2 cursor-pointer"
+                        >
+                            History
+                        </button>
 
-	<!-- ░░ GAME AREA ░░ -->
-	<main class="flex-grow flex items-center justify-center p-8">
-		<div
-		id="game-container"
-		class="relative w-full max-w-4xl aspect-video bg-gray-900/70 rounded-3xl shadow-2xl overflow-hidden"
-		>
-		<canvas id="pong-canvas" class="w-full h-full rounded-3xl"></canvas>
+                        <!-- sliding underline -->
+                        <span
+                            id="tab-underline"
+                            class="absolute bottom-0 h-0.5 bg-amber-400 transition-all duration-300"
+                        ></span>
+                    </nav>
 
-		<!-- SCOREBOARD -->
-		<div
-			id="scoreboard"
-			class="absolute top-4 left-1/2 -translate-x-1/2 text-4xl font-extrabold flex gap-3 drop-shadow-[0_0_8px_rgb(0_0_0/0.9)] select-none z-10"
-		>
-			<span id="score-left" class="text-cyan-300">0</span>
-			<span>:</span>
-			<span id="score-right" class="text-amber-300">0</span>
-		</div>
-		</div>
-	</main>
-	<!-- ░░ PROFILE MINI-PAGE ░░ -->
-	<div
-		id="profile-overlay"
-		class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden opacity-0 transition-opacity duration-300"
-	>
-		<div
-		class="relative w-full max-w-3xl h-[90vh] bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white p-8 rounded-3xl shadow-2xl flex flex-col"
-		>
-		<!-- close × -->
-		<button
-			id="profile-close"
-			class="absolute top-4 right-4 text-white/70 hover:text-white"
-		>
-			<svg
-			class="w-6 h-6"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			viewBox="0 0 24 24"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			>
-			<path d="M6 18L18 6M6 6l12 12" />
-			</svg>
-		</button>
+                    <!-- TAB PANELS -->
+                    <div id="tab-panels" class="flex-1 overflow-y-auto pt-6">
+                        <!-- INFO ─────────────────────────────────────────────────────────── -->
+                        <section data-panel="info" class="panel">
+                            <!-- heading row: toggle + edit -->
+                            <div class="flex items-center justify-between mb-6">
+                                <!-- collapsible toggle -->
+                                <span
+                                    class="flex items-center gap-2 text-xl font-semibold focus:outline-none select-none"
+                                    >Profile&nbsp;Settings</span
+                                >
 
-		<!-- header -->
-		<div class="flex items-center gap-6 mb-8">
-			<div
-			class="group relative w-24 h-24 rounded-full p-[3px] bg-gradient-to-br from-cyan-400 via-fuchsia-500 to-amber-400 shrink-0"
-			>
-			<img
-				id="avatar-img"
-				src="https://i.pravatar.cc/150?u=user"
-				alt="Profile picture"
-				class="w-full h-full object-cover rounded-full"
-			/>
-			<label
-				for="avatar-input"
-				class="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
-				title="Change picture"
-			>
-				<svg
-				class="w-6 h-6 text-white"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				viewBox="0 0 24 24"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				>
-				<path
-					d="M3 7h4l2-3h6l2 3h4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"
-				/>
-				<circle cx="12" cy="13" r="4" />
-				</svg>
-			</label>
-			<input
-				type="file"
-				id="avatar-input"
-				accept="image/*"
-				class="hidden"
-			/>
-			</div>
-			<div>
-			<!-- populated by nav.ts -->
-			<h2 id="profile-name" class="text-3xl font-bold">Username</h2>
-			<p id="profile-mail" class="text-sm text-white/70">user@email</p>
-			<p id="profile-joined" class="text-xs text-white/60">
-				Player since —
-			</p>
-			</div>
-		</div>
+                                <!-- EDIT button (shows inputs) -->
+                                <button
+                                    id="settings-edit"
+                                    class="text-amber-400 hover:underline font-semibold"
+                                >
+                                    Edit
+                                </button>
+                            </div>
 
-		<!-- TAB BAR -->
-		<nav
-			id="profile-tabs"
-			class="relative flex space-x-8 border-b border-white/30 text-white/70 overflow-x-auto"
-		>
-			<button
-			type="button"
-			data-tab="info"
-			class="tab-btn pb-2 cursor-pointer text-white"
-			>
-			Info
-			</button>
-			<button
-			type="button"
-			data-tab="stats"
-			class="tab-btn pb-2 cursor-pointer"
-			>
-			Stats
-			</button>
-			<button
-			type="button"
-			data-tab="history"
-			class="tab-btn pb-2 cursor-pointer"
-			>
-			History
-			</button>
+                            <!-- fields block -->
+                            <div id="profile-fields" class="space-y-8">
+                                <!-- USERNAME -->
+                                <div>
+                                    <h4
+                                        class="text-xs font-bold text-white/50 tracking-wide mb-1"
+                                    >
+                                        USERNAME
+                                    </h4>
+                                    <div class="flex items-center gap-4">
+                                        <!-- view mode -->
+                                        <span
+                                            id="view-username"
+                                            class="text-lg font-semibold"
+                                            >Player</span
+                                        >
+                                        <!-- edit mode -->
+                                        <input
+                                            id="edit-username"
+                                            type="text"
+                                            class="edit-input hidden px-3 py-1 rounded bg-white/10 w-48"
+                                        />
+                                    </div>
+                                </div>
 
-			<!-- sliding underline -->
-			<span
-			id="tab-underline"
-			class="absolute bottom-0 h-0.5 bg-amber-400 transition-all duration-300"
-			></span>
-		</nav>
+                                <!-- EMAIL -->
+                                <div>
+                                    <h4
+                                        class="text-xs font-bold text-white/50 tracking-wide mb-1"
+                                    >
+                                        EMAIL
+                                    </h4>
+                                    <div class="flex items-center gap-4">
+                                        <span
+                                            id="view-email"
+                                            class="text-lg font-semibold"
+                                            >email@example.com</span
+                                        >
+                                        <input
+                                            id="edit-email"
+                                            type="email"
+                                            class="edit-input hidden px-3 py-1 rounded bg-white/10 w-60"
+                                        />
+                                    </div>
+                                </div>
 
-		<!-- TAB PANELS -->
-		<div id="tab-panels" class="flex-1 overflow-y-auto pt-6">
-			<!-- INFO ─────────────────────────────────────────────────────────── -->
-			<section data-panel="info" class="panel">
-			<!-- heading row: toggle + edit -->
-			<div class="flex items-center justify-between mb-6">
-				<!-- collapsible toggle -->
-				<span
-				class="flex items-center gap-2 text-xl font-semibold focus:outline-none select-none"
-				>Profile&nbsp;Settings</span
-				>
+                                <!-- PASSWORD (hidden in view-mode, 3 inputs in edit-mode) -->
+                                <div>
+                                    <h4
+                                        class="text-xs font-bold text-white/50 tracking-wide mb-1"
+                                    >
+                                        PASSWORD
+                                    </h4>
 
-				<!-- EDIT button (shows inputs) -->
-				<button
-				id="settings-edit"
-				class="text-amber-400 hover:underline font-semibold"
-				>
-				Edit
-				</button>
-			</div>
+                                    <!-- nothing is shown in view-mode -->
+                                    <span
+                                        id="view-password"
+                                        class="hidden"
+                                    ></span>
 
-			<!-- fields block -->
-			<div id="profile-fields" class="space-y-8">
-				<!-- USERNAME -->
-				<div>
-				<h4
-					class="text-xs font-bold text-white/50 tracking-wide mb-1"
-				>
-					USERNAME
-				</h4>
-				<div class="flex items-center gap-4">
-					<!-- view mode -->
-					<span id="view-username" class="text-lg font-semibold"
-					>Player</span
-					>
-					<!-- edit mode -->
-					<input
-					id="edit-username"
-					type="text"
-					class="edit-input hidden px-3 py-1 rounded bg-white/10 w-48"
-					/>
-				</div>
-				</div>
+                                    <!-- edit-mode fields -->
+                                    <div class="flex flex-col gap-2">
+                                        <input
+                                            id="edit-oldpass"
+                                            type="password"
+                                            placeholder="Current password"
+                                            class="edit-input hidden px-3 py-1 rounded bg-white/10 w-48"
+                                        />
+                                        <input
+                                            id="edit-newpass"
+                                            type="password"
+                                            placeholder="New password"
+                                            class="edit-input hidden px-3 py-1 rounded bg-white/10 w-48"
+                                        />
+                                        <input
+                                            id="edit-confpass"
+                                            type="password"
+                                            placeholder="Confirm password"
+                                            class="edit-input hidden px-3 py-1 rounded bg-white/10 w-48"
+                                        />
+                                    </div>
+                                </div>
 
-				<!-- EMAIL -->
-				<div>
-				<h4
-					class="text-xs font-bold text-white/50 tracking-wide mb-1"
-				>
-					EMAIL
-				</h4>
-				<div class="flex items-center gap-4">
-					<span id="view-email" class="text-lg font-semibold"
-					>email@example.com</span
-					>
-					<input
-					id="edit-email"
-					type="email"
-					class="edit-input hidden px-3 py-1 rounded bg-white/10 w-60"
-					/>
-				</div>
-				</div>
+                                <!-- MEMBER SINCE (read-only) -->
+                                <div>
+                                    <h4
+                                        class="text-xs font-bold text-white/50 tracking-wide mb-1"
+                                    >
+                                        MEMBER&nbsp;SINCE
+                                    </h4>
+                                    <span
+                                        id="view-joined"
+                                        class="text-lg font-semibold"
+                                        >2025-06-04</span
+                                    >
+                                </div>
+                            </div>
 
-				<!-- PASSWORD (hidden in view-mode, 3 inputs in edit-mode) -->
-				<div>
-				<h4
-					class="text-xs font-bold text-white/50 tracking-wide mb-1"
-				>
-					PASSWORD
-				</h4>
+                            <!-- ── TWO-FACTOR AUTH SETUP BUTTON & STATUS ── -->
+                            <div class="flex items-center gap-4 mb-8">
+                                <button
+                                    id="enable-2fa-btn"
+                                    type="button"
+                                    class="px-4 py-2 rounded-full bg-amber-500 hover:bg-amber-600 font-semibold"
+                                >
+                                    Enable Two-Factor Authentication
+                                </button>
+                                <button
+                                    id="remove-2fa-btn"
+                                    type="button"
+                                    class="px-4 py-2 rounded-full bg-red-600 hover:bg-red-700 font-semibold hidden"
+                                >
+                                    Remove 2FA
+                                </button>
+                                <span
+                                    id="2fa-status"
+                                    class="text-sm text-white/70"
+                                    >Not enabled</span
+                                >
+                            </div>
 
-				<!-- nothing is shown in view-mode -->
-				<span id="view-password" class="hidden"></span>
+                            <!-- 2FA SETUP MODAL (hidden by default) -->
+                            <div
+                                id="2fa-modal"
+                                class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden"
+                            >
+                                <div
+                                    class="bg-black/70 text-white p-6 rounded-2xl shadow-lg max-w-sm w-full"
+                                >
+                                    <h3 class="text-xl font-bold mb-4">
+                                        Set up Two-Factor Auth
+                                    </h3>
+                                    <img
+                                        id="2fa-qr"
+                                        alt="Scan QR code"
+                                        class="mb-4 mx-auto rounded-md border border-white/30"
+                                    />
+                                    <p class="text-xs text-white/70 mb-2">
+                                        Or enter this key manually:
+                                    </p>
+                                    <code
+                                        id="2fa-manual"
+                                        class="block mb-4 text-center font-mono bg-white/10 p-2 rounded break-words"
+                                    ></code>
+                                    <input
+                                        id="2fa-token-input"
+                                        type="text"
+                                        placeholder="123456"
+                                        class="w-full px-3 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none mb-4"
+                                    />
+                                    <div class="flex justify-end gap-2">
+                                        <button
+                                            id="2fa-verify-btn"
+                                            type="button"
+                                            class="px-4 py-2 rounded-full bg-emerald-500 hover:bg-emerald-600 font-semibold"
+                                        >
+                                            Verify
+                                        </button>
+                                        <button
+                                            id="2fa-cancel-btn"
+                                            type="button"
+                                            class="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 font-semibold"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                    <p
+                                        id="2fa-error"
+                                        class="text-red-400 text-sm mt-2 min-h-[1em]"
+                                    ></p>
+                                </div>
+                            </div>
+                            <!-- REMOVE 2FA MODAL -->
+                            <div
+                                id="remove-2fa-modal"
+                                class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden"
+                            >
+                                <div
+                                    class="bg-black/70 text-white p-6 rounded-2xl shadow-lg max-w-sm w-full"
+                                >
+                                    <h3 class="text-xl font-bold mb-4">
+                                        Remove Two-Factor Auth
+                                    </h3>
+                                    <input
+                                        id="remove-2fa-token-input"
+                                        type="text"
+                                        placeholder="Enter 2FA code"
+                                        class="w-full px-3 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none mb-4"
+                                    />
+                                    <div class="flex justify-end gap-2">
+                                        <button
+                                            id="remove-2fa-confirm-btn"
+                                            type="button"
+                                            class="px-4 py-2 rounded-full bg-red-600 hover:bg-red-700 font-semibold"
+                                        >
+                                            Remove
+                                        </button>
+                                        <button
+                                            id="remove-2fa-cancel-btn"
+                                            type="button"
+                                            class="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 font-semibold"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                    <p
+                                        id="remove-2fa-error"
+                                        class="text-red-400 text-sm mt-2 min-h-[1em]"
+                                    ></p>
+                                </div>
+                            </div>
+                            <!-- Save / Cancel (only in edit mode) -->
+                            <div
+                                id="settings-actions"
+                                class="mt-8 flex gap-4 hidden"
+                            >
+                                <button
+                                    id="settings-save"
+                                    class="px-5 py-2 rounded-full bg-emerald-500 hover:bg-emerald-600 font-semibold"
+                                >
+                                    Save
+                                </button>
+                                <button
+                                    id="settings-cancel"
+                                    class="px-5 py-2 rounded-full bg-white/10 hover:bg-white/20 font-semibold"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
 
-				<!-- edit-mode fields -->
-				<div class="flex flex-col gap-2">
-					<input
-					id="edit-oldpass"
-					type="password"
-					placeholder="Current password"
-					class="edit-input hidden px-3 py-1 rounded bg-white/10 w-48"
-					/>
-					<input
-					id="edit-newpass"
-					type="password"
-					placeholder="New password"
-					class="edit-input hidden px-3 py-1 rounded bg-white/10 w-48"
-					/>
-					<input
-					id="edit-confpass"
-					type="password"
-					placeholder="Confirm password"
-					class="edit-input hidden px-3 py-1 rounded bg-white/10 w-48"
-					/>
-				</div>
-				</div>
+                            <!-- tiny toast -->
+                            <div
+                                id="profile-toast"
+                                class="fixed top-6 right-6 bg-emerald-500/90 text-white px-4 py-2 rounded-full shadow-lg text-sm opacity-0 pointer-events-none transition-opacity duration-300"
+                            >
+                                Saved&nbsp;✔
+                            </div>
+                        </section>
 
-				<!-- MEMBER SINCE (read-only) -->
-				<div>
-				<h4
-					class="text-xs font-bold text-white/50 tracking-wide mb-1"
-				>
-					MEMBER&nbsp;SINCE
-				</h4>
-				<span id="view-joined" class="text-lg font-semibold"
-					>2025-06-04</span
-				>
-				</div>
-			</div>
+                        <!-- STATS -->
+                        <section
+                            data-panel="stats"
+                            class="panel hidden custom-scroll"
+                        >
+                            <h3 class="text-xl font-semibold mb-4">
+                                Monthly average winning games
+                            </h3>
+                            <canvas
+                                id="monthly-chart"
+                                class="max-w-full mb-8"
+                            ></canvas>
 
-				<!-- ── TWO-FACTOR AUTH SETUP BUTTON & STATUS ── -->
-				<div class="flex items-center gap-4 mb-8">
-				<button
-					id="enable-2fa-btn"
-					type="button"
-					class="px-4 py-2 rounded-full bg-amber-500 hover:bg-amber-600 font-semibold"
-				>
-					Enable Two-Factor Authentication
-				</button>
-				<button
-					id="remove-2fa-btn"
-					type="button"
-					class="px-4 py-2 rounded-full bg-red-600 hover:bg-red-700 font-semibold hidden"
-					>
-					Remove 2FA
-				</button>
-				<span id="2fa-status" class="text-sm text-white/70">Not enabled</span>
-				</div>
+                            <h3 class="text-xl font-semibold mb-4">
+                                Life average winning games
+                            </h3>
+                            <canvas
+                                id="life-chart"
+                                class="w-56 h-56 mx-auto mb-8"
+                            ></canvas>
 
-				<!-- 2FA SETUP MODAL (hidden by default) -->
-				<div
-				id="2fa-modal"
-				class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden"
-				>
-				<div class="bg-black/70 text-white p-6 rounded-2xl shadow-lg max-w-sm w-full">
-					<h3 class="text-xl font-bold mb-4">Set up Two-Factor Auth</h3>
-					<img id="2fa-qr" alt="Scan QR code" class="mb-4 mx-auto rounded-md border border-white/30"/>
-					<p class="text-xs text-white/70 mb-2">Or enter this key manually:</p>
-					<code
-					id="2fa-manual"
-					class="block mb-4 text-center font-mono bg-white/10 p-2 rounded break-words"
-					></code>
-					<input
-					id="2fa-token-input"
-					type="text"
-					placeholder="123456"
-					class="w-full px-3 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none mb-4"
-					/>
-					<div class="flex justify-end gap-2">
-					<button
-						id="2fa-verify-btn"
-						type="button"
-						class="px-4 py-2 rounded-full bg-emerald-500 hover:bg-emerald-600 font-semibold"
-					>
-						Verify
-					</button>
-					<button
-						id="2fa-cancel-btn"
-						type="button"
-						class="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 font-semibold"
-					>
-						Cancel
-					</button>
-					</div>
-					<p id="2fa-error" class="text-red-400 text-sm mt-2 min-h-[1em]"></p>
-				</div>
-				</div>
-				<!-- REMOVE 2FA MODAL -->
-				<div
-				id="remove-2fa-modal"
-				class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden"
-				>
-				<div class="bg-black/70 text-white p-6 rounded-2xl shadow-lg max-w-sm w-full">
-					<h3 class="text-xl font-bold mb-4">Remove Two-Factor Auth</h3>
-					<input
-					id="remove-2fa-token-input"
-					type="text"
-					placeholder="Enter 2FA code"
-					class="w-full px-3 py-2 rounded-full bg-white/10 focus:bg-white/20 focus:outline-none mb-4"
-					/>
-					<div class="flex justify-end gap-2">
-					<button
-						id="remove-2fa-confirm-btn"
-						type="button"
-						class="px-4 py-2 rounded-full bg-red-600 hover:bg-red-700 font-semibold"
-					>
-						Remove
-					</button>
-					<button
-						id="remove-2fa-cancel-btn"
-						type="button"
-						class="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 font-semibold"
-					>
-						Cancel
-					</button>
-					</div>
-					<p id="remove-2fa-error" class="text-red-400 text-sm mt-2 min-h-[1em]"></p>
-				</div>
-				</div>
-			<!-- Save / Cancel (only in edit mode) -->
-			<div id="settings-actions" class="mt-8 flex gap-4 hidden">
-				<button
-				id="settings-save"
-				class="px-5 py-2 rounded-full bg-emerald-500 hover:bg-emerald-600 font-semibold"
-				>
-				Save
-				</button>
-				<button
-				id="settings-cancel"
-				class="px-5 py-2 rounded-full bg-white/10 hover:bg-white/20 font-semibold"
-				>
-				Cancel
-				</button>
-			</div>
+                            <h3 class="text-xl font-semibold mb-4">
+                                Goals scored vs conceded
+                            </h3>
+                            <canvas
+                                id="goals-chart"
+                                class="w-56 h-56 mx-auto mb-8"
+                            ></canvas>
 
-			<!-- tiny toast -->
-			<div
-				id="profile-toast"
-				class="fixed top-6 right-6 bg-emerald-500/90 text-white px-4 py-2 rounded-full shadow-lg text-sm opacity-0 pointer-events-none transition-opacity duration-300"
-			>
-				Saved&nbsp;✔
-			</div>
-			</section>
+                            <h3 class="text-xl font-semibold mb-4">
+                                Monthly goals scored vs conceded
+                            </h3>
+                            <canvas
+                                id="hits-chart"
+                                class="max-w-full mb-8"
+                            ></canvas>
 
-			<!-- STATS -->
-			<section data-panel="stats" class="panel hidden custom-scroll">
-			<h3 class="text-xl font-semibold mb-4">
-				Monthly average winning games
-			</h3>
-			<canvas id="monthly-chart" class="max-w-full mb-8"></canvas>
+                            <h3 class="text-xl font-semibold mb-4">Trophies</h3>
+                            <div id="trophies"></div>
+                        </section>
 
-			<h3 class="text-xl font-semibold mb-4">
-				Life average winning games
-			</h3>
-			<canvas id="life-chart" class="w-56 h-56 mx-auto mb-8"></canvas>
+                        <!-- HISTORY -->
+                        <section data-panel="history" class="panel hidden">
+                            <h3 class="text-xl font-semibold mb-4">
+                                Recent Games
+                            </h3>
+                            <div class="overflow-y-auto max-h custom-scroll">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr
+                                            class="text-left text-white/70 border-b border-white/30"
+                                        >
+                                            <th class="py-2">Match&nbsp;ID</th>
+                                            <th class="py-2">Date</th>
+                                            <th class="py-2">Opponent</th>
+                                            <th class="py-2">Score</th>
+                                            <th class="py-2">Result</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="history-body"></tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
 
-			<h3 class="text-xl font-semibold mb-4">
-				Goals scored vs conceded
-			</h3>
-			<canvas id="goals-chart" class="w-56 h-56 mx-auto mb-8"></canvas>
+            <!-- ░░ PLAY POP-UP ░░ -->
+            <div
+                id="play-overlay"
+                class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden opacity-0 transition-opacity duration-300"
+            >
+                <div
+                    class="relative w-full max-w-3xl p-10 rounded-3xl shadow-2xl bg-gradient-to-br from-cyan-600 via-blue-600 to-indigo-700 text-white flex flex-col gap-8"
+                >
+                    <!-- close × -->
+                    <button
+                        id="play-close"
+                        class="absolute top-4 right-4 text-white/70 hover:text-white"
+                    >
+                        <svg
+                            class="w-6 h-6"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            viewBox="0 0 24 24"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
 
-			<h3 class="text-xl font-semibold mb-4">
-				Monthly goals scored vs conceded
-			</h3>
-			<canvas id="hits-chart" class="max-w-full mb-8"></canvas>
+                    <header class="text-center">
+                        <h2 class="text-3xl font-bold mb-1">Choose a mode</h2>
+                        <p class="text-sm text-white/70">
+                            Pick how you want to play
+                        </p>
+                    </header>
 
-			<h3 class="text-xl font-semibold mb-4">Trophies</h3>
-			<div id="trophies"></div>
-			</section>
+                    <!-- 2 × 2 grid of mode cards (original layout) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <!-- vs AI -->
+                        <button
+                            data-mode="ai"
+                            class="mode-card flex flex-col items-center gap-3 p-6 rounded-2xl bg-white/10 hover:bg-white/15 transition"
+                        >
+                            <span class="text-5xl">🤖</span>
+                            <span class="text-lg font-semibold"
+                                >Vs&nbsp;AI</span
+                            >
+                            <p class="text-xs text-white/70 text-center">
+                                Practice against the computer
+                            </p>
+                        </button>
 
-			<!-- HISTORY -->
-			<section data-panel="history" class="panel hidden">
-			<h3 class="text-xl font-semibold mb-4">Recent Games</h3>
-			<div class="overflow-y-auto max-h custom-scroll">
-				<table class="w-full text-sm">
-				<thead>
-					<tr
-					class="text-left text-white/70 border-b border-white/30"
-					>
-					<th class="py-2">Match&nbsp;ID</th>
-					<th class="py-2">Date</th>
-					<th class="py-2">Opponent</th>
-					<th class="py-2">Score</th>
-					<th class="py-2">Result</th>
-					</tr>
-				</thead>
-				<tbody id="history-body"></tbody>
-				</table>
-			</div>
-			</section>
+                        <!-- offline 1-on-1 -->
+                        <button
+                            data-mode="offline"
+                            class="mode-card flex flex-col items-center gap-3 p-6 rounded-2xl bg-white/10 hover:bg-white/15 transition"
+                        >
+                            <span class="text-5xl">🎮</span>
+                            <span class="text-lg font-semibold"
+                                >1&nbsp;v&nbsp;1&nbsp;(offline)</span
+                            >
+                            <p class="text-xs text-white/70 text-center">
+                                Two players on the same device
+                            </p>
+                        </button>
 
-		</div>
-		</div>
-	</div>
+                        <!-- remote -->
+                        <button
+                            id="remote-play"
+                            data-mode="remote"
+                            class="mode-card flex flex-col items-center gap-3 p-6 rounded-2xl bg-white/10 hover:bg-white/15 transition"
+                        >
+                            <span class="text-5xl">🌐</span>
+                            <span class="text-lg font-semibold"
+                                >Remote&nbsp;Play</span
+                            >
+                            <p class="text-xs text-white/70 text-center">
+                                Invite a friend or join matchmaking
+                            </p>
+                        </button>
 
-	<!-- ░░ PLAY POP-UP ░░ -->
-	<div
-		id="play-overlay"
-		class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden opacity-0 transition-opacity duration-300"
-	>
-		<div
-		class="relative w-full max-w-3xl p-10 rounded-3xl shadow-2xl bg-gradient-to-br from-cyan-600 via-blue-600 to-indigo-700 text-white flex flex-col gap-8"
-		>
-		<!-- close × -->
-		<button
-			id="play-close"
-			class="absolute top-4 right-4 text-white/70 hover:text-white"
-		>
-			<svg
-			class="w-6 h-6"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			viewBox="0 0 24 24"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			>
-			<path d="M6 18L18 6M6 6l12 12" />
-			</svg>
-		</button>
+                        <!-- tournament -->
+                        <button
+                            data-mode="tournament"
+                            class="mode-card flex flex-col items-center gap-3 p-6 rounded-2xl bg-white/10 hover:bg-white/15 transition"
+                        >
+                            <span class="text-5xl">🏆</span>
+                            <span class="text-lg font-semibold"
+                                >Tournament</span
+                            >
+                            <p class="text-xs text-white/70 text-center">
+                                Bracket-style knockout fun
+                            </p>
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-		<header class="text-center">
-			<h2 class="text-3xl font-bold mb-1">Choose a mode</h2>
-			<p class="text-sm text-white/70">Pick how you want to play</p>
-		</header>
+            <!-- ░░ TOURNAMENT OVERLAY ░░ -->
+            <section
+                id="tournament-overlay"
+                class="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0"
+            >
+                <div
+                    id="tournament-container"
+                    class="w-[90vw] max-w-4xl space-y-6 rounded-2xl bg-violet-800/95 p-8 shadow-2xl transition"
+                >
+                    <!-- header -->
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-2xl font-bold">Tournament</h2>
+                        <button
+                            id="tour-close"
+                            class="text-2xl hover:text-red-400"
+                        >
+                            ✕
+                        </button>
+                    </div>
 
-		<!-- 2 × 2 grid of mode cards (original layout) -->
-		<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-			<!-- vs AI -->
-			<button
-			data-mode="ai"
-			class="mode-card flex flex-col items-center gap-3 p-6 rounded-2xl bg-white/10 hover:bg-white/15 transition"
-			>
-			<span class="text-5xl">🤖</span>
-			<span class="text-lg font-semibold">Vs&nbsp;AI</span>
-			<p class="text-xs text-white/70 text-center">
-				Practice against the computer
-			</p>
-			</button>
+                    <!-- STEP 0 – choose -->
+                    <div id="tour-step-main" class="space-y-4">
+                        <button
+                            id="tour-create-btn"
+                            class="w-full rounded-xl bg-emerald-600 py-3 font-semibold hover:bg-emerald-700 transition"
+                        >
+                            Create new tournament
+                        </button>
+                        <button
+                            id="tour-join-btn"
+                            class="w-full rounded-xl bg-indigo-600 py-3 font-semibold hover:bg-indigo-700 transition"
+                        >
+                            Join with a code
+                        </button>
+                    </div>
 
-			<!-- offline 1-on-1 -->
-			<button
-			data-mode="offline"
-			class="mode-card flex flex-col items-center gap-3 p-6 rounded-2xl bg-white/10 hover:bg-white/15 transition"
-			>
-			<span class="text-5xl">🎮</span>
-			<span class="text-lg font-semibold"
-				>1&nbsp;v&nbsp;1&nbsp;(offline)</span
-			>
-			<p class="text-xs text-white/70 text-center">
-				Two players on the same device
-			</p>
-			</button>
+                    <!-- STEP 1A – created -->
+                    <div
+                        id="tour-step-created"
+                        class="hidden space-y-4 text-center"
+                    >
+                        <p class="text-lg">
+                            Share this code with your friends:
+                        </p>
+                        <div
+                            id="tour-created-code"
+                            class="mx-auto w-fit rounded-xl bg-white/10 px-6 py-3 text-3xl font-mono tracking-widest"
+                        ></div>
+                        <button
+                            id="tour-copy-code"
+                            class="rounded-xl bg-white/20 px-4 py-2 hover:bg-white/30"
+                        >
+                            Copy code
+                        </button>
+                    </div>
 
-			<!-- remote -->
-			<button
-			id="remote-play"
-			data-mode="remote"
-			class="mode-card flex flex-col items-center gap-3 p-6 rounded-2xl bg-white/10 hover:bg-white/15 transition"
-			>
-			<span class="text-5xl">🌐</span>
-			<span class="text-lg font-semibold">Remote&nbsp;Play</span>
-			<p class="text-xs text-white/70 text-center">
-				Invite a friend or join matchmaking
-			</p>
-			</button>
+                    <!-- STEP 1B – join -->
+                    <div id="tour-step-join" class="hidden space-y-4">
+                        <input
+                            id="tour-code-input"
+                            type="text"
+                            placeholder="Enter tournament code"
+                            class="w-full rounded-lg bg-white/10 px-4 py-3 text-center uppercase tracking-widest outline-none focus:ring-2 focus:ring-violet-400"
+                        />
+                        <button
+                            id="tour-confirm-join-btn"
+                            class="w-full rounded-xl bg-emerald-600 py-3 font-semibold hover:bg-emerald-700 transition"
+                        >
+                            Join
+                        </button>
+                        <p
+                            id="tour-error"
+                            class="text-sm text-red-400 text-center"
+                        ></p>
+                    </div>
 
-			<!-- tournament -->
-			<button
-			data-mode="tournament"
-			class="mode-card flex flex-col items-center gap-3 p-6 rounded-2xl bg-white/10 hover:bg-white/15 transition"
-			>
-			<span class="text-5xl">🏆</span>
-			<span class="text-lg font-semibold">Tournament</span>
-			<p class="text-xs text-white/70 text-center">
-				Bracket-style knockout fun
-			</p>
-			</button>
-		</div>
-		</div>
-	</div>
-
-
-<!-- ░░ TOURNAMENT OVERLAY ░░ -->
-<section id="tournament-overlay"
-		class="fixed inset-0 z-40 flex items-center justify-center
-				bg-black/60 backdrop-blur-sm hidden opacity-0">
-	<div id="tournament-container"
-		class="w-[90vw] max-w-4xl
-				space-y-6 rounded-2xl bg-violet-800/95
-				p-8 shadow-2xl transition">
-
-	<!-- header -->
-	<div class="flex items-center justify-between">
-	<h2 class="text-2xl font-bold">Tournament</h2>
-	<button id="tour-close" class="text-2xl hover:text-red-400">✕</button>
-	</div>
-
-	<!-- STEP 0 – choose -->
-	<div id="tour-step-main" class="space-y-4">
-	<button id="tour-create-btn"
-			class="w-full rounded-xl bg-emerald-600 py-3 font-semibold
-					hover:bg-emerald-700 transition">
-		Create new tournament
-	</button>
-	<button id="tour-join-btn"
-			class="w-full rounded-xl bg-indigo-600 py-3 font-semibold
-					hover:bg-indigo-700 transition">
-		Join with a code
-	</button>
-	</div>
-
-	<!-- STEP 1A – created -->
-		<div id="tour-step-created" class="hidden space-y-4 text-center">
-		<p class="text-lg">Share this code with your friends:</p>
-		<div id="tour-created-code"
-			class="mx-auto w-fit rounded-xl bg-white/10 px-6 py-3
-					text-3xl font-mono tracking-widest"></div>
-		<button id="tour-copy-code"
-				class="rounded-xl bg-white/20 px-4 py-2 hover:bg-white/30">
-			Copy code
-		</button>
-		</div>
-
-
-	<!-- STEP 1B – join -->
-	<div id="tour-step-join" class="hidden space-y-4">
-	<input id="tour-code-input" type="text"
-			placeholder="Enter tournament code"
-			class="w-full rounded-lg bg-white/10 px-4 py-3 text-center
-					uppercase tracking-widest outline-none
-					focus:ring-2 focus:ring-violet-400">
-	<button id="tour-confirm-join-btn"
-			class="w-full rounded-xl bg-emerald-600 py-3 font-semibold
-					hover:bg-emerald-700 transition">
-		Join
-	</button>
-	<p id="tour-error" class="text-sm text-red-400 text-center"></p>
-	</div>
-	
-<!-- <style>
+                    <!-- <style>
 	@media (max-width:640px){
 	#tour-bracket-vert{
 		--scale: calc(min(92vw / 360, 88vh / 560));
@@ -884,352 +1079,597 @@
 
 </style> -->
 
+                    <!-- STEP 2 – 4-player bracket lobby -->
+                    <div id="tour-step-bracket" class="hidden space-y-6">
+                        <h3 class="text-lg font-semibold text-center">
+                            4-Player Bracket
+                        </h3>
 
-<!-- STEP 2 – 4-player bracket lobby -->
-<div id="tour-step-bracket" class="hidden space-y-6">
-<h3 class="text-lg font-semibold text-center">4-Player Bracket</h3>
+                        <!-- BRACKET -------------------------------------------------------- -->
+                        <div
+                            id="tour-bracket"
+                            class="relative mx-auto w-[750px] h-[360px] font-handwriting hidden md:block"
+                        >
+                            <svg
+                                class="absolute inset-0 w-full h-full pointer-events-none"
+                                viewBox="0 0 750 460"
+                                preserveAspectRatio="xMidYMid meet"
+                            >
+                                <!-- Game 1 ---------------------------------------------------- -->
+                                <path
+                                    d="M120  50 H280"
+                                    stroke="white"
+                                    stroke-opacity="0.25"
+                                    stroke-width="2"
+                                />
+                                <path
+                                    d="M120 140 H280"
+                                    stroke="white"
+                                    stroke-opacity="0.25"
+                                    stroke-width="2"
+                                />
+                                <path
+                                    d="M280  50 V140"
+                                    stroke="white"
+                                    stroke-opacity="0.25"
+                                    stroke-width="2"
+                                />
+                                <!-- winner of G1 ➜ centre -->
+                                <path
+                                    d="M280  95 H500"
+                                    stroke="white"
+                                    stroke-opacity="0.25"
+                                    stroke-width="2"
+                                />
 
-<!-- BRACKET -------------------------------------------------------- -->
-	<div id="tour-bracket"
-		class="relative mx-auto w-[750px] h-[360px] font-handwriting hidden md:block">  
+                                <!-- Game 2 ---------------------------------------------------- -->
+                                <path
+                                    d="M120 310 H280"
+                                    stroke="white"
+                                    stroke-opacity="0.25"
+                                    stroke-width="2"
+                                />
+                                <path
+                                    d="M120 400 H280"
+                                    stroke="white"
+                                    stroke-opacity="0.25"
+                                    stroke-width="2"
+                                />
+                                <path
+                                    d="M280 310 V400"
+                                    stroke="white"
+                                    stroke-opacity="0.25"
+                                    stroke-width="2"
+                                />
+                                <!-- winner of G2 ➜ centre -->
+                                <path
+                                    d="M280 355 H500"
+                                    stroke="white"
+                                    stroke-opacity="0.25"
+                                    stroke-width="2"
+                                />
 
-	<svg class="absolute inset-0 w-full h-full pointer-events-none"
-		viewBox="0 0 750 460" preserveAspectRatio="xMidYMid meet">
+                                <!-- centre winners converge ➜ grand-final -------------------- -->
+                                <path
+                                    d="M500  95 V355"
+                                    stroke="white"
+                                    stroke-opacity="0.25"
+                                    stroke-width="2"
+                                />
+                                <path
+                                    d="M500 225 H600"
+                                    stroke="white"
+                                    stroke-opacity="0.25"
+                                    stroke-width="2"
+                                />
+                            </svg>
 
-		<!-- Game 1 ---------------------------------------------------- -->
-		<path d="M120  50 H280" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
-		<path d="M120 140 H280" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
-		<path d="M280  50 V140" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
-		<!-- winner of G1 ➜ centre -->
-		<path d="M280  95 H500" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+                            <!-- players (unchanged) -->
+                            <div
+                                data-slot="0"
+                                class="chip absolute left-0 top-[27px]"
+                            >
+                                —
+                            </div>
+                            <div
+                                data-slot="1"
+                                class="chip absolute left-0 top-[100px]"
+                            >
+                                —
+                            </div>
+                            <div
+                                data-slot="2"
+                                class="chip absolute left-0 top-[230px]"
+                            >
+                                —
+                            </div>
+                            <div
+                                data-slot="3"
+                                class="chip absolute left-0 top-[302px]"
+                            >
+                                —
+                            </div>
 
-		<!-- Game 2 ---------------------------------------------------- -->
-		<path d="M120 310 H280" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
-		<path d="M120 400 H280" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
-		<path d="M280 310 V400" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
-		<!-- winner of G2 ➜ centre -->
-		<path d="M280 355 H500" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+                            <!-- winners – new left offset --------------------------------- -->
+                            <div
+                                data-slot="4"
+                                class="chip absolute left-[320px] top-[50px] w-[200px]"
+                            >
+                                Winner of Game 1
+                            </div>
+                            <div
+                                data-slot="5"
+                                class="chip absolute left-[320px] top-[280px] w-[200px]"
+                            >
+                                Winner of Game 2
+                            </div>
 
-		<!-- centre winners converge ➜ grand-final -------------------- -->
-		<path d="M500  95 V355" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
-		<path d="M500 225 H600" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
-	</svg>
+                            <!-- champion – new left offset -------------------------------- -->
+                            <div
+                                data-slot="6"
+                                class="chip absolute left-[5px] top-[165px] w-[320px]"
+                            >
+                                champion
+                            </div>
+                        </div>
 
-	<!-- players (unchanged) -->
-	<div data-slot="0" class="chip absolute left-0   top-[27px]">—</div>
-	<div data-slot="1" class="chip absolute left-0   top-[100px]">—</div>
-	<div data-slot="2" class="chip absolute left-0   top-[230px]">—</div>
-	<div data-slot="3" class="chip absolute left-0   top-[302px]">—</div>
+                        <!-- ░░ VERTICAL (mobile) BRACKET ░░ -->
 
-	<!-- winners – new left offset --------------------------------- -->
-	<div data-slot="4" class="chip absolute left-[320px] top-[50px]  w-[200px]">Winner of Game 1</div>
-	<div data-slot="5" class="chip absolute left-[320px] top-[280px] w-[200px]">Winner of Game 2</div>
+                        <div
+                            id="tour-bracket-vert"
+                            class="relative w-[360px] h-[380px] font-handwriting mx-auto md:hidden"
+                        >
+                            <!-- --- connector lines, shifted 40 px right --- -->
+                            <svg
+                                class="absolute inset-0 w-full h-full pointer-events-none"
+                                viewBox="0 0 360 560"
+                                preserveAspectRatio="xMidYMid meet"
+                            >
+                                <g
+                                    transform="translate(-25 0)"
+                                    stroke="white"
+                                    stroke-opacity=".25"
+                                    stroke-width="2"
+                                >
+                                    <!-- QF-1 (P0 vs P1) -->
+                                    <path d="M140  66 V134" />
+                                    <path d="M220  66 V134" />
+                                    <path d="M140 134 H220" />
 
-	<!-- champion – new left offset -------------------------------- -->
-	<div data-slot="6" class="chip absolute left-[5px] top-[165px] w-[320px]">champion</div>
-	</div>
+                                    <!-- QF-2 (P2 vs P3) -->
+                                    <path d="M140 505 V434" />
+                                    <path d="M220 505 V434" />
+                                    <path d="M140 434 H220" />
 
-	<!-- ░░ VERTICAL (mobile) BRACKET ░░ -->
+                                    <!-- connect winners to centre spine -->
+                                    <path d="M180 134 V300" />
+                                    <!--nope-->
 
+                                    <!-- down-spine & champion branch -->
+                                    <path d="M180 300 V434" />
+                                    <path d="M180 300 H250" />
+                                </g>
+                            </svg>
 
-	<div id="tour-bracket-vert"
-	class="relative w-[360px] h-[380px] font-handwriting
-			mx-auto md:hidden">
+                            <!-- players (0-3) -->
+                            <div
+                                data-slot="0"
+                                class="chip absolute left-5 top-[16px] w-[140px]"
+                            >
+                                —
+                            </div>
+                            <div
+                                data-slot="1"
+                                class="chip absolute right-5 top-[16px] w-[140px]"
+                            >
+                                —
+                            </div>
 
-	<!-- --- connector lines, shifted 40 px right --- -->
-	<svg class="absolute inset-0 w-full h-full pointer-events-none"
-		viewBox="0 0 360 560" preserveAspectRatio="xMidYMid meet">
-		<g transform="translate(-25 0)"          
-		stroke="white" stroke-opacity=".25" stroke-width="2">
+                            <div
+                                data-slot="2"
+                                class="chip absolute left-5 top-[350px] w-[140px]"
+                            >
+                                —
+                            </div>
+                            <div
+                                data-slot="3"
+                                class="chip absolute right-5 top-[350px] w-[140px]"
+                            >
+                                —
+                            </div>
 
-		<!-- QF-1 (P0 vs P1) -->
-		<path d="M140  66 V134"/> <path d="M220  66 V134"/> <path d="M140 134 H220"/>
+                            <!-- semi-final winners (4-5) – both on the left -->
+                            <div
+                                data-slot="4"
+                                class="chip absolute left-0 top-[170px] w-[140px] opacity-0 translate-x-4"
+                            >
+                                Winner Game 1
+                            </div>
+                            <div
+                                data-slot="5"
+                                class="chip absolute left-0 top-[210px] w-[140px] opacity-0 translate-x-4"
+                            >
+                                Winner Game 2
+                            </div>
+                            <!-- champion (6) – on the right branch -->
+                            <div
+                                data-slot="6"
+                                class="chip absolute left-[350px] -translate-x-full top-[191px] w-[200px] text-center opacity-0 translate-x-4"
+                            >
+                                champion
+                            </div>
+                        </div>
 
-		<!-- QF-2 (P2 vs P3) -->
-		<path d="M140 505 V434"/>
-		<path d="M220 505 V434"/>
-		<path d="M140 434 H220"/>
+                        <p
+                            id="bracket-hint"
+                            class="text-sm text-center text-white/70"
+                        >
+                            Waiting for 3 more players…
+                        </p>
+                    </div>
+                </div>
+                <!-- end tournament-container -->
+            </section>
+            <!-- end tournament-overlay -->
 
-		<!-- connect winners to centre spine -->
-		<path d="M180 134 V300"/> <!--nope-->
+            <!-- Remote-Play Modal -->
+            <div
+                id="remote-modal"
+                class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden opacity-0"
+            >
+                <div
+                    class="relative p-8 rounded-2xl w-full max-w-md sm:max-w-lg lg:max-w-2xl bg-violet-800/95 text-white shadow-2xl"
+                >
+                    <!-- ⬅️ removed “+” -->
+                    <!-- close × -->
+                    <button
+                        id="remote-close"
+                        class="absolute top-4 right-4 text-gray-300 hover:text-white"
+                    >
+                        &times;
+                    </button>
 
-		<!-- down-spine & champion branch -->
-		<path d="M180 300 V434"/>
-		<path d="M180 300 H250"/>
-		</g>
-	</svg>
+                    <h3 class="text-2xl font-bold mb-6 text-center">
+                        Remote Play
+                    </h3>
 
-	<!-- players (0-3) -->
-	<div data-slot="0" class="chip absolute left-5   top-[16px]  w-[140px]">—</div>
-	<div data-slot="1" class="chip absolute right-5 top-[16px]  w-[140px]">—</div>
+                    <!-- main actions -->
+                    <div class="flex flex-col gap-4">
+                        <!-- colours now match the Tournament palette -->
+                        <button
+                            id="remote-create-btn"
+                            class="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-700 transition"
+                        >
+                            Create Game
+                        </button>
+                        <button
+                            id="remote-join-btn"
+                            class="px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-700 transition"
+                        >
+                            Join Game
+                        </button>
+                        <button
+                            id="remote-challenge-btn"
+                            class="px-4 py-2 rounded bg-amber-500 hover:bg-amber-600 transition"
+                        >
+                            Challenge
+                        </button>
+                    </div>
 
-	<div data-slot="2" class="chip absolute left-5   top-[350px] w-[140px]">—</div>
-	<div data-slot="3" class="chip absolute right-5 top-[350px] w-[140px]">—</div>
+                    <!-- Challenge Friends Modal -->
+                    <div
+                        id="challenge-modal"
+                        class="fixed inset-0 z-60 hidden flex items-center justify-center bg-black/60 backdrop-blur-sm"
+                    >
+                        <div
+                            class="relative w-full max-w-xl sm:max-w-2xl rounded-3xl p-8 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 shadow-2xl ring-1 ring-white/20"
+                        >
+                            <button
+                                id="challenge-close"
+                                class="absolute top-5 right-5 text-white text-2xl leading-none hover:scale-110 transition"
+                            >
+                                &times;
+                            </button>
 
-	<!-- semi-final winners (4-5) – both on the left -->
-	<div data-slot="4" class="chip absolute left-0 top-[170px] w-[140px] opacity-0 translate-x-4"> Winner Game 1 </div>
-	<div data-slot="5" class="chip absolute left-0 top-[210px] w-[140px] opacity-0 translate-x-4">Winner Game 2</div>
-	<!-- champion (6) – on the right branch -->
-	<div data-slot="6" class="chip absolute left-[350px] -translate-x-full top-[191px] w-[200px] text-center opacity-0 translate-x-4"> champion </div>
-	</div>
+                            <h2
+                                class="text-center text-white text-2xl font-semibold tracking-wide mb-6"
+                            >
+                                Challenge&nbsp;a&nbsp;Friend
+                            </h2>
 
+                            <!-- friends rendered here -->
+                            <div
+                                id="challenge-list"
+                                class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent"
+                            ></div>
+                        </div>
+                    </div>
 
-<p id="bracket-hint" class="text-sm text-center text-white/70">
-	Waiting for 3 more players…
-</p>
-</div>
+                    <!-- after Create -->
+                    <div id="remote-created" class="mt-6 hidden">
+                        <p class="mb-2">Share this Game&nbsp;ID:</p>
+                        <div class="flex items-center gap-2">
+                            <input
+                                id="remote-created-id"
+                                readonly
+                                class="flex-1 rounded bg-white/10 px-2 py-1 text-center text-white/90 placeholder-white/50 outline-none"
+                            />
+                            <button
+                                id="remote-copy-btn"
+                                class="px-3 py-2 rounded bg-white/20 hover:bg-white/30 transition"
+                            >
+                                Copy
+                            </button>
+                        </div>
+                    </div>
 
-</div> <!-- end tournament-container -->
-</section> <!-- end tournament-overlay -->
+                    <!-- after Join -->
+                    <div id="remote-join" class="mt-6 hidden">
+                        <p class="mb-2">Enter Game&nbsp;ID to join:</p>
+                        <div class="flex items-center gap-2">
+                            <input
+                                id="remote-join-input"
+                                class="flex-1 rounded bg-white/10 px-2 py-1 text-center text-white placeholder-white/50 outline-none"
+                            />
+                            <button
+                                id="remote-join-confirm"
+                                class="px-3 py-2 rounded bg-emerald-600 hover:bg-emerald-700 transition"
+                            >
+                                Join
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
+            <!-- ░░ DIFFICULTY POP-UP ░░ -->
+            <div
+                id="difficulty-overlay"
+                class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden opacity-0 transition-opacity duration-300"
+            >
+                <div
+                    id="difficulty-container"
+                    class="relative w-full max-w-md p-8 rounded-3xl shadow-2xl bg-gradient-to-br from-purple-600 to-indigo-700 text-white flex flex-col items-center gap-6 transform scale-90 transition-transform duration-300"
+                >
+                    <!-- close × -->
+                    <button
+                        id="difficulty-close"
+                        class="absolute top-4 right-4 text-white/70 hover:text-white"
+                    >
+                        <svg
+                            class="w-6 h-6"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            viewBox="0 0 24 24"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
 
-	<!-- Remote-Play Modal -->
-	<div id="remote-modal"
-		class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center
-				z-50 hidden opacity-0">
-	<div class="relative p-8 rounded-2xl w-full max-w-md sm:max-w-lg lg:max-w-2xl
-				bg-violet-800/95 text-white shadow-2xl">   <!-- ⬅️ removed “+” -->
-		<!-- close × -->
-		<button id="remote-close"
-				class="absolute top-4 right-4 text-gray-300 hover:text-white">
-		&times;
-		</button>
+                    <h2 class="text-2xl font-bold">Select Difficulty</h2>
+                    <div class="flex flex-col gap-4 w-full">
+                        <button
+                            data-diff="easy"
+                            class="diff-btn w-full py-2 rounded-full bg-white/10 hover:bg-white/15 transition"
+                        >
+                            Easy
+                        </button>
+                        <button
+                            data-diff="medium"
+                            class="diff-btn w-full py-2 rounded-full bg-white/10 hover:bg-white/15 transition"
+                        >
+                            Medium
+                        </button>
+                        <button
+                            data-diff="hard"
+                            class="diff-btn w-full py-2 rounded-full bg-white/10 hover:bg-white/15 transition"
+                        >
+                            Training mode
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- ░░ FRIENDS SIDEBAR ░░ -->
+            <aside
+                id="friends-sidebar"
+                class="fixed right-0 top-16 bottom-0 w-80 bg-black/30 backdrop-blur border-l border-white/20 flex flex-col z-[40] transform translate-x-full transition-transform duration-300 2xl:translate-x-0"
+            >
+                <h2
+                    class="text-lg font-bold px-4 py-3 border-b border-white/20"
+                >
+                    Friends
+                </h2>
+                <!-- add-friend bar -->
+                <div
+                    class="flex items-center gap-2 px-4 pb-3 pt-2 border-b border-white/20"
+                >
+                    <input
+                        id="addfriend-input"
+                        type="text"
+                        placeholder="Username…"
+                        class="flex-1 hidden bg-white/10 px-3 py-1 rounded-full text-sm placeholder-white/60 focus:outline-none"
+                    />
+                    <button
+                        id="addfriend-btn"
+                        class="px-3 py-1 rounded-full bg-amber-500 hover:bg-amber-600 text-sm font-semibold"
+                    >
+                        Add&nbsp;
+                    </button>
+                </div>
+                <div
+                    id="friends-list"
+                    class="flex-1 overflow-y-auto custom-scroll px-4 py-3 space-y-4"
+                ></div>
+            </aside>
 
-		<h3 class="text-2xl font-bold mb-6 text-center">Remote Play</h3>
+            <button
+                id="friends-toggle"
+                class="fixed right-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-l-lg text-xl flex items-center justify-center bg-black/40 backdrop-blur 2xl:hidden z-[41]"
+            >
+                ❮
+            </button>
 
-		<!-- main actions -->
-		<div class="flex flex-col gap-4">
-		<!-- colours now match the Tournament palette -->
-		<button id="remote-create-btn"
-				class="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-700 transition">
-			Create Game
-		</button>
-		<button id="remote-join-btn"
-				class="px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-700 transition">
-			Join Game
-		</button>
-		</div>
+            <!-- NEW friend-row template (one time in HTML) -->
+            <template id="friend-row-template">
+                <div
+                    class="bg-white/10 rounded-lg overflow-hidden transition-[max-height,opacity] duration-300"
+                    style="max-height: 56px"
+                >
+                    <!-- visible row -->
+                    <div class="flex items-center gap-3 p-2">
+                        <img class="avatar w-8 h-8 rounded-full" src="" />
+                        <div class="flex-1">
+                            <p class="username text-sm font-semibold"></p>
+                            <p class="email text-[10px] text-white/60"></p>
+                        </div>
+                        <button
+                            class="more-btn text-[10px] px-2 py-1 rounded-full bg-amber-500 hover:bg-amber-600"
+                        >
+                            more ▾
+                        </button>
+                    </div>
+                    <!-- submenu -->
+                    <div class="submenu px-2 pb-3 space-x-2 hidden">
+                        <button
+                            class="sub px-2 py-1 text-[10px] bg-emerald-500 rounded-full"
+                        >
+                            Challenge
+                        </button>
+                        <button
+                            class="sub stats-btn px-2 py-1 text-[10px] bg-cyan-500 rounded-full"
+                        >
+                            Stats
+                        </button>
+                        <button
+                            class="sub remove-btn px-2 py-1 text-[10px] bg-red-500 rounded-full active:scale-95 transition-transform duration-75"
+                        >
+                            Remove
+                        </button>
+                    </div>
+                    <!-- confirm bar (hidden by default) -->
+                    <div class="confirm-box px-2 pb-3 space-x-2 hidden">
+                        <span class="text-[11px]">Remove friend?</span>
+                        <button
+                            class="yes-btn px-2 py-[2px] text-[10px] rounded-full bg-red-500 hover:bg-red-600"
+                        >
+                            Yes
+                        </button>
+                        <button
+                            class="no-btn px-2 py-[2px] text-[10px] rounded-full bg-white/10 hover:bg-white/20"
+                        >
+                            No
+                        </button>
+                    </div>
+                </div>
+            </template>
+            <!-- FRIENDS SIDEBAR TOAST -->
+            <div
+                id="friends-toast"
+                class="fixed top-6 right-6 z-50 bg-emerald-500 text-white px-4 py-2 rounded-full shadow-lg text-sm opacity-0 pointer-events-none transition-opacity duration-300"
+            ></div>
+        </div>
 
-		<!-- after Create -->
-		<div id="remote-created" class="mt-6 hidden">
-		<p class="mb-2">Share this Game&nbsp;ID:</p>
-		<div class="flex items-center gap-2">
-			<input id="remote-created-id" readonly
-				class="flex-1 rounded bg-white/10 px-2 py-1 text-center text-white/90 placeholder-white/50 outline-none" />
-			<button id="remote-copy-btn"
-					class="px-3 py-2 rounded bg-white/20 hover:bg-white/30 transition">
-			Copy
-			</button>
-		</div>
-		</div>
+        <!-- ░░ FRIEND-STATS OVERLAY ░░ -->
+        <div
+            id="friendstats-overlay"
+            class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden opacity-0 transition-opacity duration-300"
+        >
+            <div
+                class="relative w-full max-w-3xl h-[90vh] bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white p-8 rounded-3xl shadow-2xl flex flex-col"
+            >
+                <!-- close × -->
+                <button
+                    id="friendstats-close"
+                    class="absolute top-4 right-4 text-white/70 hover:text-white"
+                >
+                    <svg
+                        class="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
 
-		<!-- after Join -->
-		<div id="remote-join" class="mt-6 hidden">
-		<p class="mb-2">Enter Game&nbsp;ID to join:</p>
-		<div class="flex items-center gap-2">
-			<input id="remote-join-input"
-				class="flex-1 rounded bg-white/10 px-2 py-1 text-center text-white placeholder-white/50 outline-none" />
-			<button id="remote-join-confirm"
-					class="px-3 py-2 rounded bg-emerald-600 hover:bg-emerald-700 transition">
-			Join
-			</button>
-		</div>
-		</div>
-	</div>
-	</div>
+                <!-- header -->
+                <div class="flex items-center gap-6 mb-8">
+                    <div
+                        class="w-24 h-24 rounded-full p-[3px] bg-gradient-to-br from-cyan-400 via-fuchsia-500 to-amber-400 shrink-0"
+                    >
+                        <img
+                            id="friendstats-avatar"
+                            src="https://i.pravatar.cc/150?u=placeholder"
+                            class="w-full h-full object-cover rounded-full"
+                        />
+                    </div>
+                    <div>
+                        <h2 id="friendstats-name" class="text-3xl font-bold">
+                            Friend
+                        </h2>
+                        <p id="friendstats-email" class="text-sm text-white/70">
+                            friend@email
+                        </p>
+                    </div>
+                </div>
 
+                <!-- scrollable stats area -->
+                <div class="flex-1 overflow-y-auto pt-2 custom-scroll">
+                    <h3 class="text-xl font-semibold mb-4">
+                        Monthly average winning games
+                    </h3>
+                    <canvas
+                        id="fs-monthly-chart"
+                        class="max-w-full mb-8"
+                    ></canvas>
 
+                    <h3 class="text-xl font-semibold mb-4">
+                        Life average winning games
+                    </h3>
+                    <canvas
+                        id="fs-life-chart"
+                        class="w-56 h-56 mx-auto mb-8"
+                    ></canvas>
 
-	<!-- ░░ DIFFICULTY POP-UP ░░ -->
-	<div
-		id="difficulty-overlay"
-		class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden opacity-0 transition-opacity duration-300"
-	>
-		<div
-		id="difficulty-container"
-		class="relative w-full max-w-md p-8 rounded-3xl shadow-2xl bg-gradient-to-br from-purple-600 to-indigo-700 text-white flex flex-col items-center gap-6 transform scale-90 transition-transform duration-300"
-		>
-		<!-- close × -->
-		<button
-			id="difficulty-close"
-			class="absolute top-4 right-4 text-white/70 hover:text-white"
-		>
-			<svg
-			class="w-6 h-6"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			viewBox="0 0 24 24"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			>
-			<path d="M6 18L18 6M6 6l12 12" />
-			</svg>
-		</button>
+                    <h3 class="text-xl font-semibold mb-4">
+                        Goals scored vs conceded
+                    </h3>
+                    <canvas
+                        id="fs-goals-chart"
+                        class="w-56 h-56 mx-auto mb-8"
+                    ></canvas>
 
-		<h2 class="text-2xl font-bold">Select Difficulty</h2>
-		<div class="flex flex-col gap-4 w-full">
-			<button
-			data-diff="easy"
-			class="diff-btn w-full py-2 rounded-full bg-white/10 hover:bg-white/15 transition"
-			>
-			Easy
-			</button>
-			<button
-			data-diff="medium"
-			class="diff-btn w-full py-2 rounded-full bg-white/10 hover:bg-white/15 transition"
-			>
-			Medium
-			</button>
-			<button
-			data-diff="hard"
-			class="diff-btn w-full py-2 rounded-full bg-white/10 hover:bg-white/15 transition"
-			>
-			Training mode
-			</button>
-		</div>
-		</div>
-	</div>
-	<!-- ░░ FRIENDS SIDEBAR ░░ -->
-	<aside id="friends-sidebar"
-	class="fixed right-0 top-16 bottom-0 w-80 bg-black/30 backdrop-blur
-			border-l border-white/20 flex flex-col z-[40]
-			transform translate-x-full transition-transform duration-300
-			2xl:translate-x-0">
-<h2 class="text-lg font-bold px-4 py-3 border-b border-white/20">Friends</h2>
-<!-- add-friend bar -->
-	<div class="flex items-center gap-2 px-4 pb-3 pt-2 border-b border-white/20">
-	<input id="addfriend-input"
-			type="text"
-			placeholder="Username…"
-			class="flex-1 hidden bg-white/10 px-3 py-1 rounded-full
-					text-sm placeholder-white/60 focus:outline-none" />
-	<button id="addfriend-btn"
-			class="px-3 py-1 rounded-full bg-amber-500 hover:bg-amber-600
-					text-sm font-semibold">
-		Add&nbsp;
-	</button>
-	</div>
-<div id="friends-list" class="flex-1 overflow-y-auto custom-scroll px-4 py-3 space-y-4"></div>
-</aside>
+                    <h3 class="text-xl font-semibold mb-4">
+                        Monthly goals scored vs conceded
+                    </h3>
+                    <canvas id="fs-hits-chart" class="max-w-full mb-8"></canvas>
 
-<button id="friends-toggle"
-		class="fixed right-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-l-lg
-			text-xl flex items-center justify-center bg-black/40 backdrop-blur
-			2xl:hidden z-[41]">❮</button>
+                    <!-- 🏆  friend trophies tile will render here -->
+                    <h3 class="text-xl font-semibold mb-4">Trophies</h3>
+                    <div
+                        id="fs-trophies"
+                        class="mb-8 w-full flex justify-center"
+                    ></div>
+                </div>
+            </div>
+        </div>
+        <!-- MODE-CARD & DIFFICULTY STYLES (unchanged) -->
 
-	<!-- NEW friend-row template (one time in HTML) -->
-	<template id="friend-row-template">
-		<div class="bg-white/10 rounded-lg overflow-hidden
-					transition-[max-height,opacity] duration-300"
-			style="max-height:56px">
-		<!-- visible row -->
-		<div class="flex items-center gap-3 p-2">
-			<img class="avatar w-8 h-8 rounded-full" src="" />
-			<div class="flex-1">
-			<p class="username text-sm font-semibold"></p>
-			<p class="email text-[10px] text-white/60"></p>
-			</div>
-			<button class="more-btn text-[10px] px-2 py-1 rounded-full
-						bg-amber-500 hover:bg-amber-600">
-			more ▾
-			</button>
-		</div>
-		<!-- submenu -->
-		<div class="submenu px-2 pb-3 space-x-2 hidden">
-			<button class="sub px-2 py-1 text-[10px] bg-emerald-500 rounded-full">
-			Challenge
-			</button>
-			<button class="sub stats-btn px-2 py-1 text-[10px] bg-cyan-500 rounded-full">
-			Stats
-			</button>
-			<button class="sub remove-btn px-2 py-1 text-[10px] bg-red-500 rounded-full
-						active:scale-95 transition-transform duration-75">
-			Remove
-			</button>
-		</div>
-		<!-- confirm bar (hidden by default) -->
-		<div class="confirm-box px-2 pb-3 space-x-2 hidden">
-			<span class="text-[11px]">Remove friend?</span>
-			<button class="yes-btn px-2 py-[2px] text-[10px] rounded-full
-						bg-red-500 hover:bg-red-600">Yes</button>
-			<button class="no-btn  px-2 py-[2px] text-[10px] rounded-full
-						bg-white/10 hover:bg-white/20">No</button>
-		</div>
-		</div>
-	</template>
-	<!-- FRIENDS SIDEBAR TOAST -->
-	<div id="friends-toast"
-	class="fixed top-6 right-6 z-50
-			bg-emerald-500 text-white px-4 py-2 rounded-full shadow-lg text-sm
-			opacity-0 pointer-events-none transition-opacity duration-300"></div>
-	</div>
-
-	<!-- ░░ FRIEND-STATS OVERLAY ░░ -->
-	<div id="friendstats-overlay"
-		class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center
-				z-[60] hidden opacity-0 transition-opacity duration-300">
-	<div class="relative w-full max-w-3xl h-[90vh]
-				bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600
-				text-white p-8 rounded-3xl shadow-2xl flex flex-col">
-
-		<!-- close × -->
-		<button id="friendstats-close"
-				class="absolute top-4 right-4 text-white/70 hover:text-white">
-		<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2"
-			viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-			<path d="M6 18L18 6M6 6l12 12"/>
-		</svg>
-		</button>
-
-		<!-- header -->
-		<div class="flex items-center gap-6 mb-8">
-		<div class="w-24 h-24 rounded-full p-[3px]
-					bg-gradient-to-br from-cyan-400 via-fuchsia-500 to-amber-400 shrink-0">
-			<img id="friendstats-avatar"
-				src="https://i.pravatar.cc/150?u=placeholder"
-				class="w-full h-full object-cover rounded-full"/>
-		</div>
-		<div>
-			<h2 id="friendstats-name"  class="text-3xl font-bold">Friend</h2>
-			<p  id="friendstats-email" class="text-sm  text-white/70">friend@email</p>
-		</div>
-		</div>
-
-		<!-- scrollable stats area -->
-		<div class="flex-1 overflow-y-auto pt-2 custom-scroll">
-
-		<h3 class="text-xl font-semibold mb-4">Monthly average winning games</h3>
-		<canvas id="fs-monthly-chart" class="max-w-full mb-8"></canvas>
-
-		<h3 class="text-xl font-semibold mb-4">Life average winning games</h3>
-		<canvas id="fs-life-chart" class="w-56 h-56 mx-auto mb-8"></canvas>
-		
-		<h3 class="text-xl font-semibold mb-4">Goals scored vs conceded</h3>
-		<canvas id="fs-goals-chart" class="w-56 h-56 mx-auto mb-8"></canvas>
-		
-		<h3 class="text-xl font-semibold mb-4">Monthly goals scored vs conceded</h3>
-		<canvas id="fs-hits-chart" class="max-w-full mb-8"></canvas>
-
-		<!-- 🏆  friend trophies tile will render here -->
-		<h3 class="text-xl font-semibold mb-4">Trophies</h3>
-		<div id="fs-trophies" class="mb-8 w-full flex justify-center"></div>
-	</div>
-
-	</div>
-
-	</div>
-	<!-- MODE-CARD & DIFFICULTY STYLES (unchanged) -->
-
-	<!-- compiled scripts -->
-	<script type="module" src="./dist/auth.js"></script>
-	<!-- NEW -->
-	<script type="module" src="./dist/nav.js"></script>
-	<script type="module" src="./dist/stats.js"></script>
-	<script type="module" src="./dist/main.js"></script>
-	<script type="module" src="./dist/friends.js"></script>
-	<script type="module" src="./dist/notifications.js"></script>
-	<script type="module" src="./dist/friendstats.js"></script>
-	<script type="module" src="./dist/addfriend.js"></script>
-</body>
+        <!-- compiled scripts -->
+        <script type="module" src="./dist/auth.js"></script>
+        <!-- NEW -->
+        <script type="module" src="./dist/nav.js"></script>
+        <script type="module" src="./dist/stats.js"></script>
+        <script type="module" src="./dist/main.js"></script>
+        <script type="module" src="./dist/friends.js"></script>
+        <script type="module" src="./dist/notifications.js"></script>
+        <script type="module" src="./dist/friendstats.js"></script>
+        <script type="module" src="./dist/addfriend.js"></script>
+    </body>
 </html>
