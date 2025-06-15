@@ -1,4 +1,4 @@
-// notifications.ts – handles bell‑icon dropdown + in‑app notifications
+// frontend/src/notifications.ts
 // ---------------------------------------------------------------
 // This module is completely self‑contained.  Simply import it once from any
 // bootstrap file (e.g. nav.ts) or reference the compiled JS in <script type="module" …>.
@@ -11,10 +11,12 @@ import { HOST } from "./config.js";
  * Types & state
  * ----------------------------------------------------------------*/
 interface Notification {
-  id: number;          // unique id – milliseconds timestamp is fine
-  text: string;        // main message
-  date: string;        // ISO date string (for display only)
-  read: boolean;       // unread ↔ read status
+  id: number;
+  text: string;
+  date: string;
+  read: boolean;
+  type?: 'friend_request' | 'friend_accept' | string;
+  reference_id?: number;
 }
 
 let notifications: Notification[] = [
@@ -95,6 +97,40 @@ function renderPanel(): void {
     wrap.append(msg, time);
 
     row.append(icon, wrap);
+
+    // ─── New: if this is a friend request, add an Accept button ───
+    if (n.type === 'friend_request' && n.reference_id) {
+      const btn = document.createElement('button');
+      btn.textContent = 'Accept';
+      btn.className = 'ml-auto px-2 py-1 bg-green-500 text-white rounded';
+      btn.onclick = async (e) => {
+        e.stopPropagation();
+
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        await fetch(`http://${HOST}:3000/api/users/respond-friend`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            request_id: n.reference_id,
+            action: 'accept'
+          })
+        });
+
+        // mark as read and re-render
+        n.read = true;
+        updateBadge();
+        renderPanel();
+      };
+      row.append(btn);
+    }
+    // ────────────────────────────────────────────────────────────────
+
+    // clicking the row (outside the button) marks as read
     row.addEventListener("click", () => {
       n.read = true;
       updateBadge();
@@ -167,3 +203,32 @@ document.addEventListener("click", ev => {
 updateBadge();
 // Optional: fetchNotifications();
 // Example: pushNotification("Welcome back! Good luck in the arena 🏓");
+
+//MHEISENBERG
+fetchNotifications();
+// 2. connect to WS so we get new ones in real time
+const token = localStorage.getItem('token');
+if (token) {
+  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  const wsUrl =
+    `${protocol}://${window.location.hostname}:3000/ws/notifications?token=${token}`;
+  console.log('[notif] connecting to WS at', wsUrl);
+  const ws = new WebSocket(wsUrl);
+  ws.onopen = () => console.log('[notif] WS open, readyState=', ws.readyState);
+  ws.onerror = err => console.log('[notif] WS error', err);
+  ws.onclose = ev => console.log('[notif] WS closed', ev.code, ev.reason);
+  ws.onmessage = ev => {
+    console.log('[notif] WS message received raw:', ev.data);
+    try {
+      const incoming = JSON.parse(ev.data) as Notification;
+      console.log('[notif] WS parsed notification:', incoming);
+      notifications.unshift({ ...incoming, read: false });
+      updateBadge();
+      if (!panel?.classList.contains('hidden')) renderPanel();
+    } catch (err) {
+      console.log('[notif] WS message parse error', err);
+    }
+  };
+} else {
+  console.log('[notif] no token, skipping WS connect');
+}

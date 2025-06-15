@@ -1,3 +1,4 @@
+//backend/utils/db.ts
 const Database = require('better-sqlite3');
 const path = require('path');
 
@@ -79,5 +80,17 @@ CREATE TABLE IF NOT EXISTS challenges (
 );
 `);
 
+db.exec(`
+	CREATE TABLE IF NOT EXISTS notifications (
+	id           INTEGER PRIMARY KEY AUTOINCREMENT,
+	user_id      INTEGER NOT NULL,
+	type         TEXT NOT NULL,
+	reference_id INTEGER,
+	text         TEXT NOT NULL,
+	is_read      INTEGER DEFAULT 0,
+	created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY(user_id) REFERENCES users(id)
+	);
+`);
 
 export default db;

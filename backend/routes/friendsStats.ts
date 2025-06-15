@@ -1,7 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import db from '../utils/db';
 import { authMiddleware } from '../middleware/auth';
-import { JWTPayload } from '../utils/jwt';
 
 export default async function friendsStatsRoutes(fastify: FastifyInstance) {
 
