@@ -134,16 +134,16 @@ const existing = db.prepare(`
 //   console.log(`⚠️  Users ${senderId} and ${receiverId} are already friends or pending`);
 // }
 
-// if (true) {
-//   db.prepare(`
-//     DELETE FROM notifications
-//     WHERE (user_id = ?)
-//   `).run(receiverId);
-//   console.log(`✅ Friend entry inserted between users ${senderId} and ${receiverId}`);
-//   }
-//   else {
-//   console.log(`⚠️  Users ${senderId} and ${receiverId} are already friends or pending`);
-// }
+if (true) {
+  db.prepare(`
+    DELETE FROM notifications
+    WHERE (user_id = ?)
+  `).run(receiverId);
+  console.log(`✅ Friend entry inserted between users ${senderId} and ${receiverId}`);
+  }
+  else {
+  console.log(`⚠️  Users ${senderId} and ${receiverId} are already friends or pending`);
+}
 
 
 // if (!existing) {

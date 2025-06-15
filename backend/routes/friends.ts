@@ -96,14 +96,14 @@ export default async function friendsRoutes(fastify: FastifyInstance) {
 
     // 2) push via WS if they’re currently connected
     // const conns = fastify['notifConns'] as Map<number, WebSocket>;
-	const conns = (fastify as any).notifConns as Map<number, WebSocket> || new Map();
+	const conns = fastify.notifConns;
 	if (conns) {
 		const sock  = conns.get(targetId);
 		console.log(`→ WS push to user ${targetId}:`, notifText, friendReqId);
-		if (sock && sock.readyState === WebSocket.OPEN) {
+		if (sock?.readyState === WebSocket.OPEN) {
 		sock.send(JSON.stringify({
 			id:         Date.now(),
-			text:       `You have a new friend request from ${username}`,
+			text:       `You have a new friend request from ${me}`,
 			date:       new Date().toISOString(),
 			read:       false,
 			reference_id: friendReqId,
