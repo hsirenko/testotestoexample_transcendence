@@ -1,6 +1,8 @@
 /* tournament.ts – local-only 4-player bracket with a shareable code  */
 /* ----------------------------------------------------------------- */
 
+export { showOverlay, hideOverlay };
+
 const ov          = document.getElementById("tournament-overlay")   as HTMLElement;
 const box         = document.getElementById("tournament-container") as HTMLElement;
 
