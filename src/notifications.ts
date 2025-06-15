@@ -98,36 +98,62 @@ function renderPanel(): void {
 
     row.append(icon, wrap);
 
-    // ─── New: if this is a friend request, add an Accept button ───
-    if (n.type === 'friend_request' && n.reference_id) {
-      const btn = document.createElement('button');
-      btn.textContent = 'Accept';
-      btn.className = 'ml-auto px-2 py-1 bg-green-500 text-white rounded';
-      btn.onclick = async (e) => {
-        e.stopPropagation();
+/* ─── Friend-request action pills ─────────────────────────────── */
+if (n.type === "friend_request" && n.reference_id) {
+  /* shared helper for both buttons */
+  const respond = async (
+    e: MouseEvent,
+    action: "accept" | "decline",
+    btn: HTMLButtonElement
+  ) => {
+    e.stopPropagation();
+    btn.disabled = true;                     // prevent double-clicks
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-        const token = localStorage.getItem('token');
-        if (!token) return;
+    await fetch(`http://${HOST}:3000/api/users/respond-friend`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        request_id: n.reference_id,
+        action,                              // "accept" or "decline"
+      }),
+    });
 
-        await fetch(`http://${HOST}:3000/api/users/respond-friend`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            request_id: n.reference_id,
-            action: 'accept'
-          })
-        });
+    /* mark as read and refresh UI */
+    n.read = true;
+    updateBadge();
+    renderPanel();
+  };
 
-        // mark as read and re-render
-        n.read = true;
-        updateBadge();
-        renderPanel();
-      };
-      row.append(btn);
-    }
+  /* wrapper so both pills align right with a gap */
+  const box = document.createElement("div");
+  box.className = "ml-auto flex gap-2";
+
+  /* Accept pill */
+  const accept = document.createElement("button");
+  accept.textContent = "Accept";
+  accept.className =
+    "px-3 py-1 rounded-full bg-emerald-500 hover:bg-emerald-600 " +
+    "text-sm font-semibold transition";
+  accept.onclick = (e) => respond(e, "accept", accept);
+
+  /* Decline pill */
+  const decline = document.createElement("button");
+  decline.textContent = "Decline";
+  decline.className =
+    "px-3 py-1 rounded-full bg-rose-500 hover:bg-rose-600 " +
+    "text-sm font-semibold transition";
+  decline.onclick = (e) => respond(e, "decline", decline);
+
+  box.append(accept, decline);
+  row.append(box);
+}
+
+
     // ────────────────────────────────────────────────────────────────
 
     // clicking the row (outside the button) marks as read
