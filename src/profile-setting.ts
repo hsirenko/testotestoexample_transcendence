@@ -290,9 +290,6 @@ saveBtn?.addEventListener("click", async () => {
     if (!oldP || !newP || !conP) {
       showError("Please fill current, new, and confirm password."); return;
     }
-    if (oldP !== DUMMY_OLD_PASS) {
-      showError("Current password is incorrect."); return;
-    }
     const pErr = validatePassword(newP);
     if (pErr) { showError(pErr); return; }
     if (newP !== conP) {
@@ -305,7 +302,7 @@ saveBtn?.addEventListener("click", async () => {
     const payload: Record<string, string> = {};
     if (u !== (viewUsername?.textContent ?? "")) payload.username = u;
     if (e !== (viewEmail?.textContent ?? ""))    payload.email    = e;
-    if (newP)                                    payload.password = newP;
+    if (newP)                                    {payload.newPassword = newP;payload.oldPassword = oldP;}
 
     if (Object.keys(payload).length) {
       const res  = await fetch(`http://${HOST}:3000/api/users/edit-profile`, {
