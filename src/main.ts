@@ -7,6 +7,9 @@ import {
     GameOverMsg,
     ServerMsg,
 } from "./types/ws.js";
+
+import { fetchFriends } from "./friends.js";
+
 import { HOST } from "./config.js";
 import { showOverlay, hideOverlay } from "./tournament.js";
 
@@ -443,12 +446,23 @@ function handleWin(remote: boolean): void {
         CanvasHtml.parentElement!.appendChild(overlay);
     }
 
-    overlay.innerHTML = `
-	<div class="msg-box">
-	<span class="winner">${winner} Wins!</span>
-	<button id="play-again">Play Again</button>
-	</div>
-`;
+    overlay.innerHTML = remote
+        ? /* —— REMOTE MATCH —— show only the CLOSE button —— */
+          `
+      <div class="msg-box">
+        <span class="winner">${winner} Wins!</span>
+        <button id="close-btn">Home</button>
+      </div>`
+        : /* —— OFF-LINE / AI —— show PLAY AGAIN + CLOSE —— */
+          `
+      <div class="msg-box">
+        <span class="winner">${winner} Wins!</span>
+        <div class="btn-row">
+          <button id="play-again">Play Again</button>
+          <button id="close-btn">Close</button>
+        </div>
+      </div>`;
+
     overlay.className = "overlay";
 
     /* inject style only once */
@@ -513,29 +527,56 @@ function handleWin(remote: boolean): void {
 			font-size:1.25rem;
 			}
 		}
+        #win-message .btn-row{
+              display:flex;
+              gap:1rem;
+              flex-wrap:wrap;
+              justify-content:center;
+            }
+                
+            /* CLOSE / HOME button 🎨 */
+            #close-btn{
+              margin-top:1rem;
+              padding:.55rem 2rem;
+              font-size:1.1rem;
+              font-weight:700;
+              border:none;
+              border-radius:10px;
+              background:#facc15;           /* sunny amber, contrasts play-again pink */
+              color:#000;
+              cursor:pointer;
+              transition:transform .2s,filter .2s;
+            }
+            #close-btn:hover{
+              transform:scale(1.05);
+              filter:brightness(1.15);
+            }
+              
 		`;
         document.head.appendChild(style);
     }
 
     /* play-again button logic */
-	const againBtn = document.getElementById("play-again") as HTMLButtonElement;
-	if (!remote)
-	{
-		againBtn.onclick = () => {
-			overlay!.remove();
-			LScore = RScore = 0;
-			updateScore();
-	
-			resetObjects();
-			resizeCanvas();
-	
-			startCountdown(3, beginPlay); // << here!
-		};
-	}
-	else
-	{
-		againBtn.remove();
-	}
+    const againBtn = document.getElementById(
+        "play-again"
+    ) as HTMLButtonElement | null;
+    const closeBtn = document.getElementById("close-btn") as HTMLButtonElement;
+
+    if (!remote && againBtn) {
+        againBtn.onclick = () => {
+            overlay!.remove();
+            LScore = RScore = 0;
+            updateScore();
+            resetObjects();
+            resizeCanvas();
+            startCountdown(3, beginPlay);
+        };
+    }
+
+    closeBtn.onclick = () => {
+        // reuse the existing navbar handler so all clean-up paths stay identical
+        (document.getElementById("nav-home") as HTMLAnchorElement).click();
+    };
 }
 
 function beginPlay(): void {
@@ -654,25 +695,25 @@ function connectWebSocket() {
             alert("WTF MAN :D");
         }
         if (msg.type === "ready") {
-			opponentId = msg.opponentId;
-			const token = localStorage.getItem("token");
-			if (token && opponentId) {
-				const res = await fetch(`http://${HOST}:3000/api/match/start`, {
-					method: "POST",
-					headers: {
-						"Content-Type":"application/json",
-						"Authorization":`Bearer ${token}`
-					},
-					body: JSON.stringify({
-						player2_id: opponentId,
-						player1_id: yourUserId
-					})
-				});
-				if (res.ok) {
-					currentMatchId = (await res.json()).match_id;
-					console.log("📝 match started →", currentMatchId);
-				}
-			}
+            opponentId = msg.opponentId;
+            const token = localStorage.getItem("token");
+            if (token && opponentId) {
+                const res = await fetch(`http://${HOST}:3000/api/match/start`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                        player2_id: opponentId,
+                        player1_id: yourUserId,
+                    }),
+                });
+                if (res.ok) {
+                    currentMatchId = (await res.json()).match_id;
+                    console.log("📝 match started →", currentMatchId);
+                }
+            }
             const waitingOverlay = document.getElementById("waiting-overlay");
             const modal = document.getElementById("remote-modal")!;
             document.getElementById("win-message")?.remove();
@@ -717,7 +758,7 @@ function connectWebSocket() {
                 LScore = msg.scores.left; // then update our local copies
                 RScore = msg.scores.right;
                 updateScore();
-				// console.log("HERE!\n");
+                // console.log("HERE!\n");
                 pauseAndReset(dir); // one-second inter-round pause
             }
             // update score and draw
@@ -727,41 +768,48 @@ function connectWebSocket() {
             // render();
         } else if (msg.type === "gameOver") {
             // stop listening & close
-			// console.log(msg)
-			const btnCreate = document.getElementById("remote-create-btn")! as HTMLButtonElement;
-			const btnJoin = document.getElementById("remote-join-btn")! as HTMLButtonElement;
-			const dir: 1 | -1 = msg.scores.left > LScore ? 1 : -1; // ← decide who scored first
+            // console.log(msg)
+            const btnCreate = document.getElementById(
+                "remote-create-btn"
+            )! as HTMLButtonElement;
+            const btnJoin = document.getElementById(
+                "remote-join-btn"
+            )! as HTMLButtonElement;
+            const dir: 1 | -1 = msg.scores.left > LScore ? 1 : -1; // ← decide who scored first
 
-			LScore = msg.scores.left; // then update our local copies
-			RScore = msg.scores.right;
-			updateScore();
+            LScore = msg.scores.left; // then update our local copies
+            RScore = msg.scores.right;
+            updateScore();
             socket!.close();
-			if (currentMatchId != null && opponentId != null) {
-			const token = localStorage.getItem("token");
-			// const xxx = localStorage.getItem("user");
-			console.log("XX =:" + yourUserId);
-			if (token) {
-				fetch(`http://${HOST}:3000/api/match/submit`, {
-				method: "POST",
-				headers: {
-					"Content-Type":"application/json",
-					"Authorization":`Bearer ${token}`
-				},
-				body: JSON.stringify({
-					match_id:  currentMatchId,
-					winner_id: msg.winner === 'left' ? /* left’s userId */ yourUserId : opponentId,
-					score_p1:  LScore,
-					score_p2:  RScore,
-				})
-				}).catch(console.error);
-			}
-			currentMatchId = null;
-			}
-			handleWin(true);
-			btnCreate.disabled = false;
-			btnJoin.disabled = false;
-			hasJoined = false;
-			gameId = "";
+            if (currentMatchId != null && opponentId != null) {
+                const token = localStorage.getItem("token");
+                // const xxx = localStorage.getItem("user");
+                console.log("XX =:" + yourUserId);
+                if (token) {
+                    fetch(`http://${HOST}:3000/api/match/submit`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({
+                            match_id: currentMatchId,
+                            winner_id:
+                                msg.winner === "left"
+                                    ? /* left’s userId */ yourUserId
+                                    : opponentId,
+                            score_p1: LScore,
+                            score_p2: RScore,
+                        }),
+                    }).catch(console.error);
+                }
+                currentMatchId = null;
+            }
+            handleWin(true);
+            btnCreate.disabled = false;
+            btnJoin.disabled = false;
+            hasJoined = false;
+            gameId = "";
             // alert(`${(msg as GameOverMsg).winner.toUpperCase()} wins!`);
             // window.location.reload();
         }
@@ -770,6 +818,105 @@ function connectWebSocket() {
     socket.onerror = (err) => console.error("[client] ⚠️ ws error", err);
     socket.onclose = (ev) => console.log("[client] ❌ ws closed", ev);
 }
+
+//here is the new challenge pop up part
+
+const btnChallenge = document.getElementById(
+    "remote-challenge-btn"
+)! as HTMLButtonElement;
+
+const challengeModal = document.getElementById(
+    "challenge-modal"
+)! as HTMLDivElement;
+
+const challengeList = document.getElementById(
+    "challenge-list"
+)! as HTMLDivElement;
+
+const challengeClose = document.getElementById(
+    "challenge-close"
+)! as HTMLButtonElement;
+
+interface Friend {
+    id: string;
+    username: string;
+    avatar: string;
+}
+
+//here need changes to fix the pp of the friend
+function getAvatarUrl(f: Friend): string {
+    return f.avatar && f.avatar.length ? f.avatar : "/img/default-avatar.png";
+}
+
+//open and close functionality for the challenge pop up
+function openChallengeModal(): void {
+    challengeModal.classList.remove("hidden");
+    populateChallengeList();
+}
+
+function closeChallengeModal(): void {
+    challengeModal.classList.add("hidden");
+}
+
+//build the friend list using the fetch function which is already done (i did export it from the friends.ts at the beginnign of this file)
+async function populateChallengeList(): Promise<void> {
+    challengeList.innerHTML = `<p class="text-white/80 text-center">Loading…</p>`;
+
+    try {
+        const friends: Friend[] = await fetchFriends();
+
+        if (!friends.length) {
+            challengeList.innerHTML = `<p class="text-white/80 text-center">You have no friends yet.</p>`;
+            return;
+        }
+
+        challengeList.innerHTML = "";
+
+        friends.forEach((f) => {
+            const row = document.createElement("div");
+            row.className =
+                "flex items-center justify-between bg-white/10 hover:bg-white/15 " +
+                "rounded-xl px-4 py-3 transition";
+
+            row.innerHTML = `
+        <div class="flex items-center gap-3 min-w-0">
+          <img src="${getAvatarUrl(f)}"
+               class="w-10 h-10 rounded-full object-cover shrink-0" alt="">
+          <span class="text-white font-medium truncate">${f.username}</span>
+        </div>
+
+        <button data-id="${f.id}"
+                class="challenge-send-btn bg-amber-500 hover:bg-amber-600
+                       rounded-lg px-4 py-1.5 text-sm shadow">
+          Challenge
+        </button>
+      `;
+            challengeList.appendChild(row);
+        });
+    } catch (err) {
+        console.error(err);
+        challengeList.innerHTML = `<p class="text-red-300 text-center">Could not load friends.</p>`;
+    }
+}
+
+//setting the button functionality
+btnChallenge.addEventListener("click", openChallengeModal);
+
+challengeClose.addEventListener("click", closeChallengeModal);
+
+challengeModal.addEventListener("click", (e) => {
+    if (e.target === challengeModal) closeChallengeModal(); // click-outside
+});
+
+document.addEventListener("click", (e) => {
+    const el = e.target as HTMLElement;
+    if (el.classList.contains("challenge-send-btn")) {
+        const id = el.getAttribute("data-id");
+        if (id) {
+            closeChallengeModal();
+        }
+    }
+});
 
 export function initRemoteModal(): void {
     const ov = document.getElementById("remote-modal")!; // overlay
