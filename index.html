@@ -894,14 +894,17 @@
     </div>
 	
 <style>
-/* shrink the vertical bracket so it never overflows */
-@media (max-width:640px){
-  #tour-bracket-vert{
-    --scale: calc(min(92vw / 360, 88vh / 620));
-    transform-origin: top center;
-    transform: scale(var(--scale));
-  }
-}
+	@media (max-width:640px){
+	#tour-bracket-vert{
+		--scale: calc(min(92vw / 360, 88vh / 560));
+		transform-origin: top center;
+		transform: scale(var(--scale));
+	}
+	/* slimmer chips so it fits on 360-px phones */
+	#tour-bracket-vert .chip       { width: 120px; }
+	#tour-bracket-vert [data-slot="6"]{ width: 160px; }
+	}
+
 </style>
 
 
@@ -911,7 +914,7 @@
 
   <!-- BRACKET -------------------------------------------------------- -->
 	<div id="tour-bracket"
-		class="relative mx-auto w-[750px] h-[460px] font-handwriting hidden md:block">  
+		class="relative mx-auto w-[750px] h-[360px] font-handwriting hidden md:block">  
 
 	<svg class="absolute inset-0 w-full h-full pointer-events-none"
 		viewBox="0 0 750 460" preserveAspectRatio="xMidYMid meet">
@@ -936,17 +939,61 @@
 	</svg>
 
 	<!-- players (unchanged) -->
-	<div data-slot="0" class="chip absolute left-0   top-[41px]">YOU</div>
-	<div data-slot="1" class="chip absolute left-0   top-[130px]">—</div>
-	<div data-slot="2" class="chip absolute left-0   top-[300px]">—</div>
-	<div data-slot="3" class="chip absolute left-0   top-[385px]">—</div>
+	<div data-slot="0" class="chip absolute left-0   top-[27px]">—</div>
+	<div data-slot="1" class="chip absolute left-0   top-[100px]">—</div>
+	<div data-slot="2" class="chip absolute left-0   top-[230px]">—</div>
+	<div data-slot="3" class="chip absolute left-0   top-[302px]">—</div>
 
 	<!-- winners – new left offset --------------------------------- -->
-	<div data-slot="4" class="chip absolute left-[300px] top-[73px]  w-[200px]">Winner of Game 1</div>
-	<div data-slot="5" class="chip absolute left-[300px] top-[360px] w-[200px]">Winner of Game 2</div>
+	<div data-slot="4" class="chip absolute left-[320px] top-[50px]  w-[200px]">Winner of Game 1</div>
+	<div data-slot="5" class="chip absolute left-[320px] top-[280px] w-[200px]">Winner of Game 2</div>
 
 	<!-- champion – new left offset -------------------------------- -->
-	<div data-slot="6" class="chip absolute left-[710px] top-[213px] w-[320px]">Winner</div>
+	<div data-slot="6" class="chip absolute left-[645px] top-[165px] w-[320px]">champion</div>
+	</div>
+
+	<!-- ░░ VERTICAL (mobile) BRACKET ░░ -->
+
+
+	<div id="tour-bracket-vert"
+     class="relative w-[360px] h-[380px] font-handwriting
+            mx-auto md:hidden">
+
+	<!-- --- connector lines, shifted 40 px right --- -->
+	<svg class="absolute inset-0 w-full h-full pointer-events-none"
+		viewBox="0 0 360 560" preserveAspectRatio="xMidYMid meet">
+		<g transform="translate(-25 0)"          
+		stroke="white" stroke-opacity=".25" stroke-width="2">
+
+		<!-- QF-1 (P0 vs P1) -->
+		<path d="M140  66 V134"/> <path d="M220  66 V134"/> <path d="M140 134 H220"/>
+
+		<!-- QF-2 (P2 vs P3) -->
+		<path d="M140 505 V434"/>
+		<path d="M220 505 V434"/>
+		<path d="M140 434 H220"/>
+
+		<!-- connect winners to centre spine -->
+		<path d="M180 134 V300"/> <!--nope-->
+
+		<!-- down-spine & champion branch -->
+		<path d="M180 300 V434"/>
+		<path d="M180 300 H250"/>
+		</g>
+	</svg>
+
+	<!-- players (0-3) -->
+	<div data-slot="0" class="chip absolute left-5   top-[16px]  w-[140px]">—</div>
+	<div data-slot="1" class="chip absolute right-5 top-[16px]  w-[140px]">—</div>
+
+	<div data-slot="2" class="chip absolute left-5   top-[350px] w-[140px]">—</div>
+	<div data-slot="3" class="chip absolute right-5 top-[350px] w-[140px]">—</div>
+
+	<!-- semi-final winners (4-5) – both on the left -->
+	<div data-slot="4" class="chip absolute left-0 top-[170px] w-[140px] opacity-0 translate-x-4"> Winner Game 1 </div>
+	<div data-slot="5" class="chip absolute left-0 top-[210px] w-[140px] opacity-0 translate-x-4">Winner Game 2</div>
+	<!-- champion (6) – on the right branch -->
+	<div data-slot="6" class="chip absolute left-[350px] -translate-x-full top-[191px] w-[200px] text-center opacity-0 translate-x-4"> champion </div>
 	</div>
 
 
@@ -954,55 +1001,6 @@
     Waiting for 3 more players…
   </p>
 </div>
-
-<!-- VERTICAL BRACKET ──────────────────────────────────────────── -->
-<div id="tour-bracket-vert"
-     class="relative w-[360px] h-[620px] font-handwriting
-            block md:hidden mx-auto">        <!-- visible only ≤ 640px -->
-
-  <!-- connecting lines -->
-  <svg class="absolute inset-0 w-full h-full pointer-events-none"
-       viewBox="0 0 360 620" preserveAspectRatio="xMidYMid meet"
-       stroke="white" stroke-opacity=".25" stroke-width="2">
-
-    <!-- quarter-finals (top row) -->
-    <path d="M140  60 V140" />       <!-- P0 down      -->
-    <path d="M220  60 V140" />       <!-- P1 down      -->
-    <path d="M140 140 H220" />       <!-- join P0-P1   -->
-
-    <path d="M140 200 V280" />       <!-- P2 down      -->
-    <path d="M220 200 V280" />       <!-- P3 down      -->
-    <path d="M140 280 H220" />       <!-- join P2-P3   -->
-
-    <!-- semi-finals to centre -->
-    <path d="M180 140 V280" />       <!-- centre vert  -->
-    <path d="M140 300 H180" />       <!-- winner L → C -->
-    <path d="M220 300 H180" />       <!-- winner R → C -->
-
-    <!-- centre to grand-final -->
-    <path d="M180 300 V500" />
-    <path d="M100 500 H260" />       <!-- long horiz   -->
-
-    <!-- champion line straight down -->
-    <path d="M180 500 V580" />
-  </svg>
-
-  <!-- players ---------------------------------------------------- -->
-  <div data-slot="0" class="chip absolute left-0   top-[20px]  w-[140px]">YOU</div>
-  <div data-slot="1" class="chip absolute right-0 top-[20px]  w-[140px]">—</div>
-
-  <div data-slot="2" class="chip absolute left-0   top-[160px] w-[140px]">—</div>
-  <div data-slot="3" class="chip absolute right-0 top-[160px] w-[140px]">—</div>
-
-  <!-- winners ---------------------------------------------------- -->
-  <div data-slot="4" class="chip absolute left-0   top-[300px] w-[140px]">Winner of Game 1</div>
-  <div data-slot="5" class="chip absolute right-0 top-[300px] w-[140px]">Winner of Game 2</div>
-
-  <!-- champion --------------------------------------------------- -->
-  <div data-slot="6" class="chip absolute left-1/2 -translate-x-1/2
-                           top-[600px] w-[200px] text-center">champion</div>
-</div>
-
 
   </div> <!-- end tournament-container -->
 </section> <!-- end tournament-overlay -->

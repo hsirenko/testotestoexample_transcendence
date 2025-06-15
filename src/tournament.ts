@@ -30,7 +30,7 @@ export interface Player { id: number; username: string; }
 interface Tournament    { id: string; players: Player[]; }
 
 let current: Tournament | null = null;
-const YOU = localStorage.getItem("username") ?? "YOU";
+const YOU = localStorage.getItem("username") ?? "mohamibr";
 
 /* ───── helpers ───── */
 function genCode(): string {
@@ -117,22 +117,37 @@ export function initTournamentModal(): void {
   showOverlay(ov, box);
 }
 
-/* ───── painter ───── */
+/* painter in tournament.ts */
 function updateBracket(players: Player[]) {
-  /* seeds */
-  for (let i = 0; i < 4; i++) {
-    slotEls[i].textContent = players[i]?.username.toUpperCase() ?? "player name";
-  }
-  /* winners / champion chips fade-in when their text ≠ "—" */
-  slotEls.slice(4).forEach(el => {
-    if (el.textContent !== "—") el.classList.remove("opacity-0", "translate-x-4");
-  });
 
+  /* helper – paint ALL matching elements */
+  const paint = (slot: number, txt: string) =>
+    document
+      .querySelectorAll<HTMLDivElement>(`[data-slot="${slot}"]`)
+      .forEach(el => el.textContent = txt);
+
+  /* seeds 0-3 */
+  for (let i = 0; i < 4; i++) {
+    paint(i, players[i]?.username.toUpperCase() ?? "PLAYER NAME");
+  }
+
+  /* winners & champion fade-in */
+  document
+    .querySelectorAll<HTMLDivElement>(`[data-slot="4"],
+                                       [data-slot="5"],
+                                       [data-slot="6"]`)
+    .forEach(el => {
+      if (el.textContent !== "—")
+        el.classList.remove("opacity-0", "translate-x-4");
+    });
+
+  /* lobby hint */
   const remain = 4 - players.length;
   bracketHint.textContent =
     remain > 0 ? `Waiting for ${remain} more player${remain > 1 ? "s" : ""}…`
                : "Bracket ready – good luck!";
 }
+
 
 /* ───── wiring ───── */
 closeBtn.addEventListener("click", () => hideOverlay(ov, box));
