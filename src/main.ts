@@ -1,3 +1,4 @@
+//frontend/src/main.ts
 import {
     ClientMsgJoin,
     ClientMsgMove,
@@ -517,17 +518,24 @@ function handleWin(remote: boolean): void {
     }
 
     /* play-again button logic */
-    const againBtn = document.getElementById("play-again") as HTMLButtonElement;
-    againBtn.onclick = () => {
-        overlay!.remove();
-        LScore = RScore = 0;
-        updateScore();
-
-        resetObjects();
-        resizeCanvas();
-
-        startCountdown(3, beginPlay); // << here!
-    };
+	const againBtn = document.getElementById("play-again") as HTMLButtonElement;
+	if (!remote)
+	{
+		againBtn.onclick = () => {
+			overlay!.remove();
+			LScore = RScore = 0;
+			updateScore();
+	
+			resetObjects();
+			resizeCanvas();
+	
+			startCountdown(3, beginPlay); // << here!
+		};
+	}
+	else
+	{
+		againBtn.remove();
+	}
 }
 
 function beginPlay(): void {
@@ -538,6 +546,13 @@ function beginPlay(): void {
     (window as any).refreshMobilePads?.();
 }
 /* ═════════════ REMOTE MODE ═════════════ */
+
+let opponentId: number | null = null;
+let currentMatchId: number | null = null;
+let yourUserId: number | null = null;
+
+const user = JSON.parse(localStorage.getItem("user") ?? "{}");
+yourUserId = user.id;
 
 const auth = (): HeadersInit => {
     const t = localStorage.getItem("token");
@@ -628,7 +643,7 @@ function connectWebSocket() {
         }
     };
 
-    socket.onmessage = (ev) => {
+    socket.onmessage = async (ev) => {
         const msg = JSON.parse(ev.data) as ServerMsg;
 
         /* Skip live-state updates while we’re showing the 1-second pause */
@@ -639,7 +654,25 @@ function connectWebSocket() {
             alert("WTF MAN :D");
         }
         if (msg.type === "ready") {
-            console.log("[client] 🔔 ready received — starting countdown");
+			opponentId = msg.opponentId;
+			const token = localStorage.getItem("token");
+			if (token && opponentId) {
+				const res = await fetch(`http://${HOST}:3000/api/match/start`, {
+					method: "POST",
+					headers: {
+						"Content-Type":"application/json",
+						"Authorization":`Bearer ${token}`
+					},
+					body: JSON.stringify({
+						player2_id: opponentId,
+						player1_id: yourUserId
+					})
+				});
+				if (res.ok) {
+					currentMatchId = (await res.json()).match_id;
+					console.log("📝 match started →", currentMatchId);
+				}
+			}
             const waitingOverlay = document.getElementById("waiting-overlay");
             const modal = document.getElementById("remote-modal")!;
             document.getElementById("win-message")?.remove();
@@ -684,7 +717,7 @@ function connectWebSocket() {
                 LScore = msg.scores.left; // then update our local copies
                 RScore = msg.scores.right;
                 updateScore();
-
+				// console.log("HERE!\n");
                 pauseAndReset(dir); // one-second inter-round pause
             }
             // update score and draw
@@ -692,13 +725,44 @@ function connectWebSocket() {
             // RScore = msg.scores.right;
             // updateScore();
             // render();
-        } else if ((msg as GameOverMsg).type === "gameOver") {
+        } else if (msg.type === "gameOver") {
             // stop listening & close
+			// console.log(msg)
+			const btnCreate = document.getElementById("remote-create-btn")! as HTMLButtonElement;
+			const btnJoin = document.getElementById("remote-join-btn")! as HTMLButtonElement;
+			const dir: 1 | -1 = msg.scores.left > LScore ? 1 : -1; // ← decide who scored first
+
+			LScore = msg.scores.left; // then update our local copies
+			RScore = msg.scores.right;
+			updateScore();
             socket!.close();
-            console.log(
-                `${(msg as GameOverMsg).winner} - SCORES: ${LScore} - ${RScore}`
-            );
-            alert(`${(msg as GameOverMsg).winner.toUpperCase()} wins!`);
+			if (currentMatchId != null && opponentId != null) {
+			const token = localStorage.getItem("token");
+			// const xxx = localStorage.getItem("user");
+			console.log("XX =:" + yourUserId);
+			if (token) {
+				fetch(`http://${HOST}:3000/api/match/submit`, {
+				method: "POST",
+				headers: {
+					"Content-Type":"application/json",
+					"Authorization":`Bearer ${token}`
+				},
+				body: JSON.stringify({
+					match_id:  currentMatchId,
+					winner_id: msg.winner === 'left' ? /* left’s userId */ yourUserId : opponentId,
+					score_p1:  LScore,
+					score_p2:  RScore,
+				})
+				}).catch(console.error);
+			}
+			currentMatchId = null;
+			}
+			handleWin(true);
+			btnCreate.disabled = false;
+			btnJoin.disabled = false;
+			hasJoined = false;
+			gameId = "";
+            // alert(`${(msg as GameOverMsg).winner.toUpperCase()} wins!`);
             // window.location.reload();
         }
     };

@@ -1,3 +1,4 @@
+//backend/routes/match.ts
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import db from '../utils/db';
 import { authMiddleware } from '../middleware/auth';
@@ -6,7 +7,7 @@ import { JWTPayload } from '../utils/jwt';
 export default async function matchRoutes(fastify: FastifyInstance) {
   
   //START MATCH (new)
-  fastify.post('/match/start', async (req, reply) => {
+  fastify.post('/api/match/start', { preHandler: authMiddleware }, async (req, reply) => {
     const {
       player1_id,
       player2_id,
@@ -54,7 +55,7 @@ export default async function matchRoutes(fastify: FastifyInstance) {
 
 
   //END MATCH
-  fastify.post('/match/submit', async (req, reply) => {
+  fastify.post('/api/match/submit', { preHandler: authMiddleware }, async (req, reply) => {
   const {
     match_id,
     winner_id,

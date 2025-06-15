@@ -115,12 +115,25 @@ import db from './utils/db';
 const senderId = 38;
 const receiverId = 49;
 
-// Check if they're already friends
 const existing = db.prepare(`
-  SELECT * FROM friends
-  WHERE (sender_id = ? AND receiver_id = ?)
-     OR (sender_id = ? AND receiver_id = ?)
-`).get(senderId, receiverId, receiverId, senderId);
+  SELECT * FROM matches
+`).all();
+
+if (existing.length > 0) {
+  db.prepare(`
+    DELETE FROM matches
+  `).run();
+  console.log(`✅ All rows deleted from the matches table.`);
+} else {
+  console.log(`⚠️  No matches found in the table.`);
+}
+
+// Check if they're already friends
+// const existing = db.prepare(`
+//   SELECT * FROM friends
+//   WHERE (sender_id = ? AND receiver_id = ?)
+//      OR (sender_id = ? AND receiver_id = ?)
+// `).get(senderId, receiverId, receiverId, senderId);
 
 // if (existing) {
 //   db.prepare(`
@@ -134,16 +147,16 @@ const existing = db.prepare(`
 //   console.log(`⚠️  Users ${senderId} and ${receiverId} are already friends or pending`);
 // }
 
-if (true) {
-  db.prepare(`
-    DELETE FROM notifications
-    WHERE (user_id = ?)
-  `).run(receiverId);
-  console.log(`✅ Friend entry inserted between users ${senderId} and ${receiverId}`);
-  }
-  else {
-  console.log(`⚠️  Users ${senderId} and ${receiverId} are already friends or pending`);
-}
+// if (true) {
+//   db.prepare(`
+//     DELETE FROM notifications
+//     WHERE (user_id = ?)
+//   `).run(receiverId);
+//   console.log(`✅ Friend entry inserted between users ${senderId} and ${receiverId}`);
+//   }
+//   else {
+//   console.log(`⚠️  Users ${senderId} and ${receiverId} are already friends or pending`);
+// }
 
 
 // if (!existing) {
