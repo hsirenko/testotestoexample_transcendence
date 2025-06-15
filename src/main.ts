@@ -29,6 +29,8 @@ const PadW       = window.innerWidth <= MobileW ? 10 : 12;
 const PadH       = window.innerWidth <= MobileW ? 60 : 80;
 const PadGap     = 24;
 
+let ignoreServerState = false;
+
 const ColLPad = "#22d3ee";
 const ColRPad = "#fbbf24";
 const ColBall = "#f472b6";
@@ -79,6 +81,34 @@ let gameId      = "";
 let ownGameId: string | null = null;
 let hasJoined   = false;
 
+
+const pauseAndReset = (dir: 1 | -1): void => {
+  // /* ---------- REMOTE: just freeze rendering & network for 1 s -------- */
+  // if (remoteMode) {
+  //   playing            = false;        // stop loop (no render / key spam)
+  //   ignoreServerState  = true;         // drop incoming “state” frames
+  //   render();                          // paint the last frame once
+
+  //   setTimeout(() => {                 // after 1 s: resume everything
+  //     ignoreServerState = false;
+  //     lastTime          = performance.now();
+  //     resetObjects();
+  //     playing           = true;
+  //   }, 1000);
+
+  //   return;                            // never touch local positions/vels
+  // }
+
+  // /* ---------- LOCAL (PvP / AI) behaviour, unchanged ------------------ */
+  playing  = false;
+  ball.v.x = ball.v.y = 0;
+  resetPositions(dir);
+
+  setTimeout(() => {
+    lastTime = performance.now();
+    playing  = true;
+  }, 1000);
+};
 /* Shared key state (for human control) ---------------------------- */
 const keys: Record<string, boolean> = {};
 
@@ -257,17 +287,6 @@ function update(dt: number): void {
     ball.v.x = dir * spd * Math.cos(ang);
     ball.v.y =       spd * Math.sin(ang);
   }
-
-  /* --- Scoring -------------------------------------------------------- */
-  const pauseAndReset = (dir: 1 | -1) => {
-    playing  = false;
-    ball.v.x = ball.v.y = 0;
-    resetPositions(dir);
-    setTimeout(() => {
-      lastTime = performance.now();
-      playing  = true;
-    }, 1000);
-  };
 
   if (ball.x + BallSize < 0) {
     RScore++;
@@ -573,15 +592,7 @@ function connectWebSocket() {
 	} else if (ownGameId && gameId === ownGameId && hasJoined) {
 		return;
 	}
-	const pauseAndReset = (dir: 1 | -1) => {
-		playing  = false;
-		ball.v.x = ball.v.y = 0;
-		resetPositions(dir);
-		setTimeout(() => {
-		lastTime = performance.now();
-		playing  = true;
-		}, 1000);
-	};
+	
     console.log(`[client] 🎾 connecting to ws://${HOST}:3000/ws/game`);
     socket = new WebSocket(`ws://${HOST}:3000/ws/game?token=${localStorage.getItem('token')}`);
     socket.onopen = () => {
@@ -595,7 +606,12 @@ function connectWebSocket() {
     };
 
     socket.onmessage = (ev) => {
+      
         const msg = JSON.parse(ev.data) as ServerMsg;
+
+        /* Skip live-state updates while we’re showing the 1-second pause */
+          if (msg.type === "state" && ignoreServerState) return;
+
         // 1) got the “ready” signal from the server?
         if (msg.type === "error") {
             alert("WTF MAN :D");
@@ -640,13 +656,15 @@ function connectWebSocket() {
             };
 
 			if (msg.scores.left !== LScore || msg.scores.right !== RScore) {
-				LScore = msg.scores.left;
-				RScore = msg.scores.right;
-				updateScore();
-				const dir = msg.scores.left > LScore ? 1 : -1;
-				// console.log("HERE\n");
-				pauseAndReset(dir);
-			}
+  const dir: 1 | -1 =          // ← decide who scored first
+    msg.scores.left > LScore ? 1 : -1;
+
+  LScore = msg.scores.left;    // then update our local copies
+  RScore = msg.scores.right;
+  updateScore();
+
+  pauseAndReset(dir);          // one-second inter-round pause
+}
             // update score and draw
             // LScore = msg.scores.left;
             // RScore = msg.scores.right;
