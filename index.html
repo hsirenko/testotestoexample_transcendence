@@ -63,13 +63,13 @@
 	}
 	.floating-input:focus + .floating-label,
 	.floating-input:not(:placeholder-shown) + .floating-label {
-	  top: -1.05rem;           /* raise label above outline */
-	  font-size: 0.75rem;     /* text-xs   */
-	  color: #6366f1;         /* indigo-500 */
-	  left: 5px;
+	top: -1.05rem;           /* raise label above outline */
+	font-size: 0.75rem;     /* text-xs   */
+	color: #6366f1;         /* indigo-500 */
+	left: 5px;
 	}
 	body.game-playing #friends-sidebar{
-	  transform: translateX(100%) !important;   /* slides out → keeps `duration-300` */
+	transform: translateX(100%) !important;   /* slides out → keeps `duration-300` */
 	}
 	</style>
 </head>
@@ -87,34 +87,34 @@
 		class="bg-black/60 backdrop-blur p-8 rounded-3xl flex flex-col gap-4 w-full max-w-sm"
 	>
 		<h2 class="text-2xl font-extrabold text-center mb-2">Sign in</h2>
-	 <div class="relative w-full">
-	   <input id="email" type="email" required placeholder=" "
-	          class="floating-input peer w-full rounded-md border border-white/30
-	                 bg-transparent px-3 py-4 text-white
-	                 focus:border-indigo-400 focus:outline-none" />
-	   <label for="email"
-	          class="floating-label absolute left-3 top-4.5 pointer-events-none
-	                 text-gray-400 transition-all duration-200">Email</label>
-	 </div>
-	 <div class="relative w-full">
-	   <input id="password" type="password" required placeholder=" "
-	          class="floating-input peer w-full rounded-md border border-white/30
-	                 bg-transparent px-3 py-4 text-white
-	                 focus:border-indigo-400 focus:outline-none" />
-	   <label for="password"
-	          class="floating-label absolute left-3 top-4.5 pointer-events-none
-	                 text-gray-400 transition-all duration-200">Password</label>
-	 </div>
-	 <div id="twofa-wrapper" class="relative w-full hidden">
-	   <input id="twofa-token" type="text" inputmode="numeric" pattern="[0-9]{6}"
-	          maxlength="6" placeholder=" "
-	          class="floating-input peer w-full rounded-md border border-white/30
-	                 bg-transparent px-3 py-4 text-white
-	                 focus:border-indigo-400 focus:outline-none" />
-	   <label for="twofa-token"
-	          class="floating-label absolute left-3 top-4.5 pointer-events-none
-	                 text-gray-400 transition-all duration-200">2-Factor code</label>
-	 </div>
+	<div class="relative w-full">
+	<input id="email" type="email" required placeholder=" "
+			class="floating-input peer w-full rounded-md border border-white/30
+					bg-transparent px-3 py-4 text-white
+					focus:border-indigo-400 focus:outline-none" />
+	<label for="email"
+			class="floating-label absolute left-3 top-4.5 pointer-events-none
+					text-gray-400 transition-all duration-200">Email</label>
+	</div>
+	<div class="relative w-full">
+	<input id="password" type="password" required placeholder=" "
+			class="floating-input peer w-full rounded-md border border-white/30
+					bg-transparent px-3 py-4 text-white
+					focus:border-indigo-400 focus:outline-none" />
+	<label for="password"
+			class="floating-label absolute left-3 top-4.5 pointer-events-none
+					text-gray-400 transition-all duration-200">Password</label>
+	</div>
+	<div id="twofa-wrapper" class="relative w-full hidden">
+	<input id="twofa-token" type="text" inputmode="numeric" pattern="[0-9]{6}"
+			maxlength="6" placeholder=" "
+			class="floating-input peer w-full rounded-md border border-white/30
+					bg-transparent px-3 py-4 text-white
+					focus:border-indigo-400 focus:outline-none" />
+	<label for="twofa-token"
+			class="floating-label absolute left-3 top-4.5 pointer-events-none
+					text-gray-400 transition-all duration-200">2-Factor code</label>
+	</div>
 
 		<p id="login-error" class="text-xs text-red-400 min-h-[1em]"></p>
 
@@ -170,42 +170,42 @@
 	>
 		<h2 class="text-2xl font-extrabold text-center mb-2">Create account</h2>
 
-		 <div class="relative w-full">
-		   <input id="su-username" type="text" required placeholder=" "
-		          class="floating-input peer w-full rounded-md border border-white/30
-		                 bg-transparent px-3 py-4 text-white
-		                 focus:border-indigo-400 focus:outline-none" />
-		   <label for="su-username"
-		          class="floating-label absolute left-3 top-4.5 pointer-events-none
-		                 text-gray-400 transition-all duration-200">Username</label>
-		 </div>		
-		 <div class="relative w-full">
-		   <input id="su-email" type="email" required placeholder=" "
-		          class="floating-input peer w-full rounded-md border border-white/30
-		                 bg-transparent px-3 py-4 text-white
-		                 focus:border-indigo-400 focus:outline-none" />
-		   <label for="su-email"
-		          class="floating-label absolute left-3 top-4.5 pointer-events-none
-		                 text-gray-400 transition-all duration-200">Email</label>
-		 </div>		
-		 <div class="relative w-full">
-		   <input id="su-password" type="password" required placeholder=" "
-		          class="floating-input peer w-full rounded-md border border-white/30
-		                 bg-transparent px-3 py-4 text-white
-		                 focus:border-indigo-400 focus:outline-none" />
-		   <label for="su-password"
-		          class="floating-label absolute left-3 top-4.5 pointer-events-none
-		                 text-gray-400 transition-all duration-200">Password</label>
-		 </div>		
-		 <div class="relative w-full">
-		   <input id="su-password2" type="password" required placeholder=" "
-		          class="floating-input peer w-full rounded-md border border-white/30
-		                 bg-transparent px-3 py-4 text-white
-		                 focus:border-indigo-400 focus:outline-none" />
-		   <label for="su-password2"
-		          class="floating-label absolute left-3 top-4.5 pointer-events-none
-		                 text-gray-400 transition-all duration-200">Confirm&nbsp;password</label>
-		 </div>
+		<div class="relative w-full">
+		<input id="su-username" type="text" required placeholder=" "
+				class="floating-input peer w-full rounded-md border border-white/30
+						bg-transparent px-3 py-4 text-white
+						focus:border-indigo-400 focus:outline-none" />
+		<label for="su-username"
+				class="floating-label absolute left-3 top-4.5 pointer-events-none
+						text-gray-400 transition-all duration-200">Username</label>
+		</div>		
+		<div class="relative w-full">
+		<input id="su-email" type="email" required placeholder=" "
+				class="floating-input peer w-full rounded-md border border-white/30
+						bg-transparent px-3 py-4 text-white
+						focus:border-indigo-400 focus:outline-none" />
+		<label for="su-email"
+				class="floating-label absolute left-3 top-4.5 pointer-events-none
+						text-gray-400 transition-all duration-200">Email</label>
+		</div>		
+		<div class="relative w-full">
+		<input id="su-password" type="password" required placeholder=" "
+				class="floating-input peer w-full rounded-md border border-white/30
+						bg-transparent px-3 py-4 text-white
+						focus:border-indigo-400 focus:outline-none" />
+		<label for="su-password"
+				class="floating-label absolute left-3 top-4.5 pointer-events-none
+						text-gray-400 transition-all duration-200">Password</label>
+		</div>		
+		<div class="relative w-full">
+		<input id="su-password2" type="password" required placeholder=" "
+				class="floating-input peer w-full rounded-md border border-white/30
+						bg-transparent px-3 py-4 text-white
+						focus:border-indigo-400 focus:outline-none" />
+		<label for="su-password2"
+				class="floating-label absolute left-3 top-4.5 pointer-events-none
+						text-gray-400 transition-all duration-200">Confirm&nbsp;password</label>
+		</div>
 
 		<p id="signup-error" class="text-xs text-red-400 min-h-[1em]"></p>
 
@@ -247,70 +247,70 @@
 		<!--  ───────── NAVBAR  ─────────  -->
 <!-- ───────── NAVBAR ───────── -->
 <nav class="fixed inset-x-0 top-0 z-50 h-16 font-extrabold
-            bg-gradient-to-r from-slate-900/70 via-slate-800/60 to-slate-900/70
-            backdrop-blur-md border-b border-white/10 shadow-lg shadow-fuchsia-800/40">
-  <div class="flex w-full h-full items-center px-4 sm:px-5 lg:px-6">
-    <!-- Brand ---------------------------------------------------------->
-    <a href="/"
-       class="text-3xl font-extrabold tracking-widest
-              bg-gradient-to-r from-fuchsia-400 via-pink-500 to-rose-500
-              bg-clip-text text-transparent">
-      ft_transcendence
-    </a>
+			bg-gradient-to-r from-slate-900/70 via-slate-800/60 to-slate-900/70
+			backdrop-blur-md border-b border-white/10 shadow-lg shadow-fuchsia-800/40">
+<div class="flex w-full h-full items-center px-4 sm:px-5 lg:px-6">
+	<!-- Brand ---------------------------------------------------------->
+	<a href="/"
+	class="text-3xl font-extrabold tracking-widest
+			bg-gradient-to-r from-fuchsia-400 via-pink-500 to-rose-500
+			bg-clip-text text-transparent">
+	ft_transcendence
+	</a>
 
-    <!-- Bell + Burger wrapper  (pushed right on mobile, normal on ≥ sm) -->
-    <div class="ml-auto flex items-center space-x-3">
-      <!-- NOTIFICATION BELL (vertically centred) ---------------------->
-      <div id="bell-wrap" class="relative flex items-center">
-        <button id="nav-notif"
-                class="hover:text-pink-200 transition-transform duration-200 hover:scale-105">
-          <!-- bell icon -->
-          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24"
-               stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11
-                     a6 6 0 00-5-5.917V4a1 1 0 10-2 0v1.083A6 6 0 006 11v3.159
-                     c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0h6z"/>
-          </svg>
-          <!-- unread badge -->
-          <span id="notif-badge"
-                class="absolute -top-1 -right-1 w-4 h-4 rounded-full
-                       bg-red-500 text-[10px] font-bold flex items-center
-                       justify-center text-white opacity-0 pointer-events-none
-                       transition-opacity duration-300"></span>
-        </button>
+	<!-- Bell + Burger wrapper  (pushed right on mobile, normal on ≥ sm) -->
+	<div class="ml-auto flex items-center space-x-3">
+	<!-- NOTIFICATION BELL (vertically centred) ---------------------->
+	<div id="bell-wrap" class="relative flex items-center">
+		<button id="nav-notif"
+				class="hover:text-pink-200 transition-transform duration-200 hover:scale-105">
+		<!-- bell icon -->
+		<svg class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+			stroke="currentColor" stroke-width="2">
+			<path stroke-linecap="round" stroke-linejoin="round"
+				d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11
+					a6 6 0 00-5-5.917V4a1 1 0 10-2 0v1.083A6 6 0 006 11v3.159
+					c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0h6z"/>
+		</svg>
+		<!-- unread badge -->
+		<span id="notif-badge"
+				class="absolute -top-1 -right-1 w-4 h-4 rounded-full
+					bg-red-500 text-[10px] font-bold flex items-center
+					justify-center text-white opacity-0 pointer-events-none
+					transition-opacity duration-300"></span>
+		</button>
 
-        <!-- dropdown panel -->
-        <div id="notif-panel"
-             class="absolute right-0 sm:left-1/2 sm:-translate-x-1/2 top-full mt-2 w-72 hidden
-                    max-h-80 overflow-y-auto custom-scroll bg-black/30 backdrop-blur
-                    border rounded-xl p-4 space-y-3 z-[55]">
-          <p class="text-center text-sm text-white/70">No notifications yet.</p>
-        </div>
-      </div>
+		<!-- dropdown panel -->
+		<div id="notif-panel"
+			class="absolute right-0 sm:left-1/2 sm:-translate-x-1/2 top-full mt-2 w-72 hidden
+					max-h-80 overflow-y-auto custom-scroll bg-black/30 backdrop-blur
+					border rounded-xl p-4 space-y-3 z-[55]">
+		<p class="text-center text-sm text-white/70">No notifications yet.</p>
+		</div>
+	</div>
 
-      <!-- BURGER (mobile only) -------------------------------------->
-      <button id="burger"
-              class="sm:hidden hover:text-pink-200 transition-transform duration-200 hover:scale-105">
-        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2"
-             viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4 6h16M4 12h16M4 18h16"/>
-        </svg>
-      </button>
-    </div>
+	<!-- BURGER (mobile only) -------------------------------------->
+	<button id="burger"
+			class="sm:hidden hover:text-pink-200 transition-transform duration-200 hover:scale-105">
+		<svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2"
+			viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+		<path d="M4 6h16M4 12h16M4 18h16"/>
+		</svg>
+	</button>
+	</div>
 
-    <!-- MAIN MENU ----------------------------------------------------->
-    <ul id="nav-menu"
-        class="absolute left-0 top-full w-full bg-slate-900/95
-               hidden flex-col items-center py-5 space-y-4
-               sm:static sm:w-auto sm:flex sm:flex-row sm:items-center
-               sm:space-y-0 sm:space-x-8 sm:bg-transparent sm:py-0 sm:ml-6">
-      <li><button id="nav-home"    class="hover:text-pink-300" data-nav="home">Home</button></li>
-      <li><button id="nav-play"    class="hover:text-pink-200" data-nav="play">Play</button></li>
-      <li><button id="nav-profile" class="hover:text-pink-200" data-nav="profile">Profile</button></li>
-      <li><button id="nav-signout" class="hover:text-pink-200" data-nav="signout">Sign Out</button></li>
-    </ul>
-  </div>
+	<!-- MAIN MENU ----------------------------------------------------->
+	<ul id="nav-menu"
+		class="absolute left-0 top-full w-full bg-slate-900/95
+			hidden flex-col items-center py-5 space-y-4
+			sm:static sm:w-auto sm:flex sm:flex-row sm:items-center
+			sm:space-y-0 sm:space-x-8 sm:bg-transparent sm:py-0 sm:ml-6">
+	<li><button id="nav-home"    class="hover:text-pink-300" data-nav="home">Home</button></li>
+	<li><button id="nav-play"    class="hover:text-pink-200" data-nav="play">Play</button></li>
+	<li><button id="nav-profile" class="hover:text-pink-200" data-nav="profile">Profile</button></li>
+	<li><button id="nav-signout" class="hover:text-pink-200" data-nav="signout">Sign Out</button></li>
+	</ul>
+</div>
 </nav>
 <!-- ─────────────────────────────────────────────────────────────── -->
 
@@ -811,61 +811,36 @@
 	</div>
 
 
-	<!-- <style>
-  @import url("https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&display=swap");
-
-  .font-handwriting { font-family: "Gloria Hallelujah", cursive; }
-
-  .chip{
-    height: 40px;
-    padding: 0 1rem;
-    border-radius: 0.75rem;
-    background: rgba(255,255,255,.10);
-    display: flex; align-items: center; justify-content: center;
-    font-size: .875rem; font-weight: 600; letter-spacing: .05em;
-    text-transform: uppercase;
-  }
-  .game{
-    height: 32px;
-    padding: 0 .75rem;
-    border-radius: 0.75rem;
-    background: rgba(255,255,255,.10);
-    display: flex; align-items: center; justify-content: center;
-    font-size: .75rem; font-weight: 600; letter-spacing: .05em;
-  }
-</style> -->
-
-
 <!-- ░░ TOURNAMENT OVERLAY ░░ -->
 <section id="tournament-overlay"
-         class="fixed inset-0 z-40 flex items-center justify-center
-                bg-black/60 backdrop-blur-sm hidden opacity-0">
+		class="fixed inset-0 z-40 flex items-center justify-center
+				bg-black/60 backdrop-blur-sm hidden opacity-0">
 	<div id="tournament-container"
 		class="w-[90vw] max-w-4xl
 				space-y-6 rounded-2xl bg-violet-800/95
 				p-8 shadow-2xl transition">
 
-    <!-- header -->
-    <div class="flex items-center justify-between">
-      <h2 class="text-2xl font-bold">Tournament</h2>
-      <button id="tour-close" class="text-2xl hover:text-red-400">✕</button>
-    </div>
+	<!-- header -->
+	<div class="flex items-center justify-between">
+	<h2 class="text-2xl font-bold">Tournament</h2>
+	<button id="tour-close" class="text-2xl hover:text-red-400">✕</button>
+	</div>
 
-    <!-- STEP 0 – choose -->
-    <div id="tour-step-main" class="space-y-4">
-      <button id="tour-create-btn"
-              class="w-full rounded-xl bg-emerald-600 py-3 font-semibold
-                     hover:bg-emerald-700 transition">
-        Create new tournament
-      </button>
-      <button id="tour-join-btn"
-              class="w-full rounded-xl bg-indigo-600 py-3 font-semibold
-                     hover:bg-indigo-700 transition">
-        Join with a code
-      </button>
-    </div>
+	<!-- STEP 0 – choose -->
+	<div id="tour-step-main" class="space-y-4">
+	<button id="tour-create-btn"
+			class="w-full rounded-xl bg-emerald-600 py-3 font-semibold
+					hover:bg-emerald-700 transition">
+		Create new tournament
+	</button>
+	<button id="tour-join-btn"
+			class="w-full rounded-xl bg-indigo-600 py-3 font-semibold
+					hover:bg-indigo-700 transition">
+		Join with a code
+	</button>
+	</div>
 
-    <!-- STEP 1A – created -->
+	<!-- STEP 1A – created -->
 		<div id="tour-step-created" class="hidden space-y-4 text-center">
 		<p class="text-lg">Share this code with your friends:</p>
 		<div id="tour-created-code"
@@ -878,22 +853,22 @@
 		</div>
 
 
-    <!-- STEP 1B – join -->
-    <div id="tour-step-join" class="hidden space-y-4">
-      <input id="tour-code-input" type="text"
-             placeholder="Enter tournament code"
-             class="w-full rounded-lg bg-white/10 px-4 py-3 text-center
-                    uppercase tracking-widest outline-none
-                    focus:ring-2 focus:ring-violet-400">
-      <button id="tour-confirm-join-btn"
-              class="w-full rounded-xl bg-emerald-600 py-3 font-semibold
-                     hover:bg-emerald-700 transition">
-        Join
-      </button>
-      <p id="tour-error" class="text-sm text-red-400 text-center"></p>
-    </div>
+	<!-- STEP 1B – join -->
+	<div id="tour-step-join" class="hidden space-y-4">
+	<input id="tour-code-input" type="text"
+			placeholder="Enter tournament code"
+			class="w-full rounded-lg bg-white/10 px-4 py-3 text-center
+					uppercase tracking-widest outline-none
+					focus:ring-2 focus:ring-violet-400">
+	<button id="tour-confirm-join-btn"
+			class="w-full rounded-xl bg-emerald-600 py-3 font-semibold
+					hover:bg-emerald-700 transition">
+		Join
+	</button>
+	<p id="tour-error" class="text-sm text-red-400 text-center"></p>
+	</div>
 	
-<style>
+<!-- <style>
 	@media (max-width:640px){
 	#tour-bracket-vert{
 		--scale: calc(min(92vw / 360, 88vh / 560));
@@ -905,14 +880,14 @@
 	#tour-bracket-vert [data-slot="6"]{ width: 160px; }
 	}
 
-</style>
+</style> -->
 
 
 <!-- STEP 2 – 4-player bracket lobby -->
 <div id="tour-step-bracket" class="hidden space-y-6">
-  <h3 class="text-lg font-semibold text-center">4-Player Bracket</h3>
+<h3 class="text-lg font-semibold text-center">4-Player Bracket</h3>
 
-  <!-- BRACKET -------------------------------------------------------- -->
+<!-- BRACKET -------------------------------------------------------- -->
 	<div id="tour-bracket"
 		class="relative mx-auto w-[750px] h-[360px] font-handwriting hidden md:block">  
 
@@ -935,7 +910,7 @@
 
 		<!-- centre winners converge ➜ grand-final -------------------- -->
 		<path d="M500  95 V355" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
-		<path d="M500 225 H690" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
+		<path d="M500 225 H600" stroke="white" stroke-opacity="0.25" stroke-width="2"/>
 	</svg>
 
 	<!-- players (unchanged) -->
@@ -949,15 +924,15 @@
 	<div data-slot="5" class="chip absolute left-[320px] top-[280px] w-[200px]">Winner of Game 2</div>
 
 	<!-- champion – new left offset -------------------------------- -->
-	<div data-slot="6" class="chip absolute left-[645px] top-[165px] w-[320px]">champion</div>
+	<div data-slot="6" class="chip absolute left-[5px] top-[165px] w-[320px]">champion</div>
 	</div>
 
 	<!-- ░░ VERTICAL (mobile) BRACKET ░░ -->
 
 
 	<div id="tour-bracket-vert"
-     class="relative w-[360px] h-[380px] font-handwriting
-            mx-auto md:hidden">
+	class="relative w-[360px] h-[380px] font-handwriting
+			mx-auto md:hidden">
 
 	<!-- --- connector lines, shifted 40 px right --- -->
 	<svg class="absolute inset-0 w-full h-full pointer-events-none"
@@ -997,45 +972,71 @@
 	</div>
 
 
-  <p id="bracket-hint" class="text-sm text-center text-white/70">
-    Waiting for 3 more players…
-  </p>
+<p id="bracket-hint" class="text-sm text-center text-white/70">
+	Waiting for 3 more players…
+</p>
 </div>
 
-  </div> <!-- end tournament-container -->
+</div> <!-- end tournament-container -->
 </section> <!-- end tournament-overlay -->
 
 
-		<!-- Remote-Play Modal -->
-		<div id="remote-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden">
-		<div class="relative bg-white p-8 rounded-2xl w-full max-w-md sm:max-w-lg lg:max-w-2xl text-black">
-			<!-- close × -->
-			<button id="remote-close" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
-			&times;
+	<!-- Remote-Play Modal -->
+	<div id="remote-modal"
+		class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center
+				z-50 hidden opacity-0">
+	<div class="relative p-8 rounded-2xl w-full max-w-md sm:max-w-lg lg:max-w-2xl
+				bg-violet-800/95 text-white shadow-2xl">   <!-- ⬅️ removed “+” -->
+		<!-- close × -->
+		<button id="remote-close"
+				class="absolute top-4 right-4 text-gray-300 hover:text-white">
+		&times;
+		</button>
+
+		<h3 class="text-2xl font-bold mb-6 text-center">Remote Play</h3>
+
+		<!-- main actions -->
+		<div class="flex flex-col gap-4">
+		<!-- colours now match the Tournament palette -->
+		<button id="remote-create-btn"
+				class="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-700 transition">
+			Create Game
+		</button>
+		<button id="remote-join-btn"
+				class="px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-700 transition">
+			Join Game
+		</button>
+		</div>
+
+		<!-- after Create -->
+		<div id="remote-created" class="mt-6 hidden">
+		<p class="mb-2">Share this Game&nbsp;ID:</p>
+		<div class="flex items-center gap-2">
+			<input id="remote-created-id" readonly
+				class="flex-1 rounded bg-white/10 px-2 py-1 text-center text-white/90 placeholder-white/50 outline-none" />
+			<button id="remote-copy-btn"
+					class="px-3 py-2 rounded bg-white/20 hover:bg-white/30 transition">
+			Copy
 			</button>
-			<h3 class="text-2xl font-bold mb-6 text-center">Remote Play</h3>
-			<div class="flex flex-col gap-4">
-			<button id="remote-create-btn" class="px-4 py-2 bg-blue-600 text-white rounded">Create Game</button>
-			<button id="remote-join-btn" class="px-4 py-2 bg-green-600 text-white rounded">Join Game</button>
-			</div>
-			<!-- after Create -->
-			<div id="remote-created" class="mt-6 hidden">
-			<p class="mb-2">Share this Game ID:</p>
-			<div class="flex items-center gap-2">
-				<input id="remote-created-id" readonly class="flex-1 border p-2 rounded bg-white text-black" />
-				<button id="remote-copy-btn" class="px-3 py-2 bg-gray-300 rounded">Copy</button>
-			</div>
-			</div>
-			<!-- after Join -->
-			<div id="remote-join" class="mt-6 hidden">
-			<p class="mb-2">Enter Game ID to join:</p>
-			<div class="flex items-center gap-2">
-				<input id="remote-join-input" class="flex-1 border p-2 rounded bg-white text-black" />
-				<button id="remote-join-confirm" class="px-3 py-2 bg-green-600 text-white rounded">Join</button>
-			</div>
-			</div>
 		</div>
 		</div>
+
+		<!-- after Join -->
+		<div id="remote-join" class="mt-6 hidden">
+		<p class="mb-2">Enter Game&nbsp;ID to join:</p>
+		<div class="flex items-center gap-2">
+			<input id="remote-join-input"
+				class="flex-1 rounded bg-white/10 px-2 py-1 text-center text-white placeholder-white/50 outline-none" />
+			<button id="remote-join-confirm"
+					class="px-3 py-2 rounded bg-emerald-600 hover:bg-emerald-700 transition">
+			Join
+			</button>
+		</div>
+		</div>
+	</div>
+	</div>
+
+
 
 	<!-- ░░ DIFFICULTY POP-UP ░░ -->
 	<div
@@ -1089,12 +1090,12 @@
 	</div>
 	<!-- ░░ FRIENDS SIDEBAR ░░ -->
 	<aside id="friends-sidebar"
-       class="fixed right-0 top-16 bottom-0 w-80 bg-black/30 backdrop-blur
-              border-l border-white/20 flex flex-col z-[40]
-              transform translate-x-full transition-transform duration-300
-              2xl:translate-x-0">
-  <h2 class="text-lg font-bold px-4 py-3 border-b border-white/20">Friends</h2>
-  <!-- add-friend bar -->
+	class="fixed right-0 top-16 bottom-0 w-80 bg-black/30 backdrop-blur
+			border-l border-white/20 flex flex-col z-[40]
+			transform translate-x-full transition-transform duration-300
+			2xl:translate-x-0">
+<h2 class="text-lg font-bold px-4 py-3 border-b border-white/20">Friends</h2>
+<!-- add-friend bar -->
 	<div class="flex items-center gap-2 px-4 pb-3 pt-2 border-b border-white/20">
 	<input id="addfriend-input"
 			type="text"
@@ -1107,13 +1108,13 @@
 		Add&nbsp;
 	</button>
 	</div>
-  <div id="friends-list" class="flex-1 overflow-y-auto custom-scroll px-4 py-3 space-y-4"></div>
+<div id="friends-list" class="flex-1 overflow-y-auto custom-scroll px-4 py-3 space-y-4"></div>
 </aside>
 
 <button id="friends-toggle"
-        class="fixed right-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-l-lg
-               text-xl flex items-center justify-center bg-black/40 backdrop-blur
-               2xl:hidden z-[41]">❮</button>
+		class="fixed right-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-l-lg
+			text-xl flex items-center justify-center bg-black/40 backdrop-blur
+			2xl:hidden z-[41]">❮</button>
 
 	<!-- NEW friend-row template (one time in HTML) -->
 	<template id="friend-row-template">
