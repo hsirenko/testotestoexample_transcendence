@@ -9,7 +9,7 @@ const PADDLE_H = 80;
 const BALL_R = 10;
 const PADDLE_SPEED = 5;    // px per step
 const BALL_SPEED   = 330;  // px per second
-const WIN_SCORE    = 30;
+const WIN_SCORE    = 13;
 
 const BALL_ACCEL = 9;        // px s-1
 
@@ -32,7 +32,7 @@ export interface StateMsg {
   ball: Ball;
   scores: { left: number; right: number };
 }
-export interface GameOverMsg { type: 'gameOver'; winner: 'left'|'right' }
+export interface GameOverMsg { type: 'gameOver'; winner: 'left'|'right'; scores: { left: number; right: number }; }
 
 export class Game {
   /** Is the physics loop currently advancing? */
@@ -42,7 +42,7 @@ export class Game {
   private spawnTime = Date.now();
 
 
-  public players = new Map<'left'|'right', WebSocket>();
+  public players = new Map<'left'|'right', { ws: WebSocket; userId: number }>();
   public paddles = {
     left:  { x: PAD_GAP,               y: HEIGHT/2 - PADDLE_H/2, w: PADDLE_W, h: PADDLE_H },
     right: { x: WIDTH - PAD_GAP - PADDLE_W, y: HEIGHT/2 - PADDLE_H/2, w: PADDLE_W, h: PADDLE_H },
@@ -206,14 +206,14 @@ private step(dt: number): void {
     };
 	// console.log('[server] ▶️ broadcastState', msg.scores, msg.ball);
     const j = JSON.stringify(msg);
-    for (const ws of this.players.values()) ws.send(j);
+    for (const clientInfo of this.players.values()) clientInfo.ws.send(j);
   }
 
   end(winner: 'left' | 'right') {
   clearInterval(this.interval!);
   this.running = false;
-  const msg = JSON.stringify({ type: 'gameOver', winner });
-  for (const ws of this.players.values()) ws.send(msg);
+  const msg = JSON.stringify({ type: 'gameOver', winner, scores: this.scores });
+  for (const clientInfo of this.players.values()) clientInfo.ws.send(msg);
 }
 
 }

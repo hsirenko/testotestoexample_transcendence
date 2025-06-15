@@ -17,8 +17,9 @@ export default async function gameSocketRoutes(fastify: FastifyInstance) {
 			socket.send(JSON.stringify({ type: 'error', message: 'Missing token.' }));
 			return socket.close();
 		}
+		let user;
 		try {
-			const user = verifyToken(token); // Use your function here
+			user = verifyToken(token);
 		} catch (err) {
 			socket.send(JSON.stringify({ type: 'error', message: 'Invalid token.' }));
 			return socket.close();
@@ -47,15 +48,21 @@ export default async function gameSocketRoutes(fastify: FastifyInstance) {
 				console.log(`[server] ➥ join request for ${msg.gameId}`);
 				// if this game doesn't exist yet, bail out (or create it)
 				side = currentGame.players.size === 0 ? 'left' : 'right';
-				currentGame.players.set(side, socket);
+				currentGame.players.set(side, { ws: socket, userId: user.userId });
 				console.log(`[server] … assigned side=${side}, players=${[...currentGame.players.keys()]}`);
 				// start when two players have joined
 				if (currentGame.players.size === 2) {
 					console.log(`✅ both players joined, broadcasting ready for ${currentGame.id}`)
-					const ready = JSON.stringify({ type: 'ready' })
-					for (const ws2 of currentGame.players.values()) {
-						ws2.send(ready)
-					}
+					const leftInfo  = currentGame.players.get('left')!;
+					const rightInfo = currentGame.players.get('right')!;
+					leftInfo.ws.send(JSON.stringify({
+						type:       'ready',
+						opponentId: rightInfo.userId
+					}));
+					rightInfo.ws.send(JSON.stringify({
+						type:       'ready',
+						opponentId: leftInfo.userId
+					}));
 				}
 				return;
 			}
@@ -76,12 +83,14 @@ export default async function gameSocketRoutes(fastify: FastifyInstance) {
 		socket.on('close', () => {
 			if (!currentGame || !side) return;
 			console.log('(ws) connection closed');
-			// if one player disconnects, forfeit to the other
-			if (currentGame) {
-				const winner = side === 'left' ? 'right' : 'left';
-				currentGame.end(winner);
-				games.delete(currentGame.id);
+
+			// Forfeit to the opponent on disconnect
+			const opponentSide = side === 'left' ? 'right' : 'left';
+			const opponent = currentGame.players.get(opponentSide);
+			if (opponent) {
+				currentGame.end(opponentSide);
 			}
+			games.delete(currentGame.id);
 		});
 	});
 }
