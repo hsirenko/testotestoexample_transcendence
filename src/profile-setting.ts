@@ -139,6 +139,9 @@ export async function populateProfileViews(): Promise<void> {
     const vJoin = $("#view-joined")   as HTMLElement | null;
     const inUser= $("#edit-username") as HTMLInputElement | null;
     const inMail= $("#edit-email")    as HTMLInputElement | null;
+    const vXP = $("#view-xp") as HTMLElement | null;
+    const xp  = await fetchXP();
+    if (vXP) vXP.textContent = xp !== null ? String(xp) : " ";
 
     if (user.username) {
       if (vUser) vUser.textContent = user.username;
@@ -205,6 +208,11 @@ export async function refreshProfileHeader(): Promise<void> {
 		? `Player since — ${iso.slice(0, 10)}`
 		: "Player since —";
 	}
+  /* XP header line */
+  const xpEl = document.getElementById("profile-xp");
+  const xp   = await fetchXP();
+  if (xpEl) xpEl.textContent = xp !== null ? `LVL ${xp}` : "LVL 0";
+
   } catch { /* ignore */ }
 }
 
@@ -260,6 +268,28 @@ function showError(msg: string) {
     box!.classList.replace("animate__fadeIn", "animate__fadeOut");
   }, 2500);
 }
+
+/* ---------- fetchXP (memoised) ----------------------------- */
+let cachedXP: number | null | undefined = undefined;
+
+async function fetchXP(): Promise<number | null> {
+  if (cachedXP !== undefined) return cachedXP;           // already have it?
+
+  try {
+    const r = await fetch(`http://${HOST}:3000/api/users/me/xp`, {
+      headers: getAuthHeader(),                           // token helper already in file
+    });
+    if (!r.ok) { cachedXP = null; return null; }
+
+    const { total } = (await r.json()) as { total?: number };
+    cachedXP = typeof total === "number" ? total : null;
+    return cachedXP;
+  } catch {
+    cachedXP = null;
+    return null;
+  }
+}
+
 
 /* handlers -------------------------------------------------------- */
 editBtn?.addEventListener("click", () => toggleEdit(true));

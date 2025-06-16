@@ -518,9 +518,11 @@
                         </div>
                         <div>
                             <!-- populated by nav.ts -->
-                            <h2 id="profile-name" class="text-3xl font-bold">
-                                Username
-                            </h2>
+                            <h2 class="text-3xl font-bold flex items-baseline gap-2">
+								<span id="profile-name">Username</span>
+								<!-- slightly smaller so it tucks in neatly -->
+								<span id="profile-xp" class="text-sm text-amber-300">Lvl —</span>
+							</h2>
                             <p id="profile-mail" class="text-sm text-white/70">
                                 user@email
                             </p>
@@ -1610,9 +1612,10 @@
                         />
                     </div>
                     <div>
-                        <h2 id="friendstats-name" class="text-3xl font-bold">
-                            Friend
-                        </h2>
+                        <h2 class="text-3xl font-bold flex items-baseline gap-2">
+							<span id="friendstats-name">Friend</span>
+							<span id="friendstats-level" class="text-sm text-amber-300">Lvl. —</span>
+						</h2>
                         <p id="friendstats-email" class="text-sm text-white/70">
                             friend@email
                         </p>
