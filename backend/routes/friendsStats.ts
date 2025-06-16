@@ -170,4 +170,23 @@ export default async function friendsStatsRoutes(fastify: FastifyInstance) {
     return reply.send({ total: user.trophies });
   });
 
+  // 6. Friend's xp_level
+  fastify.get('/api/stats/friend/:friendId/xp', {
+    preHandler: authMiddleware
+  }, async (req: FastifyRequest, reply: FastifyReply) => {
+    const { friendId } = req.params as { friendId: string };
+    const friendUserId = parseInt(friendId, 10);
+
+    if (isNaN(friendUserId)) {
+      return reply.status(400).send({ error: 'Invalid friend ID' });
+    }
+
+    const user = db.prepare(`SELECT xp_level FROM users WHERE id = ?`).get(friendUserId);
+
+    if (!user) {
+      return reply.status(404).send({ error: 'User not found' });
+    }
+
+    return reply.send({ total: user.xp_level });
+  });
 }
