@@ -1,14 +1,13 @@
+//frontend/src/auth.ts
 //CHANGE THIS TO YOUR IP ADDRESS
 import { HOST } from "./config.js";
 import { resetObjects, resizeCanvas, render, updateScore } from "./main.js";
-import {
-    populateProfileViews,
-    refreshProfileHeader,
-} from "./profile-setting.js";
 import { loadFriendsSidebar } from "./friends.js";
 import "./friends.js"; // this file already auto-fetches & renders the sidebar
 import "./stats.js"; // likewise for stats tab if you want to warm it up
 import "./history.js";
+import { initNotifications } from "./notifications.js";
+import { stopNotifications } from "./notifications.js";
 
 const overlay = document.getElementById("login-overlay") as HTMLElement;
 const appShell = document.getElementById("app") as HTMLElement;
@@ -104,6 +103,7 @@ sendCodeBtn.insertAdjacentElement("afterend", backToLoginLink);
     render();
     updateScore();
     loadFriendsSidebar();
+	initNotifications();
 })();
 
 // function show2FALoginModal(): Promise<string | null> {
@@ -264,6 +264,7 @@ form.addEventListener("submit", async (e) => {
             render();
             updateScore();
             loadFriendsSidebar();
+			initNotifications();
             return;
         } catch {
             loginError.textContent = "Network error during Google 2FA login.";
@@ -336,6 +337,7 @@ form.addEventListener("submit", async (e) => {
     render();
     updateScore();
     loadFriendsSidebar();
+	initNotifications();
 });
 
 function enterResetMode() {
@@ -455,5 +457,6 @@ signupForm?.addEventListener("submit", (e) => {
 document.getElementById("nav-signout")?.addEventListener("click", () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+	stopNotifications();
     showLogin();
 });
