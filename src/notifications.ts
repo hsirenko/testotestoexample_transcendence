@@ -41,6 +41,7 @@ let notifications: Notification[] = [
   },
 ];
 
+let notifSocket: WebSocket | null = null;
 
 
 /* ------------------------------------------------------------------
@@ -227,34 +228,63 @@ document.addEventListener("click", ev => {
  *  Initialise immediately (e.g. after login)
  * ----------------------------------------------------------------*/
 updateBadge();
-// Optional: fetchNotifications();
+// Optional: 
 // Example: pushNotification("Welcome back! Good luck in the arena 🏓");
 
 //MHEISENBERG
-fetchNotifications();
+// fetchNotifications();
 // 2. connect to WS so we get new ones in real time
-const token = localStorage.getItem('token');
-if (token) {
-  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-  const wsUrl =
-    `${protocol}://${window.location.hostname}:3000/ws/notifications?token=${token}`;
-  console.log('[notif] connecting to WS at', wsUrl);
-  const ws = new WebSocket(wsUrl);
-  ws.onopen = () => console.log('[notif] WS open, readyState=', ws.readyState);
-  ws.onerror = err => console.log('[notif] WS error', err);
-  ws.onclose = ev => console.log('[notif] WS closed', ev.code, ev.reason);
-  ws.onmessage = ev => {
-    console.log('[notif] WS message received raw:', ev.data);
-    try {
-      const incoming = JSON.parse(ev.data) as Notification;
-      console.log('[notif] WS parsed notification:', incoming);
-      notifications.unshift({ ...incoming, read: false });
-      updateBadge();
-      if (!panel?.classList.contains('hidden')) renderPanel();
-    } catch (err) {
-      console.log('[notif] WS message parse error', err);
-    }
-  };
-} else {
-  console.log('[notif] no token, skipping WS connect');
+function startNotificationsSocket()
+{
+	const token = localStorage.getItem('token');
+	if (token) {
+	  const wsUrl = `ws://${HOST}:3000/ws/notifications?token=${token}`;
+	  console.log('[notif] connecting to WS at', wsUrl);
+	  notifSocket = new WebSocket(wsUrl);
+	  notifSocket.onopen = () => console.log('[notif] WS open, readyState=', notifSocket?.readyState);
+	  notifSocket.onerror = err => console.log('[notif] WS error', err);
+	  notifSocket.onclose = ev => console.log('[notif] WS closed', ev.code, ev.reason);
+	  notifSocket.onmessage = ev => {
+		console.log('[notif] WS message received raw:', ev.data);
+		try {
+		  const incoming = JSON.parse(ev.data) as Notification;
+		  console.log('[notif] WS parsed notification:', incoming);
+		  notifications.unshift({ ...incoming, read: false });
+		  updateBadge();
+		  if (!panel?.classList.contains('hidden')) renderPanel();
+		} catch (err) {
+		  console.log('[notif] WS message parse error', err);
+		}
+	  };
+	} else {
+	  console.log('[notif] no token, skipping WS connect');
+	}
 }
+
+export function initNotifications() {
+  if (!localStorage.getItem("token")) return;
+  startNotificationsSocket();
+  fetchNotifications();
+}
+
+// new exported “stop” function
+export function stopNotifications() {
+  if (notifSocket) {
+    notifSocket.close();
+    notifSocket = null;
+  }
+  notifications = [];   // (optional) wipe out local state
+  updateBadge();
+}
+
+if (localStorage.getItem("token")) initNotifications();
+
+// if (document.readyState !== "loading") {
+// 	startNotificationsSocket();
+// }
+// 	fetchNotifications();
+// } 
+// else {
+// 	document.addEventListener("DOMContentLoaded", startNotificationsSocket);
+// 	document.addEventListener("DOMContentLoaded", fetchNotifications);
+// }

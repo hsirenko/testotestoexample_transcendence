@@ -29,7 +29,7 @@ export default async function matchRoutes(fastify: FastifyInstance) {
     `).get(player2_id, player2_id);
     
     if (isPlayer1InMatch || isPlayer2InMatch) {
-    return reply.status(400).send({ error: 'One or both players are already in an active match' });
+    	return reply.status(200).send({ message: 'Match started'});
     }
     // Validate input
     if (!player1_id || !player2_id) {
