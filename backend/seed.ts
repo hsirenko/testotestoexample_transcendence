@@ -116,12 +116,12 @@ const senderId = 38;
 const receiverId = 49;
 
 const existing = db.prepare(`
-  SELECT * FROM matches
+  SELECT * FROM friends
 `).all();
 
 if (existing.length > 0) {
   db.prepare(`
-    DELETE FROM matches
+    DELETE FROM friends
   `).run();
   console.log(`✅ All rows deleted from the matches table.`);
 } else {
