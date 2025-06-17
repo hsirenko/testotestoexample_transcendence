@@ -10,20 +10,28 @@ export default async function challengeRoutes(fastify: FastifyInstance) {
     "/api/challenge",
     { preHandler: authMiddleware },
     async (req, reply) => {
-		console.log("here :D");
       const { userId: fromUserId } = (req as any).user as JWTPayload;
-      const { toUserId } = req.body as { toUserId: number };
-      // 1) insert a notification row
+      const { toUserId, gameId } = req.body as {
+        toUserId: number;
+        gameId: string;
+      };
+
+      /* Store a row so the bell badge works even if the user is offline */
       const info = db
         .prepare(
-          `INSERT INTO notifications 
-             (user_id, type, reference_id, text)
-           VALUES (?, 'challenge', ?, ?)`
+          `INSERT INTO notifications
+            (user_id, type, reference_id, text)
+          VALUES (?, 'challenge', ?, ?)`
         )
-        .run(toUserId, fromUserId, `Player ${fromUserId} has challenged you!`);
-		console.log("toUserId: " + toUserId + "- fromUserId: " + fromUserId);
+        .run(
+          toUserId,
+          fromUserId,
+          `Player ${fromUserId} has challenged you!`
+        );
+
       const notifId = info.lastInsertRowid;
-      // 2) Push immediately via notifConns if online
+
+      /* Push the notification live if the target is online */
       const conn = fastify.notifConns.get(toUserId);
       if (conn) {
         conn.send(
@@ -31,12 +39,14 @@ export default async function challengeRoutes(fastify: FastifyInstance) {
             id: notifId,
             type: "challenge",
             reference_id: fromUserId,
+            gameId,                        // key part: share the room ID
             text: `Player ${fromUserId} has challenged you!`,
             date: new Date().toISOString(),
             read: false,
           })
         );
       }
+
       return reply.send({ success: true });
     }
   );

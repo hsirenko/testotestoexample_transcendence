@@ -663,6 +663,11 @@ export function setGameId(id: string) {
   gameId = id;
 }
 
+// Enables remote-play mode from other modules (notifications.ts, etc.)
+export function enableRemoteMode(): void {
+  remoteMode = true;
+}
+
 export function connectWebSocket() {
     if (socket && socket.readyState === WebSocket.OPEN) return;
     if (ownGameId && gameId === ownGameId && !hasJoined) {
@@ -898,12 +903,37 @@ challengeModal.addEventListener("click", (e) => {
 });
 
 document.addEventListener("click", async (e) => {
-  const btn = (e.target as HTMLElement).closest(".challenge-send-btn") as HTMLButtonElement;
+  const btn = (e.target as HTMLElement).closest(
+    ".challenge-send-btn"
+  ) as HTMLButtonElement;
   if (!btn) return;
+
   const targetId = Number(btn.dataset.id);
   if (!targetId) return;
 
-  // 1) send the challenge
+  /* ----------------------------------------------------------------
+   * Ensure the challenger already owns a game room.
+   * If the user opened the Remote-Play modal and hit “Create” then
+   * `gameId` is already set.  If they jumped straight to “Challenge”
+   * we create the room here on-the-fly.
+   * ----------------------------------------------------------------*/
+  if (!gameId) {
+    const resGame = await fetch(`http://${HOST}:3000/api/game`, {
+      method: "POST",
+      headers: auth(),
+    });
+    const data = (await resGame.json()) as { gameId: string };
+    gameId = data.gameId;
+    remoteMode = true;
+    ownGameId = gameId;      // we are the room owner
+    connectWebSocket();      // open WS and JOIN as player-1
+    waitForBothPlayers();    // show overlay “Waiting for the other player…”
+  }
+
+  /* ----------------------------------------------------------------
+   * Send the challenge **together with the room’s gameId** so the
+   * recipient can join this same room instead of spinning up a new one
+   * ----------------------------------------------------------------*/
   const token = localStorage.getItem("token");
   await fetch(`http://${HOST}:3000/api/challenge`, {
     method: "POST",
@@ -911,10 +941,9 @@ document.addEventListener("click", async (e) => {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ toUserId: targetId }),
+    body: JSON.stringify({ toUserId: targetId, gameId }),
   });
 
-  // 2) notify the sender they’ve sent it
   alert("Challenge sent!");
   closeChallengeModal();
 });
