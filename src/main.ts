@@ -86,9 +86,9 @@ let prevSpeed = GSpeed;
 /* ------------------------------------------------------------------
  * Remote-play state
  * ----------------------------------------------------------------*/
+let gameId = "";
 let socket: WebSocket | null = null;
 let remoteMode = false;
-let gameId = "";
 let ownGameId: string | null = null;
 let hasJoined = false;
 
@@ -626,8 +626,6 @@ function startGameRemote() {
     WSec.classList.add("hidden");
     game.classList.remove("hidden");
     game.classList.add("animate__animated", "animate__zoomIn");
-    // startCountdown(3, beginPlay);
-    // beginPlay();
 }
 
 document.getElementById("nav-home")!.addEventListener("click", () => {
@@ -661,7 +659,11 @@ function cleanupRemote() {
     document.getElementById("remote-modal")?.classList.add("hidden");
 }
 
-function connectWebSocket() {
+export function setGameId(id: string) {
+  gameId = id;
+}
+
+export function connectWebSocket() {
     if (socket && socket.readyState === WebSocket.OPEN) return;
     if (ownGameId && gameId === ownGameId && !hasJoined) {
         // the creator should *only* wait for the other player, not re-join themselves
@@ -676,7 +678,6 @@ function connectWebSocket() {
     );
     socket.onopen = () => {
         // 3) send our join message
-        // console.log("[client] ⚡ ws open, sending join for", gameId);
         if (!hasJoined) {
             hasJoined = true;
             const join: ClientMsgJoin = { type: "join", gameId };
@@ -758,17 +759,10 @@ function connectWebSocket() {
                 LScore = msg.scores.left; // then update our local copies
                 RScore = msg.scores.right;
                 updateScore();
-                // console.log("HERE!\n");
                 pauseAndReset(dir); // one-second inter-round pause
             }
-            // update score and draw
-            // LScore = msg.scores.left;
-            // RScore = msg.scores.right;
-            // updateScore();
-            // render();
         } else if (msg.type === "gameOver") {
             // stop listening & close
-            // console.log(msg)
             const btnCreate = document.getElementById(
                 "remote-create-btn"
             )! as HTMLButtonElement;
@@ -776,14 +770,12 @@ function connectWebSocket() {
                 "remote-join-btn"
             )! as HTMLButtonElement;
             const dir: 1 | -1 = msg.scores.left > LScore ? 1 : -1; // ← decide who scored first
-
             LScore = msg.scores.left; // then update our local copies
             RScore = msg.scores.right;
             updateScore();
             socket!.close();
             if (currentMatchId != null && opponentId != null) {
                 const token = localStorage.getItem("token");
-                // const xxx = localStorage.getItem("user");
                 console.log("XX =:" + yourUserId);
                 if (token) {
                     fetch(`http://${HOST}:3000/api/match/submit`, {
@@ -810,11 +802,8 @@ function connectWebSocket() {
             btnJoin.disabled = false;
             hasJoined = false;
             gameId = "";
-            // alert(`${(msg as GameOverMsg).winner.toUpperCase()} wins!`);
-            // window.location.reload();
         }
     };
-
     socket.onerror = (err) => console.error("[client] ⚠️ ws error", err);
     socket.onclose = (ev) => console.log("[client] ❌ ws closed", ev);
 }
@@ -908,14 +897,26 @@ challengeModal.addEventListener("click", (e) => {
     if (e.target === challengeModal) closeChallengeModal(); // click-outside
 });
 
-document.addEventListener("click", (e) => {
-    const el = e.target as HTMLElement;
-    if (el.classList.contains("challenge-send-btn")) {
-        const id = el.getAttribute("data-id");
-        if (id) {
-            closeChallengeModal();
-        }
-    }
+document.addEventListener("click", async (e) => {
+  const btn = (e.target as HTMLElement).closest(".challenge-send-btn") as HTMLButtonElement;
+  if (!btn) return;
+  const targetId = Number(btn.dataset.id);
+  if (!targetId) return;
+
+  // 1) send the challenge
+  const token = localStorage.getItem("token");
+  await fetch(`http://${HOST}:3000/api/challenge`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ toUserId: targetId }),
+  });
+
+  // 2) notify the sender they’ve sent it
+  alert("Challenge sent!");
+  closeChallengeModal();
 });
 
 export function initRemoteModal(): void {

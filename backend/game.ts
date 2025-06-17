@@ -48,11 +48,6 @@ export class Game {
     right: { x: WIDTH - PAD_GAP - PADDLE_W, y: HEIGHT/2 - PADDLE_H/2, w: PADDLE_W, h: PADDLE_H },
   };
 
-public paddles_cpy = {
-    left:  { x: PAD_GAP,               y: HEIGHT/2 - PADDLE_H/2, w: PADDLE_W, h: PADDLE_H },
-    right: { x: WIDTH - PAD_GAP - PADDLE_W, y: HEIGHT/2 - PADDLE_H/2, w: PADDLE_W, h: PADDLE_H },
-  };
-
   public ball: Ball = { x: WIDTH/2, y: HEIGHT/2, v: { x: BALL_SPEED, y: BALL_SPEED }, r: BALL_R };
   public scores = { left: 0, right: 0 };
   private interval?: NodeJS.Timeout;
