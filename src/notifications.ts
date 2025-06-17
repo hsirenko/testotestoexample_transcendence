@@ -7,6 +7,11 @@
 
 import { HOST } from "./config.js";
 import { loadFriendsSidebar } from "./friends.js";
+import {
+  ClientMsgJoin,
+} from "./types/ws.js";
+import { connectWebSocket } from "./main.js";
+import { setGameId } from "./main.js";
 
 /* ------------------------------------------------------------------
  * Types & state
@@ -226,35 +231,88 @@ updateBadge();
 // Example: pushNotification("Welcome back! Good luck in the arena 🏓");
 
 //MHEISENBERG
-// fetchNotifications();
 // 2. connect to WS so we get new ones in real time
 function startNotificationsSocket()
 {
 	const token = localStorage.getItem('token');
 	if (token) {
 	  const wsUrl = `ws://${HOST}:3000/ws/notifications?token=${token}`;
+	  const me = JSON.parse(localStorage.getItem("user") || "{}");
+	  const myUserId = me.id;
+	  console.log("player2_id myUserId: " + myUserId);
 	  console.log('[notif] connecting to WS at', wsUrl);
 	  notifSocket = new WebSocket(wsUrl);
 	  notifSocket.onopen = () => console.log('[notif] WS open, readyState=', notifSocket?.readyState);
 	  notifSocket.onerror = err => console.log('[notif] WS error', err);
 	  notifSocket.onclose = ev => console.log('[notif] WS closed', ev.code, ev.reason);
-	  notifSocket.onmessage = ev => {
-		console.log('[notif] WS message received raw:', ev.data);
-		try {
-		  const incoming = JSON.parse(ev.data) as Notification;
-		  console.log('[notif] WS parsed notification:', incoming);
-		  notifications.unshift({ ...incoming, read: false });
-		  updateBadge();
-		  if (!panel?.classList.contains('hidden')) renderPanel();
-		  if (incoming.type === 'friend_accept') {
-    		loadFriendsSidebar();
-		  }
-		} catch (err) {
-		  console.log('[notif] WS message parse error', err);
-		}
-	  };
+	  notifSocket.onmessage = async ev => {
+		  console.log('[notif] WS message received raw:', ev.data);
+		  try {
+			  const incoming = JSON.parse(ev.data) as Notification;
+			  console.log("player1_id incoming.reference_id: " + incoming.reference_id)
+			  console.log('[notif] WS parsed notification:', incoming);
+			  notifications.unshift({ ...incoming, read: false });
+			  updateBadge();
+			  if (!panel?.classList.contains('hidden')) renderPanel();
+			  if (incoming.type === 'friend_accept') {
+				  loadFriendsSidebar();
+				}
+				if (incoming.type === "challenge") {
+					// prompt the user immediately
+					if (confirm(`${incoming.text}\nAccept?`)) {
+						// Accept → kick off a private game:
+						// 1) send back a WS “ready” for the game
+						const ws = new WebSocket(`ws://${HOST}:3000/ws/game?token=${localStorage.getItem("token")}`);
+						ws.onopen = () => {
+							const join: ClientMsgJoin = { type: "join", gameId: "" /* we'll get from server */ };
+							// we need a fresh “game” REST create first:
+							fetch(`http://${HOST}:3000/api/game`, {
+								method: "POST",
+								headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+							})
+							.then((r) => r.json())
+							.then(({ gameId }) => {
+								// notify server we're joining this new private game
+								join.gameId = gameId;
+								ws.send(JSON.stringify(join));
+								
+								// tell the challenger via REST that we’re ready
+								fetch(`http://${HOST}:3000/api/match/start`, {
+									method: "POST",
+									headers: {
+										"Content-Type": "application/json",
+										Authorization: `Bearer ${localStorage.getItem("token")}`,
+									},
+									body: JSON.stringify({
+										player1_id: incoming.reference_id, // challenger
+										player2_id: myUserId,
+										tournament_id: null,
+									}),
+								});
+								setGameId(gameId);     // assuming `gameId` is a top‑level `let` in main.ts
+								connectWebSocket();         // will open WS, send join, handle ready, start, state…
+							});
+						};
+						// and of course wire up ws.onmessage etc exactly like your existing connectWebSocket
+					}
+					else {
+						// Decline → delete that notification so it disappears
+						const token = localStorage.getItem("token")!;
+						await fetch(
+							`http://${HOST}:3000/api/notifications/${incoming.id}`,
+							{
+								method: "DELETE",
+								headers: { Authorization: `Bearer ${token}` },
+							}
+						);
+					}
+				}
+			} catch (err) {
+				console.log('[notif] WS message parse error', err);
+			}
+		};
 	} else {
-	  console.log('[notif] no token, skipping WS connect');
+		console.log('[notif] no token, skipping WS connect');
 	}
 }
 

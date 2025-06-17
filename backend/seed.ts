@@ -115,7 +115,7 @@ import db from './utils/db';
 const senderId = 38;
 const receiverId = 49;
 
-const existing = db.prepare(`
+let existing = db.prepare(`
   SELECT * FROM friends
 `).all();
 
@@ -123,9 +123,22 @@ if (existing.length > 0) {
   db.prepare(`
     DELETE FROM friends
   `).run();
-  console.log(`✅ All rows deleted from the matches table.`);
+  console.log(`✅ All rows deleted from the friends table.`);
 } else {
-  console.log(`⚠️  No matches found in the table.`);
+  console.log(`⚠️  No friends found in the table.`);
+}
+
+existing = db.prepare(`
+  SELECT * FROM notifications
+`).all();
+
+if (existing.length > 0) {
+  db.prepare(`
+    DELETE FROM notifications
+  `).run();
+  console.log(`✅ All rows deleted from the notifications table.`);
+} else {
+  console.log(`⚠️  No notifications found in the table.`);
 }
 
 // Check if they're already friends
