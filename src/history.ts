@@ -16,9 +16,6 @@ import { MatchRow } from "./types.js";
 const API_BASE = `http://${HOST}:3000`;
 const ENDPOINT = `${API_BASE}/api/matches/history`;
 
-/* One-time guard */
-let loaded = false;
-
 function getAuthHeader(): HeadersInit {
   const token = localStorage.getItem('token');
   return {
@@ -29,9 +26,6 @@ function getAuthHeader(): HeadersInit {
 
 /* Called from nav.ts when the History tab is opened */
 export async function initHistoryTab(): Promise<void> {
-  if (loaded) return;
-  loaded = true;
-
   try {
     /* 1) Fetch + parse */
     const r = await fetch(ENDPOINT, { headers: getAuthHeader() });

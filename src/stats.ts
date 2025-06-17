@@ -17,8 +17,6 @@ import {
 } from "./types.js";
 import { HOST } from './config.js';
 
-// test();
-
 /* toggle mock data */
 const USE_MOCK_DATA = false;
 
@@ -32,7 +30,7 @@ const ENDPOINT = {
   goalsTotal: `${API_BASE}/api/stats/goals`,
   goalsMonth: `${API_BASE}/api/stats/monthly-goals`,
   longest: `${API_BASE}/api/stats/longest-hit`,
-  trophy: `${API_BASE}/api/users/me/trophies`,
+  me        : `${API_BASE}/api/users/me`,
 };
 
 /* mock payloads (optional offline mode) */
@@ -48,18 +46,26 @@ const MOCK = {
   trophy: { total: 420 } as TrophyDTO,
 };
 
-/* one-time init guard */
-let loaded = false;
-export function initStatsTab(): void {
-  if (loaded) return;
-  loaded = true;
+/* destroy any existing Chart.js instance on a canvas */
+function zap(id: string): void {
+  const el = document.getElementById(id) as HTMLCanvasElement | null;
+  if (!el) return;
+  const chart = Chart.getChart(el);
+  if (chart) chart.destroy();
+}
 
+export function initStatsTab(): void {
+  /* wipe previous charts (if any) to avoid “canvas already in use” errors */
+  ["monthly-chart","life-chart","goals-chart","hits-chart"].forEach(zap);
+
+  /* re-fetch and re-draw every time */
   drawMonthlyWins();
   drawLifePie();
   drawGoalsPie();
   drawMonthlyGoalsBars();
   renderTrophies();
 }
+
 
 /* ───── helpers ───── */
 function last12Labels(d: Date = new Date()): string[] {
@@ -79,12 +85,6 @@ function getAuthHeader(): HeadersInit {
   };
 }
 
-// async function fetchJSON<T>(url: string): Promise<T> {
-//   const r = await fetch(url, { credentials: "include" });
-//   if (!r.ok) throw new Error(String(r.status));
-//   return (await r.json()) as T;
-// }
-
 async function fetchJSON<T>(url: string): Promise<T> {
   const r = await fetch(url, {
     headers: getAuthHeader(),
@@ -95,6 +95,7 @@ async function fetchJSON<T>(url: string): Promise<T> {
 
 /* 1) Monthly win-rate bar */
 async function drawMonthlyWins(): Promise<void> {
+  zap("monthly-chart");
   const labels = last12Labels();
 
   const raw = USE_MOCK_DATA
@@ -133,6 +134,7 @@ async function drawMonthlyWins(): Promise<void> {
 
 /* 2) Life-time wins vs losses pie */
 async function drawLifePie(): Promise<void> {
+  zap("monthly-chart");
   const t = USE_MOCK_DATA
     ? MOCK.winsTotal
     : await fetchJSON<WinsTotalDTO>(ENDPOINT.winsTotal).catch(() => ({
@@ -159,6 +161,7 @@ async function drawLifePie(): Promise<void> {
 
 /* 3) Total goals pie */
 async function drawGoalsPie(): Promise<void> {
+  zap("monthly-chart");
   const g = USE_MOCK_DATA
     ? MOCK.goalsTotal
     : await fetchJSON<GoalsTotalDTO>(ENDPOINT.goalsTotal).catch(() => ({
@@ -185,6 +188,7 @@ async function drawGoalsPie(): Promise<void> {
 
 /* 4) Monthly goals scored vs conceded bars */
 async function drawMonthlyGoalsBars(): Promise<void> {
+  zap("monthly-chart");
   const labels = last12Labels();
 
   const raw = USE_MOCK_DATA
@@ -234,29 +238,13 @@ async function drawMonthlyGoalsBars(): Promise<void> {
   });
 }
 
-// /* 5) Cards – streak + trophies only */
-// function setCardText(sel: string, txt: string): void {
-//   const el = document.querySelector<HTMLElement>(sel);
-//   if (el) el.textContent = txt;
-// }
-
-/* 5-a  current win-streak */
-// async function renderStreak(): Promise<void> {
-//   const streak = USE_MOCK_DATA
-//     ? MOCK.streak.streak
-//     : await fetchJSON<StreakDTO>(ENDPOINT.streak)
-//         .then((d) => d.streak)
-//         .catch(() => 0);
-
-//   setCardText("#streak-card span", String(streak));
-// }
-
 /* 5-b  total trophies */
 async function renderTrophies(): Promise<void> {
+  zap("monthly-chart");
   const total = USE_MOCK_DATA
     ? MOCK.trophy.total
-    : await fetchJSON<TrophyDTO>(ENDPOINT.trophy)
-        .then((d) => d.total)
+    : await fetchJSON<{ trophies?: number }>(ENDPOINT.me)
+        .then(d => d.trophies ?? 0)
         .catch(() => 0);
 
   (document.getElementById("trophies") as HTMLElement).innerHTML = `
@@ -267,4 +255,3 @@ async function renderTrophies(): Promise<void> {
       <p class="text-sm text-white/70">Total trophies</p>
     </div>`;
 }
-

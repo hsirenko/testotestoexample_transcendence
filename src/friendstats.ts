@@ -9,6 +9,7 @@
 	type MonthlyWin    = { month: string; winRate: number };
 	type GoalsSum      = { scored: number; conceded: number };
 	type MonthlyGoals  = { month: string; scored: number; conceded: number };
+	
 
 	const auth = (): HeadersInit => {
 	const t = localStorage.getItem("token");
@@ -151,6 +152,18 @@
 	]);
 	}
 
+	const CIRC = 2 * Math.PI * 45;
+	function setFriendRing(lvl: number | null): void {
+	const bar  = document.getElementById("friend-level-bar")  as SVGCircleElement | null;
+	const text = document.getElementById("friend-level-text") as HTMLElement      | null;
+	if (!bar || !text || lvl === null) return;
+
+	const int = Math.floor(lvl), frac = lvl - int;
+	text.textContent            = String(int);
+	bar.style.strokeDashoffset  = String(CIRC * (1 - frac));
+	}
+
+
 	/* ------------------------------------------------------------------ */
 	/* overlay controls                                                   */
 	export function openFriendStats(
@@ -163,14 +176,12 @@
 	(document.getElementById("friendstats-name")  as HTMLElement).textContent = friend.username;
 	(document.getElementById("friendstats-email") as HTMLElement).textContent = friend.email ?? "";
 
-	/* level badge */
-	const lvlEl = document.getElementById("friendstats-level") as HTMLElement | null;
-	if (lvlEl) {
-		lvlEl.textContent = "Lvl. —";                      // placeholder
-		get<{ total: number }>(api(friendId).xp)
-		.then(({ total }) => { lvlEl.textContent = `Lvl. ${total}`; })
-		.catch(() => { /* ignore – keeps ‘—’ */ });
-	}
+	/* level ring */
+	setFriendRing(null);           // start empty
+	get<{ total: number }>(api(friendId).xp)
+	.then(({ total }) => setFriendRing(total))
+	.catch(() => setFriendRing(null));
+
 
 	/* draw charts */
 	buildAll(friendId).catch(console.error);

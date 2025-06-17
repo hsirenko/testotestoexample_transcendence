@@ -532,10 +532,31 @@
                         </div>
                         <div>
                             <!-- populated by nav.ts -->
-                            <h2 class="text-3xl font-bold flex items-baseline gap-2">
-								<span id="profile-name">Username</span>
-								<!-- slightly smaller so it tucks in neatly -->
-								<span id="profile-xp" class="text-sm text-amber-300">Lvl —</span>
+                            <h2 class="text-3xl font-bold flex items-center gap-3">
+							<span id="profile-name">Username</span>
+
+							<!-- animated radial-progress badge -->
+							<div class="relative w-10 h-10">
+								<svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
+								<!-- background track -->
+								<circle cx="50" cy="50" r="45"
+										stroke="#ffffff33" stroke-width="10" fill="none" />
+								<!-- animated bar -->
+								<circle id="profile-level-bar" cx="50" cy="50" r="45"
+										stroke="#fbbf24" stroke-width="10" stroke-linecap="round"
+										fill="none"
+										stroke-dasharray="282.6"
+										stroke-dashoffset="282.6"
+										class="transition-[stroke-dashoffset] duration-700 ease-out" />
+								</svg>
+
+								<!-- level number -->
+								<span id="profile-level-text"
+									class="absolute inset-0 grid place-items-center
+											text-xs font-extrabold text-amber-300">
+								—
+								</span>
+							</div>
 							</h2>
                             <p id="profile-mail" class="text-sm text-white/70">
                                 user@email
@@ -1626,9 +1647,26 @@
                         />
                     </div>
                     <div>
-                        <h2 class="text-3xl font-bold flex items-baseline gap-2">
-							<span id="friendstats-name">Friend</span>
-							<span id="friendstats-level" class="text-sm text-amber-300">Lvl. —</span>
+                        <h2 class="text-3xl font-bold flex items-center gap-3">
+						<span id="friendstats-name">Friend</span>
+
+						<div class="relative w-10 h-10">
+							<svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
+							<circle cx="50" cy="50" r="45"
+									stroke="#ffffff33" stroke-width="10" fill="none" />
+							<circle id="friend-level-bar" cx="50" cy="50" r="45"
+									stroke="#fbbf24" stroke-width="10" stroke-linecap="round"
+									fill="none"
+									stroke-dasharray="282.6"
+									stroke-dashoffset="282.6"
+									class="transition-[stroke-dashoffset] duration-700 ease-out" />
+							</svg>
+							<span id="friend-level-text"
+								class="absolute inset-0 grid place-items-center
+										text-xs font-extrabold text-amber-300">
+							—
+							</span>
+						</div>
 						</h2>
                         <p id="friendstats-email" class="text-sm text-white/70">
                             friend@email
