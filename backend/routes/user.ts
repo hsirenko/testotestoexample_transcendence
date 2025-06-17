@@ -120,7 +120,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 
       // Fetch all the fields you want to expose
       const user = db.prepare(`
-        SELECT id, username, email, xp_level, trophies, avatar_url, twofa_enabled
+        SELECT id, username, email, xp_level, trophies, avatar_url, created_at, twofa_enabled
         FROM users
         WHERE id = ?
       `).get(userId);
@@ -132,53 +132,53 @@ export default async function userRoutes(fastify: FastifyInstance) {
       return reply.send(user);
     }
   );
-  fastify.get('/api/users/me/trophies',
-    { preHandler: authMiddleware },
-    async (req: FastifyRequest, reply: FastifyReply) => {
-      const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
+  // fastify.get('/api/users/me/trophies',
+  //   { preHandler: authMiddleware },
+  //   async (req: FastifyRequest, reply: FastifyReply) => {
+  //     const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
 
-    const user = db.prepare(`SELECT trophies FROM users WHERE id = ?`).get(userId);
-    if (!user) {
-      return reply.status(404).send({ error: 'User not found' });
-    }
+  //   const user = db.prepare(`SELECT trophies FROM users WHERE id = ?`).get(userId);
+  //   if (!user) {
+  //     return reply.status(404).send({ error: 'User not found' });
+  //   }
 
-    return reply.send({ total: user.trophies });
-  });
+  //   return reply.send({ total: user.trophies });
+  // });
 
-  fastify.get('/api/users/me/xp',
-    { preHandler: authMiddleware },
-    async (req: FastifyRequest, reply: FastifyReply) => {
-      const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
+  // fastify.get('/api/users/me/xp',
+  //   { preHandler: authMiddleware },
+  //   async (req: FastifyRequest, reply: FastifyReply) => {
+  //     const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
 
-    const user = db.prepare(`SELECT xp_level FROM users WHERE id = ?`).get(userId);
-    if (!user) {
-      return reply.status(404).send({ error: 'User not found' });
-    }
+  //   const user = db.prepare(`SELECT xp_level FROM users WHERE id = ?`).get(userId);
+  //   if (!user) {
+  //     return reply.status(404).send({ error: 'User not found' });
+  //   }
 
-    return reply.send({ total: user.xp_level });
-  });
+  //   return reply.send({ total: user.xp_level });
+  // });
 
 
   //get user accccount creation date
-  fastify.get('/api/users/created-at', {
-    preHandler: authMiddleware
-  }, async (req: FastifyRequest, reply: FastifyReply) => {
-    const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
+  // fastify.get('/api/users/created-at', {
+  //   preHandler: authMiddleware
+  // }, async (req: FastifyRequest, reply: FastifyReply) => {
+  //   const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
 
-    try {
-      const row = db.prepare(`
-        SELECT created_at FROM users WHERE id = ?
-      `).get(userId);
+  //   try {
+  //     const row = db.prepare(`
+  //       SELECT created_at FROM users WHERE id = ?
+  //     `).get(userId);
 
-      if (!row) {
-        return reply.status(404).send({ error: 'User not found' });
-      }
+  //     if (!row) {
+  //       return reply.status(404).send({ error: 'User not found' });
+  //     }
 
-      return reply.send({ created_at: row.created_at });
-    } catch (err) {
-      console.error(err);
-      return reply.status(500).send({ error: 'Failed to retrieve creation date' });
-    }
-  });
+  //     return reply.send({ created_at: row.created_at });
+  //   } catch (err) {
+  //     console.error(err);
+  //     return reply.status(500).send({ error: 'Failed to retrieve creation date' });
+  //   }
+  // });
 
 }
