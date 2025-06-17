@@ -652,6 +652,7 @@ function cleanupRemote() {
     //also restore that shit in remote
     document.body.classList.remove("game-playing");
     remoteMode = false;
+	hasJoined   = false; 
     // remove any waiting/countdown overlays left behind
     document.getElementById("waiting-overlay")?.remove();
     document.getElementById("countdown-overlay")?.remove();
@@ -669,25 +670,24 @@ export function enableRemoteMode(): void {
 }
 
 export function connectWebSocket() {
-    if (socket && socket.readyState === WebSocket.OPEN) return;
-    if (ownGameId && gameId === ownGameId && !hasJoined) {
-        // the creator should *only* wait for the other player, not re-join themselves
-        hasJoined = true;
-    } else if (ownGameId && gameId === ownGameId && hasJoined) {
-        return;
-    }
-
+    // if (socket && socket.readyState === WebSocket.OPEN) return;
+    // if (ownGameId && gameId === ownGameId && !hasJoined) {
+    //     // the creator should *only* wait for the other player, not re-join themselves
+    //     hasJoined = true;
+    // } else if (ownGameId && gameId === ownGameId && hasJoined) {
+    //     return;
+    // }
+	if (socket && socket.readyState === WebSocket.OPEN) return;
+	if (hasJoined) return;
     console.log(`[client] 🎾 connecting to ws://${HOST}:3000/ws/game`);
     socket = new WebSocket(
         `ws://${HOST}:3000/ws/game?token=${localStorage.getItem("token")}`
     );
     socket.onopen = () => {
-        // 3) send our join message
-        if (!hasJoined) {
-            hasJoined = true;
-            const join: ClientMsgJoin = { type: "join", gameId };
-            socket!.send(JSON.stringify(join));
-        }
+		/* Always send exactly one JOIN on the first successful open */
+		const join: ClientMsgJoin = { type: "join", gameId };
+		socket!.send(JSON.stringify(join));
+		hasJoined = true;
     };
 
     socket.onmessage = async (ev) => {
@@ -944,7 +944,7 @@ document.addEventListener("click", async (e) => {
     body: JSON.stringify({ toUserId: targetId, gameId }),
   });
 
-  alert("Challenge sent!");
+//   alert("Challenge sent!");
   closeChallengeModal();
 });
 
