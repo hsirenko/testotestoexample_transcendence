@@ -6,6 +6,7 @@
 // (#notif-panel) and keep the unread badge (#notif-badge) in sync.
 
 import { HOST } from "./config.js";
+import { loadFriendsSidebar } from "./friends.js";
 
 /* ------------------------------------------------------------------
  * Types & state
@@ -19,27 +20,7 @@ interface Notification {
   reference_id?: number;
 }
 
-let notifications: Notification[] = [
-  // newest first
-  {
-    id:   Date.now() - 2_000,
-    text: "Mheisenberg accepted your friend request.",
-    date: new Date(Date.now() - 2_000).toISOString(),
-    read: false,
-  },
-  {
-    id:   Date.now() - 86_400_000,
-    text: "AI training mode unlocked by the one and only the AI eng. mohamibr.",
-    date: new Date(Date.now() - 86_400_000).toISOString(),
-    read: true,
-  },
-  {
-    id:   Date.now() - 172_800_000,
-    text: "Server maintenance tomorrow 2 AM UTC.",
-    date: new Date(Date.now() - 172_800_000).toISOString(),
-    read: true,
-  },
-];
+let notifications: Notification[] = [];
 
 let notifSocket: WebSocket | null = null;
 
@@ -124,10 +105,23 @@ if (n.type === "friend_request" && n.reference_id) {
       }),
     });
 
+	// Delete notification from DB
+	console.log("xxx: " + n.id);
+	console.log("yyy: " + n.reference_id);
+	await fetch(`http://${HOST}:3000/api/notifications/${n.id}`, {
+		method: "DELETE",
+		headers: {
+		Authorization: `Bearer ${token}`,
+		},
+	});
+
+	notifications = notifications.filter(x => x.reference_id !== n.reference_id);
+
     /* mark as read and refresh UI */
     n.read = true;
     updateBadge();
     renderPanel();
+	loadFriendsSidebar();
   };
 
   /* wrapper so both pills align right with a gap */
@@ -252,6 +246,9 @@ function startNotificationsSocket()
 		  notifications.unshift({ ...incoming, read: false });
 		  updateBadge();
 		  if (!panel?.classList.contains('hidden')) renderPanel();
+		  if (incoming.type === 'friend_accept') {
+    		loadFriendsSidebar();
+		  }
 		} catch (err) {
 		  console.log('[notif] WS message parse error', err);
 		}
@@ -278,13 +275,3 @@ export function stopNotifications() {
 }
 
 if (localStorage.getItem("token")) initNotifications();
-
-// if (document.readyState !== "loading") {
-// 	startNotificationsSocket();
-// }
-// 	fetchNotifications();
-// } 
-// else {
-// 	document.addEventListener("DOMContentLoaded", startNotificationsSocket);
-// 	document.addEventListener("DOMContentLoaded", fetchNotifications);
-// }
