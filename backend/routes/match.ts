@@ -7,51 +7,64 @@ import { JWTPayload } from '../utils/jwt';
 export default async function matchRoutes(fastify: FastifyInstance) {
   
   //START MATCH (new)
-  fastify.post('/api/match/start', { preHandler: authMiddleware }, async (req, reply) => {
-    const {
-      player1_id,
-      player2_id,
-      tournament_id
-    } = req.body as {
+fastify.post(
+  "/api/match/start",
+  { preHandler: authMiddleware },
+  async (req, reply) => {
+    const { player1_id, player2_id, tournament_id } = req.body as {
       player1_id: number;
       player2_id: number;
       tournament_id?: number;
     };
-    
-    const isPlayer1InMatch = db.prepare(`
-      SELECT id FROM matches
-      WHERE (player1_id = ? OR player2_id = ?) AND winner_id IS NULL
-      `).get(player1_id, player1_id);
-      
-      const isPlayer2InMatch = db.prepare(`
-    SELECT id FROM matches
-    WHERE (player1_id = ? OR player2_id = ?) AND winner_id IS NULL
-    `).get(player2_id, player2_id);
-    
-    if (isPlayer1InMatch || isPlayer2InMatch) {
-    	return reply.status(200).send({ message: 'Match started'});
-    }
-    // Validate input
+
+    /* ---- basic validation -------------------------------------------------- */
     if (!player1_id || !player2_id) {
-      return reply.status(400).send({ error: 'Both player IDs are required' });
+      return reply.status(400).send({ error: "Both player IDs are required" });
     }
-    
+
+    /* ---- check if a still-open match between these two players exists ------ */
+    const existing = db
+      .prepare(
+        `
+        SELECT id FROM matches
+        WHERE winner_id IS NULL
+          AND (
+               (player1_id = ? AND player2_id = ?)
+            OR (player1_id = ? AND player2_id = ?)
+          )
+      `
+      )
+      .get(player1_id, player2_id, player2_id, player1_id) as
+      | { id: number }
+      | undefined;
+
+    if (existing) {
+      return reply.send({
+        message: "Match started",
+        match_id: existing.id, // ← hand the id back to the 2nd player
+      });
+    }
+
+    /* ---- otherwise create the new row ------------------------------------- */
     try {
-      const stmt = db.prepare(`
+      const stmt = db.prepare(
+        `
         INSERT INTO matches (player1_id, player2_id, tournament_id)
         VALUES (?, ?, ?)
-        `);
-        const result = stmt.run(player1_id, player2_id, tournament_id ?? null);
-        
-        return reply.send({
-          message: 'Match started',
-          match_id: result.lastInsertRowid
-        });
-      } catch (err) {
+      `
+      );
+      const result = stmt.run(player1_id, player2_id, tournament_id ?? null);
+
+      return reply.send({
+        message: "Match started",
+        match_id: Number(result.lastInsertRowid), // always include id
+      });
+    } catch (err) {
       console.error(err);
-      return reply.status(500).send({ error: 'Failed to start match' });
+      return reply.status(500).send({ error: "Failed to start match" });
     }
-  });
+  }
+);
 
 
   //END MATCH
@@ -78,7 +91,7 @@ export default async function matchRoutes(fastify: FastifyInstance) {
   }
 
   if (match.winner_id !== null) {
-    return reply.status(400).send({ error: 'This match has already been submitted' });
+    return reply.status(200).send({ error: 'This match has already been submitted' });
   }
 
   const loser_id =

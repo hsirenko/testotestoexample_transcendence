@@ -9,7 +9,7 @@ const PADDLE_H = 80;
 const BALL_R = 10;
 const PADDLE_SPEED = 5;    // px per step
 const BALL_SPEED   = 330;  // px per second
-const WIN_SCORE    = 13;
+const WIN_SCORE    = 3;
 
 const BALL_ACCEL = 9;        // px s-1
 
@@ -67,94 +67,103 @@ export class Game {
 }
 
   /** Advance physics one frame and broadcast the new state. */
-private step(dt: number): void {
+  /** Advance physics one frame and broadcast the new state. */
+  private step(dt: number): void {
 
-  /* -------------------------------------------------------------
-     Bail out if the game is currently frozen between rallies
-  -------------------------------------------------------------- */
-  if (!this.running) return;
+    /* -------------------------------------------------------------
+       Bail out if the game is currently frozen between rallies
+    -------------------------------------------------------------- */
+    if (!this.running) return;
 
-  /* -------------------------------------------------------------
-     1) LINEAR SPEED-UP  (remote now feels like offline)
-        – elapsed time since the rally started
-        – target speed = BALL_SPEED + BALL_ACCEL × elapsed
-        – scale the velocity vector so its magnitude = target
-  -------------------------------------------------------------- */
-  const elapsed = (Date.now() - this.spawnTime) / 1000;   // seconds
-  const target  = BALL_SPEED + BALL_ACCEL * elapsed;
-  const speed   = Math.hypot(this.ball.v.x, this.ball.v.y);
+    /* -------------------------------------------------------------
+       1) SPEED-UP  (identical to the offline client)
+          – elapsed time since the rally started
+          – target speed = BALL_SPEED + BALL_ACCEL × elapsed
+          – scale the velocity vector so that its magnitude = target
+    -------------------------------------------------------------- */
+    const elapsed = (Date.now() - this.spawnTime) / 1000;          // [s]
+    const target  = BALL_SPEED + BALL_ACCEL * elapsed;             // [px s-1]
+    const curMag  = Math.hypot(this.ball.v.x, this.ball.v.y);
 
-  if (speed !== 0) {
-    const f = target / speed;
-    this.ball.v.x *= f;
-    this.ball.v.y *= f;
-  }
+    if (curMag !== 0) {
+      const f = target / curMag;
+      this.ball.v.x *= f;
+      this.ball.v.y *= f;
+    }
 
-  /* -------------------------------------------------------------
-     2) Move the ball
-  -------------------------------------------------------------- */
-  this.ball.x += this.ball.v.x * dt;
-  this.ball.y += this.ball.v.y * dt;
+    /* -------------------------------------------------------------
+       2) Move the ball
+    -------------------------------------------------------------- */
+    this.ball.x += this.ball.v.x * dt;
+    this.ball.y += this.ball.v.y * dt;
 
-  /* -------------------------------------------------------------
-     3) Bounce off top / bottom walls
-  -------------------------------------------------------------- */
-  if (this.ball.y - this.ball.r < 0) {
-    this.ball.y  = this.ball.r;
-    this.ball.v.y *= -1;
-  }
-  else if (this.ball.y + this.ball.r > HEIGHT) {
-    this.ball.y  = HEIGHT - this.ball.r;
-    this.ball.v.y *= -1;
-  }
+    /* -------------------------------------------------------------
+       3) Bounce off top / bottom walls
+    -------------------------------------------------------------- */
+    if (this.ball.y - this.ball.r < 0) {
+      this.ball.y  = this.ball.r;
+      this.ball.v.y *= -1;
+    } else if (this.ball.y + this.ball.r > HEIGHT) {
+      this.ball.y  = HEIGHT - this.ball.r;
+      this.ball.v.y *= -1;
+    }
 
-  /* -------------------------------------------------------------
-     4) Paddle collisions
-        – simple AABB / circle check
-        – just flip X velocity and nudge ball outside paddle
-  -------------------------------------------------------------- */
-  (['left', 'right'] as const).forEach(side => {
-    const p = this.paddles[side];
-    const touching =
-      this.ball.x - this.ball.r < p.x + p.w &&
-      this.ball.x + this.ball.r > p.x &&
-      this.ball.y + this.ball.r > p.y &&
-      this.ball.y - this.ball.r < p.y + p.h;
+    /* -------------------------------------------------------------
+       4) Paddle collisions – *new logic*
+          – identical to frontend `update()` implementation
+          – angle depends on contact point on the paddle
+    -------------------------------------------------------------- */
+    (['left', 'right'] as const).forEach(side => {
+      const p = this.paddles[side];
 
-    if (touching) {
-      this.ball.v.x *= -1;
+      const touching =
+        this.ball.x - this.ball.r < p.x + p.w &&
+        this.ball.x + this.ball.r > p.x &&
+        this.ball.y + this.ball.r > p.y &&
+        this.ball.y - this.ball.r < p.y + p.h;
 
-      // keep ball outside paddle so it doesn’t “stick”
+      if (!touching) return;
+
+      /* --- compute new outgoing direction ----------------------- */
+      const rel = (this.ball.y - (p.y + p.h / 2)) / (p.h / 2);  // –1 … +1
+      const ang = rel * (Math.PI / 3);                          // ±60°
+      const speed = Math.hypot(this.ball.v.x, this.ball.v.y);   // keep magnitude
+      const dir   = side === 'left' ? 1 : -1;                   // +x or –x
+
+      this.ball.v.x =  speed * dir * Math.cos(ang);
+      this.ball.v.y =  speed        * Math.sin(ang);
+
+      /* --- keep ball outside paddle so it doesn’t “stick” ------- */
       if (side === 'left')
         this.ball.x = p.x + p.w + this.ball.r;
       else
         this.ball.x = p.x - this.ball.r;
+    });
+
+    /* -------------------------------------------------------------
+       5) Scoring
+    -------------------------------------------------------------- */
+    if (this.ball.x + this.ball.r < 0) {          // right player scores
+      this.scores.right++;
+      this.spawnTime = Date.now();
+      if (this.scores.right >= WIN_SCORE) return this.end('right');
+      this.reset('right');
+      return;                                     // freeze-frame already broadcast
     }
-  });
+    if (this.ball.x - this.ball.r > WIDTH) {      // left player scores
+      this.scores.left++;
+      this.spawnTime = Date.now();
+      if (this.scores.left >= WIN_SCORE)  return this.end('left');
+      this.reset('left');
+      return;
+    }
 
-  /* -------------------------------------------------------------
-     5) Scoring
-  -------------------------------------------------------------- */
-  if (this.ball.x + this.ball.r < 0) {        // right player scores
-    this.scores.right++;
-    this.spawnTime = Date.now();
-    if (this.scores.right >= WIN_SCORE) return this.end('right');
-    this.reset('right');
-    return;                                   // `reset` already broadcast the freeze-frame
-  }
-  if (this.ball.x - this.ball.r > WIDTH) {    // left player scores
-    this.scores.left++;
-    this.spawnTime = Date.now();
-    if (this.scores.left >= WIN_SCORE)  return this.end('left');
-    this.reset('left');
-    return;
+    /* -------------------------------------------------------------
+       6) Broadcast the updated state to both clients
+    -------------------------------------------------------------- */
+    this.broadcastState();
   }
 
-  /* -------------------------------------------------------------
-     6) Broadcast the updated state to both clients
-  -------------------------------------------------------------- */
-  this.broadcastState();
-}
 
 
   handleInput(side: 'left'|'right', dir: 'up'|'down') {
