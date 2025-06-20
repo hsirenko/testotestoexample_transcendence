@@ -592,6 +592,9 @@ let opponentId: number | null = null;
 let currentMatchId: number | null = null;
 let yourUserId: number | null = null;
 
+let isCreator   = false;
+let isPlayer1   = false;
+
 const user = JSON.parse(localStorage.getItem("user") ?? "{}");
 yourUserId = user.id;
 
@@ -652,7 +655,8 @@ function cleanupRemote() {
     //also restore that shit in remote
     document.body.classList.remove("game-playing");
     remoteMode = false;
-	hasJoined   = false; 
+	hasJoined   = false;
+    isCreator   = false;
     // remove any waiting/countdown overlays left behind
     document.getElementById("waiting-overlay")?.remove();
     document.getElementById("countdown-overlay")?.remove();
@@ -703,7 +707,7 @@ export function connectWebSocket() {
         if (msg.type === "ready") {
             opponentId = msg.opponentId;
             const token = localStorage.getItem("token");
-            if (token && opponentId) {
+            if (isCreator && token && opponentId) {
                 const res = await fetch(`http://${HOST}:3000/api/match/start`, {
                     method: "POST",
                     headers: {
@@ -716,7 +720,8 @@ export function connectWebSocket() {
                     }),
                 });
                 if (res.ok) {
-                    currentMatchId = (await res.json()).match_id;
+                    const { match_id } = await res.json();
+                    currentMatchId    = match_id;
                     console.log("📝 match started →", currentMatchId);
                 }
             }
@@ -805,6 +810,8 @@ export function connectWebSocket() {
             handleWin(true);
             btnCreate.disabled = false;
             btnJoin.disabled = false;
+            // isMatchCreator = false;
+            isCreator      = false;
             hasJoined = false;
             gameId = "";
         }
@@ -992,6 +999,7 @@ export function initRemoteModal(): void {
         const data = (await res.json()) as { gameId: string };
         gameId = data.gameId;
         remoteMode = true;
+        isCreator = true;
         // modal.classList.add('hidden');
         connectWebSocket();
         inputId.value = data.gameId;
@@ -1016,6 +1024,7 @@ export function initRemoteModal(): void {
     // Show join section
     btnJoin.onclick = () => {
         sectJoin.classList.remove("hidden");
+        isCreator = false;
     };
 
     // Confirm join
