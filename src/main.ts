@@ -845,16 +845,20 @@ const challengeClose = document.getElementById(
 )! as HTMLButtonElement;
 
 interface Friend {
-    id: string;
+    id: number;
     username: string;
-    avatar: string;
+    avatar_url?: string | null;
 }
 
-//here need changes to fix the pp of the friend
+const ASTRONAUT =
+  "https://img.freepik.com/free-vector/" +
+  "cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-" +
+  "illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
+
 function getAvatarUrl(f: Friend): string {
-    return f.avatar && f.avatar.length ? f.avatar : "/img/default-avatar.png";
+  const url = (f.avatar_url ?? "").trim();
+  return url.length ? url : ASTRONAUT;
 }
-
 //open and close functionality for the challenge pop up
 function openChallengeModal(): void {
     challengeModal.classList.remove("hidden");

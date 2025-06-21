@@ -62,6 +62,11 @@ export async function fetchFriends(): Promise<any[]> {
     }
 }
 
+	const ASTRONAUT =
+	"https://img.freepik.com/free-vector/" +
+	"cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-" +
+	"illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
+
 /* 3 ░ render list --------------------------------------------------*/
 function render(friends: any[]): void {
     const list = document.getElementById("friends-list")!;
@@ -86,7 +91,7 @@ function render(friends: any[]): void {
 
         /* fill visuals */
         (row.querySelector(".avatar") as HTMLImageElement).src =
-            f.avatar_url ?? "https://i.pravatar.cc/40?u=placeholder";
+            f.avatar_url ?? ASTRONAUT;
         (row.querySelector(".username") as HTMLElement).textContent =
             f.username;
         (row.querySelector(".email") as HTMLElement).textContent = f.email;
@@ -116,6 +121,8 @@ function render(friends: any[]): void {
         stats.addEventListener("click", () => {
             openFriendStats(friendId, f);
         });
+
+        
 
         /* step-1  Remove → show confirm bar */
         removeBtn.addEventListener("click", () => {
@@ -194,9 +201,15 @@ export function initFriendsSidebarToggle(): void {
         btn.innerHTML = open ? "❯" : "❮";
     };
 
-    btn.addEventListener("click", () => {
-        open = !open;
+    /* click-toggle */
+    btn.addEventListener("click", () => { open = !open; apply(); });
+
+    /* NEW: Esc key closes the sidebar if it’s open */
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && open) {
+        open = false;
         apply();
+        }
     });
 
     apply();
