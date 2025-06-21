@@ -24,13 +24,13 @@ export default async function notifRoutes(fastify: FastifyInstance) {
 	});
 
 	// 2️⃣ Mark one as read
-	fastify.post('/api/notifications/:id/read', { preHandler: authMiddleware }, async (req, reply) => {
+	fastify.post('/api/notifications/read', { preHandler: authMiddleware }, async (req, reply) => {
 		const { userId } = (req as any).user as JWTPayload;
-		const notifId = parseInt((req.params as any).id, 10);
+		// const notifId = parseInt((req.params as any).id, 10);
 		db.prepare(`
 		UPDATE notifications SET is_read = 1
-		WHERE id = ? AND user_id = ?
-		`).run(notifId, userId);
+		WHERE user_id = ?
+		`).run(userId);
 		return reply.send({ success: true });
 	});
 
@@ -38,7 +38,6 @@ export default async function notifRoutes(fastify: FastifyInstance) {
 	fastify.delete('/api/notifications/:id', { preHandler: authMiddleware }, async (req, reply) => {
 		const { userId } = (req as any).user as JWTPayload;
 		const notifId = parseInt((req.params as any).id, 10);
-		console.log("xxx: " + notifId);
 
 		// Only allow deleting notifications that belong to the user
 		db.prepare(`DELETE FROM notifications WHERE id = ? AND user_id = ?`).run(notifId, userId);

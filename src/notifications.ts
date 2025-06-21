@@ -110,14 +110,14 @@ function renderPanel(): void {
 				e.stopPropagation();
 
 				/* 🔸 (optional tidying) mark as read on the server */
-				const t = localStorage.getItem("token")!;
-				await fetch(`http://${HOST}:3000/api/notifications/${n.id}/read`, {
-					method: "POST",
-					headers: { Authorization: `Bearer ${t}` },
-				});
+				// const t = localStorage.getItem("token")!;
+				// await fetch(`http://${HOST}:3000/api/notifications/${n.id}/read`, {
+				// 	method: "POST",
+				// 	headers: { Authorization: `Bearer ${t}` },
+				// });
 
 				/* 🔸 start the match – useful for stats/history tables        */
-				const me   = JSON.parse(localStorage.getItem("user") || "{}");
+				// const me   = JSON.parse(localStorage.getItem("user") || "{}");
 				// if (n.reference_id) {
 				// 	await fetch(`http://${HOST}:3000/api/match/start`, {
 				// 		method: "POST",
@@ -273,7 +273,7 @@ export async function fetchNotifications(): Promise<void> {
 		});
 		if (!res.ok) return;
 		const data: Notification[] = await res.json();
-		notifications = data.map(n => ({ ...n, read: false }));
+		notifications = data.map(n => ({ ...n, read: n.read }));
 		updateBadge();
 	} catch (err) {
 		console.error("Failed to fetch notifications", err);
@@ -283,8 +283,13 @@ export async function fetchNotifications(): Promise<void> {
 /* ------------------------------------------------------------------
  *  Event wiring – open/close dropdown & outside‑click handling
  * ----------------------------------------------------------------*/
-bell?.addEventListener("click", ev => {
+bell?.addEventListener("click", async ev => {
 	ev.stopPropagation();
+	const t = localStorage.getItem("token")!;
+	await fetch(`http://${HOST}:3000/api/notifications/read`, {
+		method: "POST",
+		headers: { Authorization: `Bearer ${t}` },
+	});
 	panel?.classList.toggle("hidden");
 	renderPanel();
 	notifications.forEach(n => (n.read = true)); // mark all as read when opened
