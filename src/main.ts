@@ -592,8 +592,8 @@ let opponentId: number | null = null;
 let currentMatchId: number | null = null;
 let yourUserId: number | null = null;
 
-let isCreator   = false;
-let isPlayer1   = false;
+// let isCreator   = false;
+// let isJoiner   = false;
 
 const user = JSON.parse(localStorage.getItem("user") ?? "{}");
 yourUserId = user.id;
@@ -656,7 +656,8 @@ function cleanupRemote() {
     document.body.classList.remove("game-playing");
     remoteMode = false;
 	hasJoined   = false;
-    isCreator   = false;
+    // isCreator   = false;
+    // isJoiner = false;
     // remove any waiting/countdown overlays left behind
     document.getElementById("waiting-overlay")?.remove();
     document.getElementById("countdown-overlay")?.remove();
@@ -706,25 +707,25 @@ export function connectWebSocket() {
         }
         if (msg.type === "ready") {
             opponentId = msg.opponentId;
-            const token = localStorage.getItem("token");
-            if (isCreator && token && opponentId) {
-                const res = await fetch(`http://${HOST}:3000/api/match/start`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                        player2_id: opponentId,
-                        player1_id: yourUserId,
-                    }),
-                });
-                if (res.ok) {
-                    const { match_id } = await res.json();
-                    currentMatchId    = match_id;
-                    console.log("📝 match started →", currentMatchId);
-                }
-            }
+            // const token = localStorage.getItem("token");
+            // if (token && opponentId) {
+            //     const res = await fetch(`http://${HOST}:3000/api/match/start`, {
+            //         method: "POST",
+            //         headers: {
+            //             "Content-Type": "application/json",
+            //             Authorization: `Bearer ${token}`,
+            //         },
+            //         body: JSON.stringify({
+            //             player2_id: isJoiner ?  opponentId : yourUserId,
+            //             player1_id: isJoiner ? yourUserId : opponentId,
+            //         }),
+            //     });
+            //     if (res.ok) {
+            //         const { match_id } = await res.json();
+            //         currentMatchId    = match_id;
+            //         console.log("📝 match started →", currentMatchId);
+            //     }
+            // }
             const waitingOverlay = document.getElementById("waiting-overlay");
             const modal = document.getElementById("remote-modal")!;
             document.getElementById("win-message")?.remove();
@@ -784,34 +785,34 @@ export function connectWebSocket() {
             RScore = msg.scores.right;
             updateScore();
             socket!.close();
-            if (currentMatchId != null && opponentId != null) {
-                const token = localStorage.getItem("token");
-                console.log("XX =:" + yourUserId);
-                if (token) {
-                    fetch(`http://${HOST}:3000/api/match/submit`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${token}`,
-                        },
-                        body: JSON.stringify({
-                            match_id: currentMatchId,
-                            winner_id:
-                                msg.winner === "left"
-                                    ? /* left’s userId */ yourUserId
-                                    : opponentId,
-                            score_p1: LScore,
-                            score_p2: RScore,
-                        }),
-                    }).catch(console.error);
-                }
-                currentMatchId = null;
-            }
+            // if (currentMatchId != null && opponentId != null) {
+            //     const token = localStorage.getItem("token");
+            //     console.log("XX =:" + yourUserId);
+            //     if (token) {
+            //         fetch(`http://${HOST}:3000/api/match/submit`, {
+            //             method: "POST",
+            //             headers: {
+            //                 "Content-Type": "application/json",
+            //                 Authorization: `Bearer ${token}`,
+            //             },
+            //             body: JSON.stringify({
+            //                 match_id: currentMatchId,
+            //                 winner_id:
+            //                     msg.winner === "left"
+            //                         ? /* left’s userId */ yourUserId
+            //                         : opponentId,
+            //                 score_p1: LScore,
+            //                 score_p2: RScore,
+            //             }),
+            //         }).catch(console.error);
+            //     }
+            //     currentMatchId = null;
+            // }
             handleWin(true);
             btnCreate.disabled = false;
             btnJoin.disabled = false;
             // isMatchCreator = false;
-            isCreator      = false;
+            // isCreator      = false;
             hasJoined = false;
             gameId = "";
         }
@@ -999,7 +1000,7 @@ export function initRemoteModal(): void {
         const data = (await res.json()) as { gameId: string };
         gameId = data.gameId;
         remoteMode = true;
-        isCreator = true;
+        // isCreator = true;
         // modal.classList.add('hidden');
         connectWebSocket();
         inputId.value = data.gameId;
@@ -1024,7 +1025,8 @@ export function initRemoteModal(): void {
     // Show join section
     btnJoin.onclick = () => {
         sectJoin.classList.remove("hidden");
-        isCreator = false;
+        // isCreator = false;
+        // isJoiner = true;
     };
 
     // Confirm join

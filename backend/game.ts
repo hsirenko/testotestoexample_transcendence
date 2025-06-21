@@ -51,7 +51,7 @@ export class Game {
   public ball: Ball = { x: WIDTH/2, y: HEIGHT/2, v: { x: BALL_SPEED, y: BALL_SPEED }, r: BALL_R };
   public scores = { left: 0, right: 0 };
   private interval?: NodeJS.Timeout;
-
+  public dbMatchId: number | null = null;
   constructor(public id: string) {}
 
   start() {
