@@ -1030,6 +1030,7 @@ export function initRemoteModal(): void {
     // Show join section
     btnJoin.onclick = () => {
         sectJoin.classList.remove("hidden");
+        joinInp.value = "";
         // isCreator = false;
         // isJoiner = true;
     };
@@ -1037,11 +1038,11 @@ export function initRemoteModal(): void {
     // Confirm join
     joinConf.onclick = () => {
         const id = joinInp.value.trim();
-        if (!id) return alert("Please enter a Game ID");
+        // if (!id) return alert("Please enter a Game ID");
         gameId = id;
         remoteMode = true;
         ownGameId = null;
-        hideOverlay(ov, inner);
+        // hideOverlay(ov, inner);
         connectWebSocket();
     };
 
