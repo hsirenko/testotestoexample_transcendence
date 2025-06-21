@@ -118,20 +118,20 @@ function renderPanel(): void {
 
 				/* 🔸 start the match – useful for stats/history tables        */
 				const me   = JSON.parse(localStorage.getItem("user") || "{}");
-				if (n.reference_id) {
-					await fetch(`http://${HOST}:3000/api/match/start`, {
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							Authorization: `Bearer ${t}`,
-						},
-						body: JSON.stringify({
-							player1_id: n.reference_id, // challenger
-							player2_id: me.id,          // us
-							tournament_id: null,
-						}),
-					});
-				}
+				// if (n.reference_id) {
+				// 	await fetch(`http://${HOST}:3000/api/match/start`, {
+				// 		method: "POST",
+				// 		headers: {
+				// 			"Content-Type": "application/json",
+				// 			Authorization: `Bearer ${t}`,
+				// 		},
+				// 		body: JSON.stringify({
+				// 			player1_id: n.reference_id, // challenger
+				// 			player2_id: me.id,          // us
+				// 			tournament_id: null,
+				// 		}),
+				// 	});
+				// }
 
 				/* 🔸 jump into the challenger’s room */
 				setGameId(n.gameId!);
@@ -337,44 +337,44 @@ function startNotificationsSocket(): void {
 			/* ------------------------------------------------------------
 			 * CHALLENGE – user clicks “Accept”
 			 * -----------------------------------------------------------*/
-			if (incoming.type === "challenge") {
-				const accepted = confirm(`${incoming.text}\nAccept?`);
-				if (!accepted) {
-					const t = localStorage.getItem("token")!;
-					await fetch(
-						`http://${HOST}:3000/api/notifications/${incoming.id}`,
-						{ method: "DELETE", headers: { Authorization: `Bearer ${t}` } }
-					);
-					return;
-				}
+			// if (incoming.type === "challenge") {
+			// 	const accepted = confirm(`${incoming.text}\nAccept?`);
+			// 	if (!accepted) {
+			// 		const t = localStorage.getItem("token")!;
+			// 		await fetch(
+			// 			`http://${HOST}:3000/api/notifications/${incoming.id}`,
+			// 			{ method: "DELETE", headers: { Authorization: `Bearer ${t}` } }
+			// 		);
+			// 		return;
+			// 	}
 
-				if (!incoming.gameId) {
-					alert("Challenge did not include a game ID. Please try again.");
-					return;
-				}
+			// 	if (!incoming.gameId) {
+			// 		alert("Challenge did not include a game ID. Please try again.");
+			// 		return;
+			// 	}
 
-				/* Join the challenger’s existing room */
-				setGameId(incoming.gameId);
-				enableRemoteMode();
-				connectWebSocket();
+			// 	/* Join the challenger’s existing room */
+			// 	setGameId(incoming.gameId);
+			// 	enableRemoteMode();
+			// 	connectWebSocket();
 
-				/* Announce the match so stats & history tables stay in sync */
-				const t = localStorage.getItem("token");
-				if (t) {
-					await fetch(`http://${HOST}:3000/api/match/start`, {
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							Authorization: `Bearer ${t}`,
-						},
-						body: JSON.stringify({
-							player1_id: incoming.reference_id, // challenger
-							player2_id: myUserId,              // us
-							tournament_id: null,
-						}),
-					});
-				}
-			}
+			// 	// /* Announce the match so stats & history tables stay in sync */
+			// 	// const t = localStorage.getItem("token");
+			// 	// if (t) {
+			// 	// 	await fetch(`http://${HOST}:3000/api/match/start`, {
+			// 	// 		method: "POST",
+			// 	// 		headers: {
+			// 	// 			"Content-Type": "application/json",
+			// 	// 			Authorization: `Bearer ${t}`,
+			// 	// 		},
+			// 	// 		body: JSON.stringify({
+			// 	// 			player1_id: incoming.reference_id, // challenger
+			// 	// 			player2_id: myUserId,              // us
+			// 	// 			tournament_id: null,
+			// 	// 		}),
+			// 	// 	});
+			// 	// }
+			// }
 		} catch (err) {
 			console.log("[notif] WS parse error", err);
 		}
