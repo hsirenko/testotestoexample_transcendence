@@ -93,33 +93,38 @@ let ownGameId: string | null = null;
 let hasJoined = false;
 
 const pauseAndReset = (dir: 1 | -1): void => {
-    // /* ---------- REMOTE: just freeze rendering & network for 1 s -------- */
     if (remoteMode) {
-        playing = false; // stop loop (no render / key spam)
-        ignoreServerState = true; // drop incoming “state” frames
-        render(); // paint the last frame once
+        playing = false;
+        ignoreServerState = true;
+
+        /* stop the active render/update chain */
+        if (rafId !== null) {
+            cancelAnimationFrame(rafId);
+            rafId = null;
+        }
+
+        render();
 
         setTimeout(() => {
-            // after 1 s: resume everything
             ignoreServerState = false;
             lastTime = performance.now();
-            resetObjects();
             playing = true;
+            rafId = requestAnimationFrame(loop);   // restart loop
         }, 1000);
-
-        return; // never touch local positions/vels
+        return;
     }
 
-    // /* ---------- LOCAL (PvP / AI) behaviour, unchanged ------------------ */
+    /* offline / vs-AI path (unchanged) */
     playing = false;
     ball.v.x = ball.v.y = 0;
     resetPositions(dir);
-
     setTimeout(() => {
         lastTime = performance.now();
         playing = true;
+        if (rafId === null) rafId = requestAnimationFrame(loop);
     }, 1000);
 };
+
 /* Shared key state (for human control) ---------------------------- */
 const keys: Record<string, boolean> = {};
 
@@ -202,6 +207,8 @@ export function resizeCanvas(): void {
 /* ------------------------------------------------------------------
  * Animation loop
  * ----------------------------------------------------------------*/
+let rafId: number | null = null;        // <-- track the active rAF
+
 function loop(now: number): void {
     const dt = (now - lastTime) / 1000;
     lastTime = now;
@@ -209,26 +216,17 @@ function loop(now: number): void {
     if (playing) {
         /* Remote – continuously send held keys */
         if (remoteMode && socket?.readyState === WebSocket.OPEN) {
-            if (keys["w"] || keys["ArrowUp"]) {
-                socket.send(
-                    JSON.stringify({ type: "move", dir: "up" } as ClientMsgMove)
-                );
-            }
-            if (keys["s"] || keys["ArrowDown"]) {
-                socket.send(
-                    JSON.stringify({
-                        type: "move",
-                        dir: "down",
-                    } as ClientMsgMove)
-                );
-            }
+            if (keys["w"] || keys["ArrowUp"])
+                socket.send(JSON.stringify({ type: "move", dir: "up" } as ClientMsgMove));
+            if (keys["s"] || keys["ArrowDown"])
+                socket.send(JSON.stringify({ type: "move", dir: "down" } as ClientMsgMove));
         }
 
-        if (!remoteMode) update(dt); // physics only locally
-        render(); // always draw latest state
+        if (!remoteMode) update(dt);   // physics locally only
+        render();                      // always draw latest state
     }
 
-    requestAnimationFrame(loop);
+    rafId = requestAnimationFrame(loop);   // keep id updated
 }
 
 /* ------------------------------------------------------------------
@@ -583,7 +581,10 @@ function beginPlay(): void {
     playing = true;
     document.body.classList.add("game-playing");
     lastTime = performance.now();
-    requestAnimationFrame(loop);
+
+    /* ensure **one** animation chain */
+    if (rafId === null) rafId = requestAnimationFrame(loop);
+
     (window as any).refreshMobilePads?.();
 }
 /* ═════════════ REMOTE MODE ═════════════ */
@@ -633,18 +634,22 @@ function startGameRemote() {
 
 document.getElementById("nav-home")!.addEventListener("click", () => {
     cleanupRemote();
+    resetObjects();
 });
 
 document.getElementById("nav-play")!.addEventListener("click", () => {
     cleanupRemote();
+    resetObjects();
 });
 
 document.getElementById("nav-profile")!.addEventListener("click", () => {
     cleanupRemote();
+    resetObjects();
 });
 
 document.getElementById("nav-signout")!.addEventListener("click", () => {
     cleanupRemote();
+    resetObjects();
 });
 
 function cleanupRemote() {
@@ -770,7 +775,7 @@ export function connectWebSocket() {
                 LScore = msg.scores.left; // then update our local copies
                 RScore = msg.scores.right;
                 updateScore();
-                pauseAndReset(dir); // one-second inter-round pause
+                // pauseAndReset(dir); // one-second inter-round pause
             }
         } else if (msg.type === "gameOver") {
             // stop listening & close
