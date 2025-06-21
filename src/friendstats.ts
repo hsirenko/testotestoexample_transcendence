@@ -140,6 +140,22 @@
 
 
 	/* ------------------------------------------------------------------ */
+/* CLOSE overlay + destroy charts                                     */
+function closeFriendStats(): void {
+  const ov = document.getElementById("friendstats-overlay")!;
+  if (ov.classList.contains("hidden")) return;          // already closed
+
+  /* fade-out animation */
+  ov.classList.add("opacity-0");
+  setTimeout(() => ov.classList.add("hidden"), 300);
+
+  /* free Chart.js instances so next open renders fresh data */
+  ["fs-monthly-chart", "fs-life-chart",
+   "fs-goals-chart",   "fs-hits-chart"].forEach(destroy);
+}
+
+
+	/* ------------------------------------------------------------------ */
 	/* public API                                                         */
 	async function buildAll(fid: number) {
 	const { winsLifetime, winsMonthly, goalsLifetime, goalsMonthly, trophies} = api(fid);
@@ -163,6 +179,10 @@
 	bar.style.strokeDashoffset  = String(CIRC * (1 - frac));
 	}
 
+	const ASTRONAUT =
+	"https://img.freepik.com/free-vector/" +
+	"cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-" +
+	"illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
 
 	/* ------------------------------------------------------------------ */
 	/* overlay controls                                                   */
@@ -172,7 +192,7 @@
 	) {
 	/* header visuals */
 	(document.getElementById("friendstats-avatar") as HTMLImageElement).src =
-		friend.avatar_url ?? "https://i.pravatar.cc/150?u=placeholder";
+		friend.avatar_url ?? ASTRONAUT;
 	(document.getElementById("friendstats-name")  as HTMLElement).textContent = friend.username;
 	(document.getElementById("friendstats-email") as HTMLElement).textContent = friend.email ?? "";
 
@@ -190,16 +210,15 @@
 	const ov = document.getElementById("friendstats-overlay")!;
 	ov.classList.remove("hidden","opacity-0");
 	}
+	
+	/* Esc key closes the friend-stats panel */
+	document.addEventListener("keydown", (e) => {
+	if (e.key === "Escape") closeFriendStats();
+	});
 
 	/* close button */
-	document.getElementById("friendstats-close")?.addEventListener("click", () => {
-	document.getElementById("friendstats-overlay")!
-			.classList.add("opacity-0");
-	/* give opacity anim 300 ms before hiding */
-	setTimeout(() => {
-		document.getElementById("friendstats-overlay")!.classList.add("hidden");
-	}, 300);
-	});
+	document.getElementById("friendstats-close")
+        ?.addEventListener("click", closeFriendStats);
 
 	/* expose for friends.ts */
 	declare global { interface Window { openFriendStats?: typeof openFriendStats; } }
