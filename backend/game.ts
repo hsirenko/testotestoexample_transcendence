@@ -52,7 +52,8 @@ export class Game {
   public scores = { left: 0, right: 0 };
   private interval?: NodeJS.Timeout;
   public dbMatchId: number | null = null;
-  constructor(public id: string) {}
+  constructor(public id: string) {
+  }
 
   start() {
   console.log(`[server] ▶️ Game ${this.id} loop started`);
@@ -62,9 +63,15 @@ export class Game {
     this.interval = setInterval(() => this.step(1 / 60), 1000 / 60);
   }
 
+  /* fresh match ⇒ fresh timer & centred paddles ------------------ */
+  this.spawnTime = Date.now();                // a1 reset rally-elapsed clock
+  this.paddles.left.y  = HEIGHT / 2 - PADDLE_H / 2;
+  this.paddles.right.y = HEIGHT / 2 - PADDLE_H / 2;
+
   /* (re-)enable physics */
   this.running = true;
 }
+
 
   /** Advance physics one frame and broadcast the new state. */
   /** Advance physics one frame and broadcast the new state. */
@@ -172,33 +179,34 @@ export class Game {
     else                p.y = Math.min(HEIGHT-p.h,   p.y + PADDLE_SPEED);
   }
 
-  private reset(scoredBy: 'left' | 'right') {
-    /* 1 ) choose a serve direction opposite to the scorer */
-    const dir   = scoredBy === 'left' ? 1 : -1;
-    const angle = (Math.random() - 0.5) * (Math.PI / 3);
+    private reset(scoredBy: 'left' | 'right') {
+  const dir   = scoredBy === 'left' ? 1 : -1;
+  const angle = (Math.random() - 0.5) * (Math.PI / 3);
 
-    /* 2 ) centre the ball and pre-compute its next velocity */
-    this.ball = {
-      x: WIDTH / 2,
-      y: HEIGHT / 2,
-      r: BALL_R,
-      v: {
-        x: BALL_SPEED * dir * Math.cos(angle),
-        y: BALL_SPEED       * Math.sin(angle),
-      },
-    };
+  this.paddles.left.y  = HEIGHT / 2 - PADDLE_H / 2;
+  this.paddles.right.y = HEIGHT / 2 - PADDLE_H / 2;
 
-    /* 3 ) broadcast this “freeze frame” to both clients */
-    this.running = false;          // ← stop physics immediately
-    this.broadcastState();
+  this.ball = {
+    x: WIDTH / 2,
+    y: HEIGHT / 2,
+    r: BALL_R,
+    v: {
+      x: BALL_SPEED * dir * Math.cos(angle),
+      y: BALL_SPEED       * Math.sin(angle),
+    },
+  };
 
-    /* 4 ) after exactly 1 s, resume the main loop for both players
-           (guard against games that might already have ended) */
-    setTimeout(() => {
-      if (!this.interval || this.running) return;  // game over or already restarted
-      this.running = true;
-    }, 1000);
-  }
+  this.running = false;
+  this.broadcastState();
+
+  setTimeout(() => {
+    if (!this.interval || this.running) return;
+    this.spawnTime = Date.now();              // a1 start clock exactly when play resumes
+    this.running = true;
+  }, 1000);
+}
+
+
 
 
   private broadcastState() {
