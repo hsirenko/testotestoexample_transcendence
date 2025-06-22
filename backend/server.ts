@@ -9,6 +9,7 @@ import googleAuthRoutes from './routes/googleAuth';
 import dotenv from 'dotenv';
 import gameSocketRoutes from './routes/gameSocketRoutes';
 import notifSocketRoutes from './routes/notificationSocketRoutes';
+import tournamentSocketRoutes from './routes/tournamentSocketRoutes';
 
 //Backend game
 import websocketPlugin from '@fastify/websocket';
@@ -20,7 +21,8 @@ export const fastify = Fastify({
 	}
 });
 
-fastify.register(websocketPlugin)
+fastify.register(websocketPlugin);
+fastify.register(tournamentSocketRoutes);
 
 dotenv.config();
 

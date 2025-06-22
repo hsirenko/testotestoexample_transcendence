@@ -1,223 +1,168 @@
-/* tournament.ts – local-only 4-player bracket with a shareable code  */
-/* ----------------------------------------------------------------- */
+/* src/tournament.ts  – remote 4-player bracket */
+
+import { createTournament, joinTournament } from './api/tournament.js';
+import { HOST }                             from './config.js';
+import {
+  enableRemoteMode,
+  setGameId,
+  connectWebSocket
+} from './main.js';
 
 export { showOverlay, hideOverlay };
 
-const ov          = document.getElementById("tournament-overlay")   as HTMLElement;
-const box         = document.getElementById("tournament-container") as HTMLElement;
-
+/* ───── html refs (same IDs as before) ───── */
+const ov          = document.getElementById('tournament-overlay')   as HTMLElement;
+const box         = document.getElementById('tournament-container') as HTMLElement;
 const closeBtn    = document.getElementById("tour-close")!;
-const stepMain    = document.getElementById("tour-step-main")!;
-const stepCreated = document.getElementById("tour-step-created")!;
-const stepJoin    = document.getElementById("tour-step-join")!;
-const stepBracket = document.getElementById("tour-step-bracket")!;
 
-const btnCreate   = document.getElementById("tour-create-btn")!;
-const btnJoin     = document.getElementById("tour-join-btn")!;
-const btnCopy     = document.getElementById("tour-copy-code")!;
-const btnConfirm  = document.getElementById("tour-confirm-join-btn")!;
+const stepMain    = document.getElementById('tour-step-main')!;
+const stepCreated = document.getElementById('tour-step-created')!;
+const stepJoin    = document.getElementById('tour-step-join')!;
+const stepBracket = document.getElementById('tour-step-bracket')!;
 
-const createdCode = document.getElementById("tour-created-code")!;
-const codeInput   = document.getElementById("tour-code-input")  as HTMLInputElement;
-const errorEl     = document.getElementById("tour-error")!;
-const bracketHint = document.getElementById("bracket-hint")!;
+const createdCode = document.getElementById('tour-created-code')!;
+const codeInput   = document.getElementById('tour-code-input')  as HTMLInputElement;
+const errorEl     = document.getElementById('tour-error')!;
+const bracketHint = document.getElementById('bracket-hint')!;
 
-/* seven visible chips: 0-3 players • 4-5 winners • 6 champion */
-const slotEls = Array.from(
-  document.querySelectorAll<HTMLDivElement>('[data-slot]')
-);
+const slotEls = Array.from(document.querySelectorAll<HTMLDivElement>('[data-slot]'));
+const YOU     = localStorage.getItem('username') ?? 'you';
 
-/* ───── types & state ───── */
-export interface Player { id: number; username: string; }
-interface Tournament    { id: string; players: Player[]; }
+/* ───── runtime state ───── */
+let code       = '';
+let socket: WebSocket;
 
-let current: Tournament | null = null;
-const YOU = localStorage.getItem("username") ?? "mohamibr";
+/*──────────────────────────────────────────────────────────────*
+ *  CREATE / JOIN handlers
+ *──────────────────────────────────────────────────────────────*/
+document.getElementById('tour-create-btn')?.addEventListener('click', async () => {
+  try {
+    const { code: c } = await createTournament(localStorage.getItem('token')!, 'Bracket');
+    code = c;
+    createdCode.textContent = c;
+    goto(stepCreated);
 
-/* ───── helpers ───── */
-function genCode(): string {
-  /* Generate 8 chars (A-Z, 2-9) with crypto if possible, otherwise Math.random */
-  const ALPHA = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0,O,1,I
-  let code = "";
-
-  /* secure, modern path */
-  if (window.crypto?.getRandomValues) {
-    const bytes = new Uint8Array(8);
-    window.crypto.getRandomValues(bytes);
-    bytes.forEach(b => (code += ALPHA[b % ALPHA.length]));
-    return code;
+    connectWs();                      // connect early
+  } catch (err:any) {
+    alert(err.message);
   }
+});
 
-  /* fallback for HTTP or very old browsers */
-  for (let i = 0; i < 8; i++) {
-    code += ALPHA[Math.floor(Math.random() * ALPHA.length)];
+document.getElementById('tour-confirm-join-btn')?.addEventListener('click', async () => {
+  try {
+    await joinTournament(localStorage.getItem('token')!, codeInput.value.trim().toUpperCase());
+    code = codeInput.value.trim().toUpperCase();
+    connectWs();
+    goto(stepBracket);
+  } catch {
+    errorEl.textContent = 'Invalid or full code';
   }
-  return code;
+});
+
+/*──────────────────────────────────────────────────────────────*
+ *  Web-socket helper
+ *──────────────────────────────────────────────────────────────*/
+function connectWs() {
+  socket = new WebSocket(`ws://${HOST}:3000/ws/tournament?token=${localStorage.getItem('token')}&code=${code}`);
+
+	socket.addEventListener('message', ev => {
+	const msg = JSON.parse(ev.data);
+
+	if (msg.type === 'tournamentStart') {
+		updateSlots(msg.players);
+	}
+
+	/*───────────────────────────────────────────────*
+	*  When a semi-final or the final is assigned
+	*───────────────────────────────────────────────*/
+	if (msg.type === 'gameAssigned' || msg.type === 'finalAssigned') {
+		// ▲ this part was already there ▼ everything below is new / tweaked
+		const stored = localStorage.getItem('user');
+		const me = stored
+		  ? (JSON.parse(stored).id ?? JSON.parse(stored).userId)
+		  : NaN;
+
+		if (msg.players.includes(me)) {
+		/* I’m playing → close bracket modal & jump into the game */
+		hideOverlay(ov, stepBracket);
+
+		enableRemoteMode();          // switch main UI to remote-play
+		setGameId(msg.gameId);       // store the id for /ws/game
+		connectWebSocket();          // actually join the match
+		}
+
+		bracketHint.textContent = 'A match is running…';
+	}
+
+	if (msg.type === 'tournamentFinished') {
+		bracketHint.textContent = `🏆  Winner: ${msg.winnerId}`;
+	}
+	});
 }
 
-function copyToClipboard(text: string) {
-  /* modern path – works only in secure contexts */
-  if (navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(text).catch(() => {});
-    return;
-  }
+/*──────────────────────────────────────────────────────────────*
+ *  UI helpers – identical animation helpers from original file
+ *──────────────────────────────────────────────────────────────*/
+function updateSlots(usrIds: number[]) {
+	const stored = localStorage.getItem('user');
+	const me = stored
+	  ? (JSON.parse(stored).id ?? JSON.parse(stored).userId)
+	  : NaN;
 
-  /* fallback – create a hidden textarea, execCommand("copy") */
-  const ta = document.createElement("textarea");
-  ta.value = text;
-  ta.style.position = "fixed";
-  ta.style.left = "-9999px";
-  document.body.appendChild(ta);
-  ta.select();
-  try { document.execCommand("copy"); } catch { /* ignore */ }
-  document.body.removeChild(ta);
+  slotEls.forEach((el, i) => {
+    const id = usrIds[i];
+
+    let label: string;               // always a string for textContent
+    if (id === undefined || id === null) {
+      label = '—';                   // empty slot
+    } else if (id === me) {
+      label = YOU;                   // your own seat
+    } else {
+      label = String(id);            // any other player → cast to string
+    }
+
+    el.textContent = label;
+  });
 }
 
-
-/* ───── overlay animation helpers (unchanged) ───── */
-function showOverlay(ovEl: HTMLElement, inner?: HTMLElement) {
-  ovEl.classList.remove("hidden", "opacity-0", "animate__fadeOut", "animate__animated");
-  ovEl.classList.add("animate__animated", "animate__fadeIn", "animate__fastest");
-
-  inner?.classList.remove("animate__zoomOutUp", "animate__animated");
-  inner?.classList.add("animate__animated", "animate__zoomInDown", "animate__fastest");
+function goto(el:HTMLElement) {
+  [stepMain, stepCreated, stepJoin, stepBracket].forEach(s => s.classList.add('hidden'));
+  el.classList.remove('hidden');
 }
 
-function hideOverlay(ovEl: HTMLElement, inner?: HTMLElement) {
-  if (ovEl.classList.contains("hidden")) return;
-
-  ovEl.classList.replace("animate__fadeIn", "animate__fadeOut");
-  ovEl.classList.add("animate__fastest");
-
-  inner?.classList.replace("animate__zoomInDown", "animate__zoomOutUp");
-  inner?.classList.add("animate__fastest");
-
-  inner?.addEventListener(
-    "animationend",
-    () => {
-      ovEl.classList.add("hidden", "opacity-0");
-      ovEl.classList.remove("animate__animated", "animate__fadeOut");
-      inner?.classList.remove("animate__animated", "animate__zoomOutUp");
-      resetView();
-    },
-    { once: true },
-  );
+/*──── exported overlay helpers (unchanged) ────*/
+function showOverlay(overlay: HTMLElement, inner?: HTMLElement) {
+  overlay.classList.remove('hidden', 'opacity-0');
+  if (inner) inner.classList.remove('scale-95', 'opacity-0');
 }
 
-/* ───── view reset ───── */
-function resetView() {
-  errorEl.textContent = "";
-  codeInput.value     = "";
-  stepMain.classList.remove("hidden");
-  stepCreated.classList.add("hidden");
-  stepJoin.classList.add("hidden");
-  stepBracket.classList.add("hidden");
+function hideOverlay(overlay: HTMLElement, inner?: HTMLElement) {
+  if (inner) inner.classList.add('scale-95', 'opacity-0');
+  overlay.classList.add('hidden');
 }
 
-/* ───── public entry-point ───── */
 export function initTournamentModal(): void {
-  showOverlay(ov, box);
+  // 1. make sure the first panel is shown
+  goto(stepMain);
+
+  // 2. clear previous input / errors
+  codeInput.value = '';
+  errorEl.textContent = '';
+
+  // 3. actually show the overlay with a nice pop-animation
+  showOverlay(ov, stepMain);      // ‘ov’ = overlay, ‘stepMain’ = inner content
 }
 
-/* painter in tournament.ts */
-function updateBracket(players: Player[]) {
+document.getElementById('tour-join-btn')?.addEventListener('click', () => {
+  goto(stepJoin);          // show the “Enter Code” panel
+  codeInput.focus();       // put cursor in the input for convenience
+});
 
-  /* helper – paint ALL matching elements */
-  const paint = (slot: number, txt: string) =>
-    document
-      .querySelectorAll<HTMLDivElement>(`[data-slot="${slot}"]`)
-      .forEach(el => el.textContent = txt);
+document.getElementById('tour-back-btn')?.addEventListener('click', () => {
+  goto(stepMain);          // back to Create / Join choice
+});
 
-  /* seeds 0-3 */
-  for (let i = 0; i < 4; i++) {
-    paint(i, players[i]?.username.toUpperCase() ?? "PLAYER NAME");
-  }
-
-  /* winners & champion fade-in */
-  document
-    .querySelectorAll<HTMLDivElement>(`[data-slot="4"],
-                                       [data-slot="5"],
-                                       [data-slot="6"]`)
-    .forEach(el => {
-      if (el.textContent !== "—")
-        el.classList.remove("opacity-0", "translate-x-4");
-    });
-
-  /* lobby hint */
-  const remain = 4 - players.length;
-  bracketHint.textContent =
-    remain > 0 ? `Waiting for ${remain} more player${remain > 1 ? "s" : ""}…`
-               : "Bracket ready – good luck!";
-}
-
-
-/* ───── wiring ───── */
 closeBtn.addEventListener("click", () => hideOverlay(ov, box));
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && !ov.classList.contains("hidden")) hideOverlay(ov, box);
 });
-
-/* CREATE */
-btnCreate.addEventListener("click", () => {
-  current = { id: genCode(), players: [{ id: Date.now(), username: YOU }] };
-
-  createdCode.textContent = current.id;
-  copyToClipboard(current.id);          // helper from previous fix
-
-  /* <<< the only new lines >>> */
-  stepMain.classList.add("hidden");
-  stepCreated.classList.remove("hidden");
-  stepBracket.classList.remove("hidden");   // ← reveal bracket immediately
-  updateBracket(current.players);           // ← paint your own name
-});
-
-
-/* copy again */
-btnCopy.addEventListener("click", () =>
-  copyToClipboard(createdCode.textContent ?? "players_name"),
-);
-
-/* JOIN */
-btnJoin.addEventListener("click", () => {
-  stepMain.classList.add("hidden");
-  stepJoin.classList.remove("hidden");
-  codeInput.focus();
-});
-
-btnConfirm.addEventListener("click", () => {
-  const code = codeInput.value.trim().toUpperCase();
-  if (!code) { errorEl.textContent = "Please enter a code."; return; }
-  if (!current || current.id !== code) {
-    errorEl.textContent = "Invalid code."; return;
-  }
-  if (current.players.some(p => p.username === YOU)) {
-    errorEl.textContent = "You are already in."; return;
-  }
-  if (current.players.length >= 4) {
-    errorEl.textContent = "Tournament is full."; return;
-  }
-
-  current.players.push({ id: Date.now(), username: YOU });
-  stepJoin.classList.add("hidden");
-  stepBracket.classList.remove("hidden");
-  updateBracket(current.players);
-});
-
-/* ───── optional external hooks (for WebSocket integration later) ───── */
-(window as any).tourAddPlayer = (username: string) => {
-  if (!current || current.players.length >= 4) return;
-  current.players.push({ id: Date.now(), username });
-  if (!stepBracket.classList.contains("hidden")) updateBracket(current.players);
-};
-
-(window as any).tourSetWinner = (semi: 0 | 1, user: string) => {
-  const slot = semi === 0 ? 4 : 5;
-  slotEls[slot].textContent = user.toUpperCase();
-  updateBracket(current?.players ?? []);
-};
-
-(window as any).tourSetChampion = (user: string) => {
-  slotEls[6].textContent = user.toUpperCase();
-  slotEls[6].classList.remove("opacity-0", "translate-x-4");
-  slotEls[6].classList.add("pulse");
-};
