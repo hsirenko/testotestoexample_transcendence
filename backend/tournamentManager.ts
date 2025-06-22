@@ -78,6 +78,11 @@ export function handleGameResult(gameId: string,
        SET winner_id = ?, score_p1 = ?, score_p2 = ?, played_at = CURRENT_TIMESTAMP
      WHERE id = ?`).run(winnerId, scoreP1, scoreP2, match.id);
 
+  broadcast(tour, {
+    type:     'matchFinished',
+    winnerId,          // numeric id
+    gameId             // so clients can ignore if it’s not their match
+  });
   /* If a semi just ended we may have to start the final */
   if (tour.semiGames.includes(gameId) && !tour.finalGame && tour.semiGames.every(g => isFinished(g))) {
     const [g1, g2] = tour.semiGames;

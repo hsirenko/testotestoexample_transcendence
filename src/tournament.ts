@@ -78,9 +78,8 @@ function connectWs() {
 	if (msg.type === 'gameAssigned' || msg.type === 'finalAssigned') {
 		// ▲ this part was already there ▼ everything below is new / tweaked
 		const stored = localStorage.getItem('user');
-		const me = stored
-		  ? (JSON.parse(stored).id ?? JSON.parse(stored).userId)
-		  : NaN;
+    const raw = stored ? JSON.parse(stored) : null;
+		const me = raw ? Number(raw.id ?? raw.userId) : NaN;
 
 		if (msg.players.includes(me)) {
 		/* I’m playing → close bracket modal & jump into the game */
@@ -105,9 +104,8 @@ function connectWs() {
  *──────────────────────────────────────────────────────────────*/
 function updateSlots(usrIds: number[]) {
 	const stored = localStorage.getItem('user');
-	const me = stored
-	  ? (JSON.parse(stored).id ?? JSON.parse(stored).userId)
-	  : NaN;
+	const raw = stored ? JSON.parse(stored) : null;
+	const me = raw ? Number(raw.id ?? raw.userId) : NaN;
 
   slotEls.forEach((el, i) => {
     const id = usrIds[i];
