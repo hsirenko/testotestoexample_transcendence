@@ -27,29 +27,47 @@ CREATE TABLE IF NOT EXISTS users (
 // TOURNAMENTS
 db.exec(`
 CREATE TABLE IF NOT EXISTS tournaments (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL,
-  created_by INTEGER,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (created_by) REFERENCES users(id)
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  name        TEXT NOT NULL,
+  code        TEXT UNIQUE NOT NULL,
+  created_by  INTEGER,
+  status      TEXT CHECK (status IN ('lobby','running','finished'))
+                 DEFAULT 'lobby',
+  created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+  winner_id   INTEGER,
+  FOREIGN KEY (created_by) REFERENCES users(id),
+  FOREIGN KEY (winner_id)  REFERENCES users(id)
+);
+`);
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS tournament_players (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  tournament_id  INTEGER NOT NULL,
+  user_id        INTEGER NOT NULL,
+  joined_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(tournament_id, user_id),
+  FOREIGN KEY (tournament_id) REFERENCES tournaments(id),
+  FOREIGN KEY (user_id)       REFERENCES users(id)
 );
 `);
 
 // MATCHES
 db.exec(`
 CREATE TABLE IF NOT EXISTS matches (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  tournament_id INTEGER,
-  player1_id INTEGER NOT NULL,
-  player2_id INTEGER NOT NULL,
-  winner_id INTEGER,
-  score_p1 INTEGER,
-  score_p2 INTEGER,
-  played_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  tournament_id  INTEGER,
+  game_id        TEXT UNIQUE,
+  player1_id     INTEGER NOT NULL,
+  player2_id     INTEGER NOT NULL,
+  winner_id      INTEGER,
+  score_p1       INTEGER,
+  score_p2       INTEGER,
+  played_at      DATETIME,
   FOREIGN KEY (tournament_id) REFERENCES tournaments(id),
-  FOREIGN KEY (player1_id) REFERENCES users(id),
-  FOREIGN KEY (player2_id) REFERENCES users(id),
-  FOREIGN KEY (winner_id) REFERENCES users(id)
+  FOREIGN KEY (player1_id)    REFERENCES users(id),
+  FOREIGN KEY (player2_id)    REFERENCES users(id),
+  FOREIGN KEY (winner_id)     REFERENCES users(id)
 );
 `);
 

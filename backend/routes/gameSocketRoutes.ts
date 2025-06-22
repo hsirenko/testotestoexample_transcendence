@@ -6,6 +6,7 @@ import db                       from '../utils/db';
 import { games }                from '../gameManager';
 import { verifyToken }          from '../utils/jwt';
 import { Game, ClientMsgJoin, ClientMsgMove, ClientMsgStart } from '../game';
+import { handleGameResult } from '../tournamentManager';
 
 export default async function gameSocketRoutes(fastify: FastifyInstance) {
   fastify.get(
@@ -57,12 +58,22 @@ export default async function gameSocketRoutes(fastify: FastifyInstance) {
             }));
 
             // 2) create a new match row in SQLite
-            const insert = db.prepare(`
-              INSERT INTO matches (player1_id, player2_id)
-              VALUES (?, ?)
-            `).run(leftInfo.userId, rightInfo.userId);
-            // store it on the game so we can close it later
-            currentGame.dbMatchId = Number(insert.lastInsertRowid);
+			let row = db
+			.prepare(`SELECT id FROM matches WHERE game_id = ?`)
+			.get(currentGame.id) as { id: number } | undefined;
+
+			if (!row) {
+			// stand-alone 1-vs-1 game → create a fresh row
+			const insert = db.prepare(`
+				INSERT INTO matches (game_id, tournament_id, player1_id, player2_id)
+				VALUES (?, NULL, ?, ?)
+			`).run(currentGame.id, leftInfo.userId, rightInfo.userId);
+
+			currentGame.dbMatchId = Number(insert.lastInsertRowid);
+			} else {
+			// tournament match → row already exists, just keep its id
+			currentGame.dbMatchId = row.id;
+			}
           }
           return;
         }
@@ -105,6 +116,12 @@ export default async function gameSocketRoutes(fastify: FastifyInstance) {
         const loserId    = currentGame.players.get(
           winnerSide === 'left' ? 'right' : 'left'
         )!.userId;
+
+		handleGameResult(currentGame.id,
+                 winnerId,
+                 loserId,
+                 leftScore,
+                 rightScore);
 
         // 3) perform the same UPDATE + XP/trophy logic
         const tx = db.transaction(() => {
