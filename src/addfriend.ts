@@ -38,7 +38,7 @@ const resetUI = () => {
 /* send POST /add-friend ------------------------------------- */
 async function addFriend(username: string) {
   try {
-    const res = await fetch(`http://${HOST}:3000/api/users/add-friend`, {
+    const res = await fetch(`https://${HOST}:8443/api/users/add-friend`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...auth() },
       body: JSON.stringify({ username }), // see backend change below
