@@ -13,7 +13,7 @@ import { HOST } from './config.js';
 import { MatchRow } from "./types.js";
 
 /* Endpoint */
-const API_BASE = `http://${HOST}:3000`;
+const API_BASE = `https://${HOST}:8443`;
 const ENDPOINT = `${API_BASE}/api/matches/history`;
 
 function getAuthHeader(): HeadersInit {

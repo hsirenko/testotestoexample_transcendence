@@ -18,12 +18,12 @@
 
 	async function get<T>(url: string): Promise<T> {
 	const r = await fetch(url, { headers: auth() });
-	if (!r.ok) throw new Error(`HTTP ${r.status}`);
+	if (!r.ok) throw new Error(`HTTPS ${r.status}`);
 	return r.json() as Promise<T>;
 	}
 
 	const api = (fid: number) => {
-	const root = `http://${HOST}:3000/api/stats/friend/${fid}`;
+	const root = `https://${HOST}:8443/api/stats/friend/${fid}`;
 	return {
 		winsLifetime:  `${root}/wins`,
 		winsMonthly:   `${root}/monthly-wins`,

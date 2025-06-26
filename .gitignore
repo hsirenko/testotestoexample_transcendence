@@ -4,3 +4,4 @@ node_modules
 dist
 .vscode
 src/config.ts
+docker/nginx/ssl

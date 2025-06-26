@@ -52,7 +52,7 @@ export async function fetchFriends(): Promise<any[]> {
     if (USE_MOCK_DATA) return MOCK_FRIENDS;
 
     try {
-        const r = await fetch(`http://${HOST}:3000/api/users/me/friends`, {
+        const r = await fetch(`https://${HOST}:8443/api/users/me/friends`, {
             headers: getAuthHeader(),
         });
         if (!r.ok) throw await r.json();
@@ -145,7 +145,7 @@ function render(friends: any[]): void {
 
             try {
                 const r = await fetch(
-                    `http://${HOST}:3000/api/users/remove-friend/${friendId}`,
+                    `https://${HOST}:8443/api/users/remove-friend/${friendId}`,
                     { method: "DELETE", headers: getAuthHeader() }
                 );
                 const body = await r.json().catch(() => ({}));
