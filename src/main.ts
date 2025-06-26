@@ -381,7 +381,7 @@ window.setGameMode = (mode: "pvp" | "ai"): void => {
     cleanupRemote();
     (window as any).showGameArea?.();
     document.getElementById("win-message")?.remove();
-
+    pushHome();
     playing = false;
     gameMode = mode;
 
@@ -1035,6 +1035,7 @@ export function initRemoteModal(): void {
         sectCreate.classList.remove("hidden");
         // NEW: reveal the canvas + countdown behind the modal
         (window as any).showGameArea?.();
+        pushHome();
         resetObjects();
         resizeCanvas();
         render();
