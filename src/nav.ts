@@ -2,6 +2,8 @@
  * ------------------------------------------
  *  Inline-profile editor code was moved to profile-setting.ts
  */
+import { showOverlay, hideOverlay }   from './tournament.js'; 
+import { pushHome , pushOverlay} from "./nav_history.js";
 import { initStatsTab }          from "./stats.js";
 import { initHistoryTab }        from "./history.js";
 import { populateProfileViews,
@@ -11,6 +13,11 @@ import { populateProfileViews,
   import { initRemoteModal } from './main.js';
   import { HOST } from './config.js';
   import { initTournamentModal } from "./tournament.js";
+
+
+  /* cache the two DOM nodes once */
+const profileOv  = document.getElementById('profile-overlay')!;    // wrapper  (class="overlay")
+const profileBox = document.getElementById('profile-container')!;  // inner panel
 
 /* ───── shorthand ───── */
 const $ = <T extends HTMLElement = HTMLElement>(sel: string) =>
@@ -50,7 +57,7 @@ addEventListener("resize", () => {
 /* =========================================================================
  *  PROFILE OVERLAY  (tabs, avatar, etc.)
  * =======================================================================*/
-const profileOv = $("#profile-overlay")!;
+//const profileOv = $("#profile-overlay")!;
 $("#avatar-input")?.addEventListener("change", ev => {
   const f = (ev.currentTarget as HTMLInputElement).files?.[0];
   if (f) $<HTMLImageElement>("#avatar-img")!.src = URL.createObjectURL(f);
@@ -90,12 +97,26 @@ addEventListener("resize", updateUnderline);
 $("#nav-profile")?.addEventListener("click", () => {
   populateProfileViews();        // fresh user data
   setActiveTab("info");          // always start on Info
-  show(profileOv);
+  showOverlay(profileOv, profileBox);
+  //pushOverlay('profile-overlay', 'profile-container');               
   updateUnderline();
   refreshProfileHeader();
 });
-$("#profile-close")?.addEventListener("click", () => hide(profileOv));
-addEventListener("keydown", e => e.key === "Escape" && hide(profileOv));
+
+
+/* close via × button */
+document.getElementById('profile-close')?.addEventListener('click', () => {
+  hideOverlay(profileOv, profileBox);   // fade/scale-out
+  pushHome();                           // history: back to home
+});
+
+/* close via Esc key (only if overlay is visible) */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !profileOv.classList.contains('hidden')) {
+    hideOverlay(profileOv, profileBox);
+    pushHome();
+  }
+});
 
 /* =========================================================================
  *  GENERIC OVERLAY HELPERS
@@ -123,10 +144,24 @@ function hide(ov: HTMLElement, inner?: HTMLElement) {
 /* =========================================================================
  *  PLAY → DIFFICULTY FLOW   (unchanged)
  * =======================================================================*/
-const playOv = $("#play-overlay")!;
+const playOv  = document.getElementById('play-overlay')!;    // wrapper
+const playBox = document.getElementById('play-container')!;  // inner panel
+
 $("#nav-play")?.addEventListener("click", () => show(playOv));
-$("#play-close")?.addEventListener("click", () => hide(playOv));
-addEventListener("keydown", e => e.key === "Escape" && hide(playOv));
+
+/* CLOSE via × button */
+document.getElementById('play-close')?.addEventListener('click', () => {
+  hideOverlay(playOv, playBox);   // fade/scale-out both layers
+  pushHome();                     // history: overlay → home
+});
+
+/* CLOSE via Esc key */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !playOv.classList.contains('hidden')) {
+    hideOverlay(playOv, playBox);
+    pushHome();
+  }
+});
 
 document.querySelectorAll<HTMLButtonElement>('.mode-card').forEach(card => {
   card.addEventListener('click', () => {

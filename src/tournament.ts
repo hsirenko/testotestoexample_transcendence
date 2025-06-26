@@ -1,4 +1,5 @@
 /* src/tournament.ts  – remote 4-player bracket */
+import { pushOverlay, pushGame , pushHome} from './nav_history.js';
 
 import { createTournament, joinTournament } from './api/tournament.js';
 import { HOST }                             from './config.js';
@@ -84,9 +85,11 @@ function connectWs() {
 		if (msg.players.includes(me)) {
 		/* I’m playing → close bracket modal & jump into the game */
 		hideOverlay(ov, stepBracket);
+    
 
 		enableRemoteMode();          // switch main UI to remote-play
 		setGameId(msg.gameId);       // store the id for /ws/game
+    pushGame(msg.gameId);
 		connectWebSocket();          // actually join the match
 		}
 
@@ -95,6 +98,7 @@ function connectWs() {
 
 	if (msg.type === 'tournamentFinished') {
 		bracketHint.textContent = `🏆  Winner: ${msg.winnerId}`;
+    pushHome();
 	}
 	});
 }
@@ -140,6 +144,7 @@ function hideOverlay(overlay: HTMLElement, inner?: HTMLElement) {
 }
 
 export function initTournamentModal(): void {
+  pushOverlay('tournament-overlay', 'tour-step-main');
   // 1. make sure the first panel is shown
   goto(stepMain);
 

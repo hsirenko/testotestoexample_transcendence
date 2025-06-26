@@ -1,3 +1,6 @@
+import { installPopHandler, pushHome, pushGame, pushOverlay, showHome} from './nav_history.js';
+
+
 //frontend/src/main.ts
 import {
     ClientMsgJoin,
@@ -427,6 +430,7 @@ function startCountdown(sec: number, callback: () => void): void {
 
 /* ═════════════ WIN MESSAGE ═════════════ */
 function handleWin(remote: boolean): void {
+
     playing = false;
     //reshow that shit
     document.body.classList.remove("game-playing");
@@ -440,6 +444,7 @@ function handleWin(remote: boolean): void {
     if (!overlay) {
         overlay = document.createElement("div");
         overlay.id = "win-message";
+        overlay.classList.add('overlay');
         CanvasHtml.parentElement!.style.position = "relative";
         CanvasHtml.parentElement!.appendChild(overlay);
     }
@@ -561,6 +566,7 @@ function handleWin(remote: boolean): void {
     const closeBtn = document.getElementById("close-btn") as HTMLButtonElement;
 
     if (!remote && againBtn) {
+        pushGame("local");
         againBtn.onclick = () => {
             overlay!.remove();
             LScore = RScore = 0;
@@ -632,17 +638,30 @@ function startGameRemote() {
     game.classList.add("animate__animated", "animate__zoomIn");
 }
 
-document.getElementById("nav-home")!.addEventListener("click", () => {
+document.getElementById("nav-home")!.addEventListener("click", e => {
+    e.preventDefault();
+    showHome();
+    pushHome();
     cleanupRemote();
     resetObjects();
 });
+
+const playOv  = document.getElementById('play-overlay')!;
+const playBox = document.getElementById('play-container')!;
 
 document.getElementById("nav-play")!.addEventListener("click", () => {
     cleanupRemote();
     resetObjects();
+    showOverlay(playOv, playBox);
+    pushOverlay('play-overlay', 'play-container');
 });
 
 document.getElementById("nav-profile")!.addEventListener("click", () => {
+    showOverlay(
+    document.getElementById('profile-overlay')!,       // wrapper
+    document.getElementById('profile-container')!      // inner panel
+  );
+    pushOverlay('profile-overlay', 'profile-container');
     cleanupRemote();
     resetObjects();
 });
@@ -1045,7 +1064,17 @@ export function initRemoteModal(): void {
         // if (!id) return alert("Please enter a Game ID");
         gameId = id;
         remoteMode = true;
-        ownGameId = null;
+        ownGameId = null;function showHome(): void {
+  // unhide the main dashboard / landing section
+  document.getElementById('home-screen')?.classList.remove('hidden');
+
+  // make sure other major sections are hidden
+  document.getElementById('game-screen')?.classList.add('hidden');
+
+  // extra clean-up if you have side panels etc.
+  document.body.classList.remove('game-playing');
+}
+
         // hideOverlay(ov, inner);
         connectWebSocket();
     };
@@ -1067,6 +1096,48 @@ export function initRemoteModal(): void {
 window.addEventListener("beforeunload", () => {
     cleanupRemote();
 });
+/* ───────────────────────────────────────────────────────────── *
+ *  One call that wires Back / Forward to the router
+ * ───────────────────────────────────────────────────────────── */
+installPopHandler(state => {
+  console.log('[POP]', state);        // fires once per arrow click
+
+  /* 1) Hide every visible overlay (wrapper + inner) */
+    document.querySelectorAll<HTMLElement>('.overlay:not(.hidden)')
+            .forEach(ov => {
+            // find the child that showOverlay() animated
+            const inner = ov.querySelector<HTMLElement>(':scope > *:not(.hidden)') ?? undefined;
+            hideOverlay(ov, inner);        // uses your existing helper
+            });
+
+    document.body.classList.remove('game-playing');   // stop canvas etc.
+
+  /* 2) Restore what the new state demands  ──────────────────── */
+  if (!state) return;                 // safety guard
+
+  switch (state.screen) {
+    case 'home':{
+        break;
+}
+
+    case 'overlay': {
+      const ov    = document.getElementById(state.id) as HTMLElement | null;
+      const inner =
+        state.inner ? document.getElementById(state.inner) as HTMLElement | null
+                    : undefined;
+      if (ov) showOverlay(ov, inner ?? undefined);
+      break;
+    }
+
+    case 'game':
+      enableRemoteMode();
+      setGameId(state.gameId);
+      connectWebSocket();
+      break;
+  }
+});
+
+
 
 // initial game setup
 resetObjects();

@@ -488,10 +488,11 @@
             <!-- ░░ PROFILE MINI-PAGE ░░ -->
             <div
                 id="profile-overlay"
-                class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden opacity-0 transition-opacity duration-300"
+                class="overlay fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden opacity-0 transition-opacity duration-300"
             >
                 <div
-                    class="relative w-full max-w-3xl h-[90vh] bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white p-8 rounded-3xl shadow-2xl flex flex-col"
+                    id="profile-container"
+                    class="modal-inner relative w-full max-w-3xl h-[90vh] bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white p-8 rounded-3xl shadow-2xl flex flex-col"
                 >
                     <!-- close × -->
                     <button
@@ -953,10 +954,11 @@
             <!-- ░░ PLAY POP-UP ░░ -->
             <div
                 id="play-overlay"
-                class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden opacity-0 transition-opacity duration-300"
+                class="overlay fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden opacity-0 transition-opacity duration-300"
             >
                 <div
-                    class="relative w-full max-w-3xl p-10 rounded-3xl shadow-2xl bg-gradient-to-br from-cyan-600 via-blue-600 to-indigo-700 text-white flex flex-col gap-8"
+                    id="play-container"
+                    class="modal-inner relative w-full max-w-3xl p-10 rounded-3xl shadow-2xl bg-gradient-to-br from-cyan-600 via-blue-600 to-indigo-700 text-white flex flex-col gap-8"
                 >
                     <!-- close × -->
                     <button
