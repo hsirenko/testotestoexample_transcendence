@@ -200,6 +200,116 @@
             </form>
         </div>
 
+        <!-- ░░ RESET-PASSWORD OVERLAY ░░ -->
+        <div id="reset-overlay"
+             class="fixed inset-0 bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white flex items-center justify-center z-[70] hidden">
+
+          <form id="reset-form"
+                class="bg-black/60 backdrop-blur p-8 rounded-3xl flex flex-col gap-4 w-full max-w-sm">
+
+            <h2 class="text-2xl font-extrabold text-center mb-2">Reset password</h2>
+
+            <div class="relative w-full">
+              <input id="reset-email" type="email" required placeholder=" "
+                     class="floating-input peer w-full rounded-md border border-white/30 bg-transparent px-3 py-4 text-white focus:border-indigo-400 focus:outline-none"/>
+              <label for="reset-email"
+                     class="floating-label absolute left-3 top-4.5 pointer-events-none text-gray-400 transition-all duration-200">
+                Email
+              </label>
+            </div>
+        
+            <p id="reset-error" class="text-xs text-red-400 min-h-[1em]"></p>
+        
+            <button id="reset-submit" type="submit"
+                    class="py-2 rounded-full bg-amber-500 hover:bg-amber-600 font-semibold">
+              Send code
+            </button>
+        
+            <a id="reset-show-login" href="#"
+               class="text-xs self-center text-amber-400 hover:underline">
+              Already have an account? Sign in
+            </a>
+        
+            <button id="reset-google-btn" type="button"
+                    class="flex items-center justify-center gap-2 py-2 rounded-full bg-white text-black hover:bg-white/90 font-medium">
+              <!-- Same SVG “G” icon you use in the login block -->
+              Continue with Google
+            </button>
+        
+            <p class="text-xs text-center">
+              Don’t have an account?
+              <a id="reset-show-signup" href="#" class="text-amber-400 hover:underline">Sign up</a>
+            </p>
+          </form>
+        </div>
+
+        <!-- ░░ CODE-VERIFICATION OVERLAY ░░ -->
+        <div id="code-overlay"
+             class="fixed inset-0 bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white flex items-center justify-center z-[70] hidden">
+            
+          <form id="code-form"
+                class="bg-black/60 backdrop-blur p-8 rounded-3xl flex flex-col gap-4 w-full max-w-sm">
+            
+            <h2 class="text-2xl font-extrabold text-center mb-2">Enter verification code</h2>
+            
+            <div class="relative w-full">
+              <input id="reset-code" type="text" inputmode="numeric" pattern="\d{6}" required maxlength="6"
+                     placeholder=" "
+                     class="floating-input peer w-full rounded-md border border-white/30 bg-transparent px-3 py-4 text-white focus:border-indigo-400 focus:outline-none"/>
+              <label for="reset-code"
+                     class="floating-label absolute left-3 top-4.5 pointer-events-none text-gray-400 transition-all duration-200">
+                6-digit code
+              </label>
+            </div>
+        
+            <p id="code-error" class="text-xs text-red-400 min-h-[1em]"></p>
+        
+            <button id="code-submit" type="submit"
+                    class="py-2 rounded-full bg-amber-500 hover:bg-amber-600 font-semibold">
+              Verify
+            </button>
+          </form>
+        </div>
+        
+        
+        <!-- ░░ NEW-PASSWORD OVERLAY ░░ -->
+        <div id="newpass-overlay"
+             class="fixed inset-0 bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white flex items-center justify-center z-[70] hidden">
+        
+          <form id="newpass-form"
+                class="bg-black/60 backdrop-blur p-8 rounded-3xl flex flex-col gap-4 w-full max-w-sm">
+        
+            <h2 class="text-2xl font-extrabold text-center mb-2">Choose a new password</h2>
+        
+            <div class="relative w-full">
+              <input id="new-pass" type="password" required placeholder=" "
+                     class="floating-input peer w-full rounded-md border border-white/30 bg-transparent px-3 py-4 text-white focus:border-indigo-400 focus:outline-none"/>
+              <label for="new-pass"
+                     class="floating-label absolute left-3 top-4.5 pointer-events-none text-gray-400 transition-all duration-200">
+                New password
+              </label>
+            </div>
+        
+            <div class="relative w-full">
+              <input id="new-pass-confirm" type="password" required placeholder=" "
+                     class="floating-input peer w-full rounded-md border border-white/30 bg-transparent px-3 py-4 text-white focus:border-indigo-400 focus:outline-none"/>
+              <label for="new-pass-confirm"
+                     class="floating-label absolute left-3 top-4.5 pointer-events-none text-gray-400 transition-all duration-200">
+                Confirm password
+              </label>
+            </div>
+        
+            <p id="newpass-error" class="text-xs text-red-400 min-h-[1em]"></p>
+        
+            <button id="newpass-submit" type="submit"
+                    class="py-2 rounded-full bg-amber-500 hover:bg-amber-600 font-semibold">
+              Change password
+            </button>
+          </form>
+        </div>
+
+
+
         <!-- ░░ SIGN-UP OVERLAY ░░ -->
         <div
             id="signup-overlay"

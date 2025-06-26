@@ -29,24 +29,24 @@ const originalSubmit = form.querySelector(
     "button[type='submit'],input[type='submit']"
 ) as HTMLElement | null;
 
-const sendCodeBtn = document.createElement("button");
-sendCodeBtn.id = "send-code-btn";
-sendCodeBtn.type = "button";
-sendCodeBtn.textContent = "Send code";
-sendCodeBtn.className =
-    (originalSubmit ? originalSubmit.className : "btn") + " hidden";
-if (originalSubmit) {
-    originalSubmit.insertAdjacentElement("afterend", sendCodeBtn);
-} else {
-    form.appendChild(sendCodeBtn);
-}
+// const sendCodeBtn = document.createElement("button");
+// sendCodeBtn.id = "send-code-btn";
+// sendCodeBtn.type = "button";
+// sendCodeBtn.textContent = "Send code";
+// sendCodeBtn.className =
+//     (originalSubmit ? originalSubmit.className : "btn") + " hidden";
+// if (originalSubmit) {
+//     originalSubmit.insertAdjacentElement("afterend", sendCodeBtn);
+// } else {
+//     form.appendChild(sendCodeBtn);
+// }
 
-const backToLoginLink = document.createElement("a");
-backToLoginLink.id = "back-to-login";
-backToLoginLink.href = "#";
-backToLoginLink.textContent = "Already have an account? Sign in";
-backToLoginLink.className = "hidden";
-sendCodeBtn.insertAdjacentElement("afterend", backToLoginLink);
+// const backToLoginLink = document.createElement("a");
+// backToLoginLink.id = "back-to-login";
+// backToLoginLink.href = "#";
+// backToLoginLink.textContent = "Already have an account? Sign in";
+// backToLoginLink.className = "hidden";
+// sendCodeBtn.insertAdjacentElement("afterend", backToLoginLink);
 
 // On page load, check for ?token=… in the URL
 (async () => {
@@ -138,6 +138,105 @@ sendCodeBtn.insertAdjacentElement("afterend", backToLoginLink);
 //     };
 //   });
 // }
+
+
+//new part related to the reset password form, code validation and password change
+const resetOverlay = document.getElementById("reset-overlay") as HTMLElement;
+const resetForm     = document.getElementById("reset-form")   as HTMLFormElement;
+const resetError    = document.getElementById("reset-error")  as HTMLElement;
+
+const codeOverlay     = document.getElementById("code-overlay")      as HTMLElement;
+const codeForm        = document.getElementById("code-form")         as HTMLFormElement;
+const codeError       = document.getElementById("code-error")        as HTMLElement;
+
+const newpassOverlay  = document.getElementById("newpass-overlay")   as HTMLElement;
+const newpassForm     = document.getElementById("newpass-form")      as HTMLFormElement;
+const newpassError    = document.getElementById("newpass-error")     as HTMLElement;
+
+
+document.getElementById("forgot-btn")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    overlay.classList.add("hidden");
+    resetOverlay.classList.remove("hidden");
+});
+
+document.getElementById("reset-show-login")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    resetOverlay.classList.add("hidden");
+    overlay.classList.remove("hidden");
+});
+
+resetForm?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    resetError.textContent = "";
+
+    const email = (document.getElementById("reset-email") as HTMLInputElement).value.trim();
+    const emErr = validateEmail(email);
+
+    if (!email)          resetError.textContent = "Email is required.";
+    else if (emErr)      resetError.textContent = emErr;
+    else {
+        // No backend change – we just give user feedback
+        resetError.textContent = "If the address is registered, a reset code has been sent.";
+        alert("Code sent");
+        resetOverlay.classList.add("hidden");
+        codeOverlay.classList.remove("hidden");
+    }
+    
+
+});
+
+codeForm?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    codeError.textContent = "";
+
+    const codeInput = (document.getElementById("reset-code") as HTMLInputElement).value.trim();
+
+    if (!/^\d{6}$/.test(codeInput)) {
+        codeError.textContent = "Code must be 6 digits.";
+        return;
+    }
+
+    // here you should implement the backend of verification
+
+    codeOverlay.classList.add("hidden");
+    newpassOverlay.classList.remove("hidden");
+});
+
+
+newpassForm?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    newpassError.textContent = "";
+
+    const pass1 = (document.getElementById("new-pass") as HTMLInputElement).value;
+    const pass2 = (document.getElementById("new-pass-confirm") as HTMLInputElement).value;
+
+    const pwdErr = validatePassword(pass1);   // same helper used in sign-up
+
+    if (pwdErr)               { newpassError.textContent = pwdErr; return; }
+    if (pass1 !== pass2)      { newpassError.textContent = "Passwords do not match."; return; }
+
+    // here you should implement the backend password change logic
+
+    alert("Password changed without backend");
+    newpassOverlay.classList.add("hidden");
+    overlay.classList.remove("hidden");       // back to normal sign-in
+});
+
+
+
+//here it ends
+
+document.getElementById("reset-show-signup")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    resetOverlay.classList.add("hidden");
+    showSignup();                           // existing helper
+});
+
+document.getElementById("reset-google-btn")?.addEventListener("click", () => {
+    window.location.href = GOOGLE_LOGIN_URL;
+});
+
 
 function animateIn(el: HTMLElement, cls: string) {
     el.classList.add("animate__animated", cls);
@@ -340,59 +439,59 @@ form.addEventListener("submit", async (e) => {
 	initNotifications();
 });
 
-function enterResetMode() {
-    resetMode = true;
-    loginError.textContent = "";
-    (document.getElementById("password") as HTMLElement)?.classList.add(
-        "hidden"
-    );
-    originalSubmit?.classList.add("hidden");
-    (document.getElementById("forgot-btn") as HTMLElement)?.classList.add(
-        "hidden"
-    );
-    document.getElementById("show-signup")?.classList.add("hidden");
-    sendCodeBtn.classList.remove("hidden");
-    backToLoginLink.classList.remove("hidden");
-}
-function exitResetMode() {
-    resetMode = false;
-    (document.getElementById("password") as HTMLElement)?.classList.remove(
-        "hidden"
-    );
-    originalSubmit?.classList.remove("hidden");
-    (document.getElementById("forgot-btn") as HTMLElement)?.classList.remove(
-        "hidden"
-    );
-    document.getElementById("show-signup")?.classList.remove("hidden");
-    sendCodeBtn.classList.add("hidden");
-    backToLoginLink.classList.add("hidden");
-}
+// function enterResetMode() {
+//     resetMode = true;
+//     loginError.textContent = "";
+//     (document.getElementById("password") as HTMLElement)?.classList.add(
+//         "hidden"
+//     );
+//     originalSubmit?.classList.add("hidden");
+//     (document.getElementById("forgot-btn") as HTMLElement)?.classList.add(
+//         "hidden"
+//     );
+//     document.getElementById("show-signup")?.classList.add("hidden");
+//     sendCodeBtn.classList.remove("hidden");
+//     backToLoginLink.classList.remove("hidden");
+// }
+// function exitResetMode() {
+//     resetMode = false;
+//     (document.getElementById("password") as HTMLElement)?.classList.remove(
+//         "hidden"
+//     );
+//     originalSubmit?.classList.remove("hidden");
+//     (document.getElementById("forgot-btn") as HTMLElement)?.classList.remove(
+//         "hidden"
+//     );
+//     document.getElementById("show-signup")?.classList.remove("hidden");
+//     sendCodeBtn.classList.add("hidden");
+//     backToLoginLink.classList.add("hidden");
+// }
 
-document.getElementById("forgot-btn")?.addEventListener("click", (e) => {
-    e.preventDefault();
-    enterResetMode();
-});
+// document.getElementById("forgot-btn")?.addEventListener("click", (e) => {
+//     e.preventDefault();
+//     enterResetMode();
+// });
 
-backToLoginLink.addEventListener("click", (e) => {
-    e.preventDefault();
-    exitResetMode();
-});
+// backToLoginLink.addEventListener("click", (e) => {
+//     e.preventDefault();
+//     exitResetMode();
+// });
 
-sendCodeBtn.addEventListener("click", () => {
-    loginError.textContent = "";
-    const email = (
-        document.getElementById("email") as HTMLInputElement
-    ).value.trim();
-    const emErr = validateEmail(email);
+// sendCodeBtn.addEventListener("click", () => {
+//     loginError.textContent = "";
+//     const email = (
+//         document.getElementById("email") as HTMLInputElement
+//     ).value.trim();
+//     const emErr = validateEmail(email);
 
-    if (!email) loginError.textContent = "Email is required.";
-    else if (emErr) loginError.textContent = emErr;
-    else {
-        loginError.textContent =
-            "If the address is registered, a reset code has been sent.";
-        exitResetMode();
-    }
-});
+//     if (!email) loginError.textContent = "Email is required.";
+//     else if (emErr) loginError.textContent = emErr;
+//     else {
+//         loginError.textContent =
+//             "If the address is registered, a reset code has been sent.";
+//         exitResetMode();
+//     }
+// });
 
 document.getElementById("show-signup")?.addEventListener("click", (e) => {
     e.preventDefault();
