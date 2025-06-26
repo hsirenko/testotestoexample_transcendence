@@ -1116,10 +1116,22 @@ installPopHandler(state => {
   if (!state) return;                 // safety guard
 
   switch (state.screen) {
-    case 'home':{
-        break;
-}
+    case 'home': {
+  cleanupRemote();
+  resetObjects();
 
+  (window as any).hideGameArea?.();   // ⬅️  NOW DEFINED
+
+  /* hide every overlay still visible */
+  document.querySelectorAll<HTMLElement>('.overlay:not(.hidden)')
+          .forEach(ov => {
+            const inner = ov.querySelector<HTMLElement>(
+              ':scope > *:not(.hidden)'
+            ) ?? undefined;
+            hideOverlay(ov, inner);
+          });
+  break;
+}
     case 'overlay': {
       const ov    = document.getElementById(state.id) as HTMLElement | null;
       const inner =

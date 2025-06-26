@@ -77,4 +77,10 @@ if (game && main) {
 
   /* Expose helper in case you need it elsewhere */
   (window as any).showGameArea = showGame;
+
+  (window as any).hideGameArea = function hideGame(): void {
+  WSec.classList.remove('hidden');              // show welcome
+  game.classList.add('hidden');                 // hide canvas
+  game.classList.remove('animate__animated', 'animate__zoomIn');
+};
 }
