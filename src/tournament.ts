@@ -84,7 +84,7 @@ function connectWs() {
 
 		if (msg.players.includes(me)) {
 		/* I’m playing → close bracket modal & jump into the game */
-		hideOverlay(ov, stepBracket);
+		hideOverlay(ov, box);
     
 
 		enableRemoteMode();          // switch main UI to remote-play
@@ -144,6 +144,7 @@ function hideOverlay(overlay: HTMLElement, inner?: HTMLElement) {
 }
 
 export function initTournamentModal(): void {
+  showOverlay(ov, box);
   pushOverlay('tournament-overlay', 'tour-step-main');
   // 1. make sure the first panel is shown
   goto(stepMain);
@@ -165,7 +166,15 @@ document.getElementById('tour-back-btn')?.addEventListener('click', () => {
   goto(stepMain);          // back to Create / Join choice
 });
 
-closeBtn.addEventListener("click", () => hideOverlay(ov, box));
-document.addEventListener("keydown", e => {
-  if (e.key === "Escape" && !ov.classList.contains("hidden")) hideOverlay(ov, box);
+/* CLOSE via × or Esc */
+closeBtn.addEventListener('click', () => {
+  hideOverlay(ov, box);
+  pushHome();                                            // NEW
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !ov.classList.contains('hidden')) {
+    hideOverlay(ov, box);
+    pushHome();                                          // NEW
+  }
 });
