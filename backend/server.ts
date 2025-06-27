@@ -65,7 +65,7 @@ const start = async () => {
     });
 
     // Public routes
-    await fastify.register(signupRoutes);
+    await fastify.register(signupRoutesz);
     await fastify.register(loginRoutes);
 	await fastify.register(googleAuthRoutes);
 	await fastify.register(gameSocketRoutes);
