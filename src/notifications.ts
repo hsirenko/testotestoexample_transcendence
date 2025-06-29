@@ -65,7 +65,7 @@ function renderPanel(): void {
 	const clearBtn = document.createElement("button");
 	clearBtn.setAttribute("aria-label", "Clear notifications");
 	clearBtn.className =
-		"absolute right-0 top-0 text-red-500 hover:text-red-600 " +
+		"absolute right-0 top-0 text-white-500 hover:text-red-600 " +
 		"transition-transform duration-200 hover:scale-110";
 
 	/* heroicons/solid trash 20 px  – drop in any SVG you like */
