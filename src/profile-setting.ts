@@ -206,8 +206,16 @@ try {
 	const remove2FABtn = document.getElementById('remove-2fa-btn')!;
 	if (nameEl && user.username) nameEl.textContent = user.username;
 	if (mailEl && user.email   ) mailEl.textContent = user.email;
-	if (avatar && user.avatar_url) avatar.src = user.avatar_url;
-	else if (avatar && !user.avatar_url) avatar.src = "https://img.freepik.com/free-vector/cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
+	if (avatar && user.avatar_url) {
+	avatar.src = user.avatar_url.startsWith('http')
+		? user.avatar_url                                  // in case you migrate later
+		: `http://${HOST}:3000/uploads/${user.avatar_url}`; // normal case
+	} else if (avatar) {
+	avatar.src = "https://img.freepik.com/free-vector/cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
+	}
+
+	// if (avatar && user.avatar_url) avatar.src = user.avatar_url;
+	// else if (avatar && !user.avatar_url) avatar.src = "https://img.freepik.com/free-vector/cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
 	const me = await fetchMe();
 	if (user.twofa_enabled)
 	{

@@ -425,6 +425,16 @@ form.addEventListener("submit", async (e) => {
     }
 
     localStorage.setItem("token", data.token);
+    let fullUser = data.user;        // what /login just returned
+    try {
+    const resMe = await fetch(`http://${HOST}:3000/api/users/me`, {
+        headers: { Authorization: `Bearer ${data.token}` },
+    });
+    if (resMe.ok) {
+        const me = await resMe.json();            // has avatar_url
+        fullUser = { ...fullUser, avatar_url: me.avatar_url };
+    }
+    } catch { /* ignore network failure */ }
     localStorage.setItem("user", JSON.stringify(data.user));
     twofaInput.classList.add("hidden");
     twofaWrapper.classList.add("hidden");

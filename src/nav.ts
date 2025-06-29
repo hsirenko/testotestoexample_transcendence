@@ -54,14 +54,46 @@ addEventListener("resize", () => {
   else applyMobile(true);
 });
 
-/* =========================================================================
- *  PROFILE OVERLAY  (tabs, avatar, etc.)
- * =======================================================================*/
-//const profileOv = $("#profile-overlay")!;
-$("#avatar-input")?.addEventListener("change", ev => {
-  const f = (ev.currentTarget as HTMLInputElement).files?.[0];
-  if (f) $<HTMLImageElement>("#avatar-img")!.src = URL.createObjectURL(f);
-});
+/* PROFILE OVERLAY – avatar upload */
+const avatarInput = document.getElementById('avatar-input') as HTMLInputElement | null;
+const avatarImg   = document.getElementById('avatar-img')   as HTMLImageElement  | null;
+
+if (avatarInput) {
+  avatarInput.addEventListener('change', async (ev) => {
+    const file = (ev.currentTarget as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    /* —— 1. optimistic preview —— */
+    if (avatarImg) avatarImg.src = URL.createObjectURL(file);
+
+    /* —— 2. upload to backend —— */
+    const fd = new FormData();
+    fd.append('avatar', file);
+
+    const token = localStorage.getItem('token');
+    const res = await fetch(`http://${HOST}:3000/api/users/avatar`, {
+      method: 'PUT',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: fd,
+    });
+
+    if (!res.ok) {
+      console.error('Avatar upload failed');            // dev aid
+      return;
+    }
+
+    const { avatar_url } = await res.json();             // avatars/xyz.png
+    const fullUrl = `http://${HOST}:3000/uploads/${avatar_url}`;
+
+    /* —— 3. update all cached places —— */
+    if (avatarImg) avatarImg.src = fullUrl;
+
+    const user = JSON.parse(localStorage.getItem('user') ?? '{}');
+    user.avatar_url = avatar_url;                        // keep *relative* in LS
+    localStorage.setItem('user', JSON.stringify(user));
+  });
+}
+
 
 /* tabs */
 const tabBtns   = document.querySelectorAll<HTMLButtonElement>("#profile-tabs .tab-btn");

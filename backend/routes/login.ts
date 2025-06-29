@@ -58,7 +58,8 @@ export default async function loginRoutes(fastify: FastifyInstance) {
         username: user.username,
         email: user.email,
         xp_level: user.xp_level,
-        trophies: user.trophies
+        trophies: user.trophies,
+        avatar_url: user.avatar_url 
       }
     });
   });
