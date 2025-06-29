@@ -88,6 +88,16 @@
                     100%
                 ) !important; /* slides out → keeps `duration-300` */
             }
+
+            /*this is added by jnde*/
+            body.game-playing #nav-menu button:not([data-nav="home"]),
+            body.game-playing #nav-menu a:not([data-nav="home"]),
+            body.game-playing #nav-notif,
+            body.game-playing #burger {
+              pointer-events: none;   /* make them un-clickable           */
+              opacity: 0.4;           /* give a visual “disabled” effect  */
+              cursor: default;
+            }
         </style>
     </head>
 
