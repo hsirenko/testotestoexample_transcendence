@@ -81,8 +81,15 @@ function renderPanel(): void {
 
 	/* optional behaviour – wipe client list & refresh badge */
 	clearBtn.onclick = async (e) => {
-		e.stopPropagation();
 		notifications = [];
+		const me = JSON.parse(localStorage.getItem("user") || "{}");
+		e.stopPropagation();
+		const t = localStorage.getItem("token")!;
+	await fetch(`http://${HOST}:3000/api/notifications`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${t}` },
+  });
+	notifications = notifications.filter(x => x.id !== me.id);
 		renderPanel();      // re-render empty state
 		updateBadge();      // badge already exists lower in the file
 
