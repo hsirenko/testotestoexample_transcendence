@@ -10,6 +10,7 @@ import dotenv from 'dotenv';
 import gameSocketRoutes from './routes/gameSocketRoutes';
 import notifSocketRoutes from './routes/notificationSocketRoutes';
 import tournamentSocketRoutes from './routes/tournamentSocketRoutes';
+import fastifyMultipart from "fastify-multipart";
 
 //Backend game
 import websocketPlugin from '@fastify/websocket';
@@ -25,6 +26,8 @@ fastify.register(websocketPlugin);
 fastify.register(tournamentSocketRoutes);
 
 dotenv.config();
+
+fastify.register(fastifyMultipart);
 
 export const HOST = process.env.IP_ADDR;
 

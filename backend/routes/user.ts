@@ -133,34 +133,90 @@ export default async function userRoutes(fastify: FastifyInstance) {
     }
   );
 
-  fastify.get(
-  '/api/users/:id',                           
-  async (req: FastifyRequest, reply: FastifyReply) => {
+    fastify.get(
+    '/api/users/:id',                           
+    async (req: FastifyRequest, reply: FastifyReply) => {
 
-    /* ── validate & coerce id param ─────────────────────────────── */
-    const { id } = req.params as { id: string };
-    const userId = Number(id);
-    if (!Number.isInteger(userId) || userId <= 0) {
-      return reply.status(400).send({ error: 'Invalid user id' });
+      /* ── validate & coerce id param ─────────────────────────────── */
+      const { id } = req.params as { id: string };
+      const userId = Number(id);
+      if (!Number.isInteger(userId) || userId <= 0) {
+        return reply.status(400).send({ error: 'Invalid user id' });
+      }
+
+      /* ── fetch public-safe fields ───────────────────────────────── */
+      const user = db.prepare(`
+        SELECT id,
+              username,
+              avatar_url,
+              xp_level,
+              trophies,
+              created_at
+        FROM   users
+        WHERE  id = ?
+      `).get(userId);
+
+      if (!user) {
+        return reply.status(404).send({ error: 'User not found' });
+      }
+
+      return reply.send(user);
     }
+  );
+  fastify.put(
+    "/api/users/avatar",
+    { preHandler: authMiddleware },
+    async (req, reply) => {
+      const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
 
-    /* ── fetch public-safe fields ───────────────────────────────── */
-    const user = db.prepare(`
-      SELECT id,
-             username,
-             avatar_url,
-             xp_level,
-             trophies,
-             created_at
-      FROM   users
-      WHERE  id = ?
-    `).get(userId);
+      /* --------------------------- A) multipart -------------------- */
+      if (req.isMultipart()) {
+        const mp = await req.file({ limits: { fileSize: 5 * 1024 * 1024 } }); // 5 MB
+        if (!mp) return reply.code(400).send({ error: "No file uploaded" });
 
-    if (!user) {
-      return reply.status(404).send({ error: 'User not found' });
+        const mime = mp.mimetype;
+        if (!/^image\/(png|jpe?g|webp)$/i.test(mime)) {
+          return reply.code(400).send({ error: "Unsupported image type" });
+        }
+
+        const ext  = mime.split("/")[1] === "jpeg" ? "jpg" : mime.split("/")[1];
+        const fn   = `avatar_${userId}_${Date.now()}.${ext}`;
+        const fs   = await import("fs");
+        const path = `uploads/avatars/${fn}`;
+
+        await fs.promises.mkdir("uploads/avatars", { recursive: true });
+        await fs.promises.writeFile(path, await mp.toBuffer());
+
+        db.prepare(`UPDATE users SET avatar_url = ? WHERE id = ?`).run(path, userId);
+        return reply.send({ avatar_url: path });
+      }
+
+      /* --------------------------- B) JSON data-URL ---------------- */
+      const { dataUrl } = req.body as { dataUrl?: string };
+      if (!dataUrl || !dataUrl.startsWith("data:image/")) {
+        return reply.code(400).send({ error: "Missing avatar dataUrl" });
+      }
+
+      const matches = dataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
+      if (!matches) return reply.code(400).send({ error: "Malformed dataUrl" });
+
+      const [, extRaw, b64] = matches;
+      const ext = extRaw === "jpeg" ? "jpg" : extRaw.toLowerCase();
+      if (!/(png|jpg|jpeg|webp)/.test(ext))
+        return reply.code(400).send({ error: "Unsupported image type" });
+
+      const buf  = Buffer.from(b64, "base64");
+      if (buf.length > 5 * 1024 * 1024)                       // 5 MB
+        return reply.code(400).send({ error: "Image too large" });
+
+      const fs   = await import("fs");
+      const fn   = `avatar_${userId}_${Date.now()}.${ext}`;
+      const path = `uploads/avatars/${fn}`;
+      await fs.promises.mkdir("uploads/avatars", { recursive: true });
+      await fs.promises.writeFile(path, buf);
+
+      db.prepare(`UPDATE users SET avatar_url = ? WHERE id = ?`).run(path, userId);
+      return reply.send({ avatar_url: path });
     }
-
-    return reply.send(user);
-  }
-);
+  );
 }
