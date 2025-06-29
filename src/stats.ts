@@ -9,16 +9,9 @@ import {
   WinsTotalDTO,
   GoalsTotalDTO,
   MonthlyGoalsRowDTO,
-  MonthlyGoalsDTO,
   MonthlyWinRateDTO,
-  MonthlyNumsDTO,
-  LongestHitDTO,
-  TrophyDTO,
 } from "./types.js";
 import { HOST } from './config.js';
-
-/* toggle mock data */
-const USE_MOCK_DATA = false;
 
 /* base URL */
 const API_BASE = `http://${HOST}:3000`;
@@ -33,25 +26,24 @@ const ENDPOINT = {
   me        : `${API_BASE}/api/users/me`,
 };
 
-/* mock payloads (optional offline mode) */
-const MOCK = {
-  winsMonth: [14, 7, 9, 11, 13, 8, 10, 12, 6, 9, 15, 11] as MonthlyNumsDTO,
-  winsTotal: { wins: 69, losses: 31 } as WinsTotalDTO,
-  goalsTotal: { scored: 120, conceded: 95 } as GoalsTotalDTO,
-  goalsMonth: {
-    scored: [10, 9, 8, 12, 11, 10, 13, 12, 9, 8, 15, 13],
-    conceded: [7, 8, 6, 9, 8, 7, 9, 10, 7, 6, 11, 10],
-  } as MonthlyGoalsDTO,
-  longest: { longest: 37, opponent: "Karim" } as LongestHitDTO,
-  trophy: { total: 420 } as TrophyDTO,
-};
-
 /* destroy any existing Chart.js instance on a canvas */
 function zap(id: string): void {
   const el = document.getElementById(id) as HTMLCanvasElement | null;
   if (!el) return;
   const chart = Chart.getChart(el);
   if (chart) chart.destroy();
+}
+
+/* ───── error helper ───── */
+function showStatsError(canvasId: string): void {
+  const el = document.getElementById(canvasId);
+  if (!el) return;
+
+  const msg = document.createElement("p");
+  msg.textContent = "Failed to load stats.";
+  msg.className   = "py-4 text-center text-red-400";
+
+  el.replaceWith(msg);          // swap canvas for the message
 }
 
 export function initStatsTab(): void {
@@ -86,10 +78,8 @@ function getAuthHeader(): HeadersInit {
 }
 
 async function fetchJSON<T>(url: string): Promise<T> {
-  const r = await fetch(url, {
-    headers: getAuthHeader(),
-  });
-  if (!r.ok) throw new Error(String(r.status));
+  const r = await fetch(url, { headers: getAuthHeader() });
+  if (!r.ok) throw new Error("Failed to load stats.");
   return (await r.json()) as T;
 }
 
@@ -97,77 +87,74 @@ async function fetchJSON<T>(url: string): Promise<T> {
 async function drawMonthlyWins(): Promise<void> {
   zap("monthly-chart");
   const labels = last12Labels();
+  try{
+      const raw = await fetchJSON<MonthlyWinRateDTO[]>(ENDPOINT.winsMonth);
+      const dict: Record<string, number> = {};
+        for (const r of raw) dict[r.month] = r.winRate;
 
-  const raw = USE_MOCK_DATA
-    ? labels.map((_, i) => ({
-        month: labels[i].slice(0, 3),
-        winRate: MOCK.winsMonth[i] ?? 0,
-      }))
-    : await fetchJSON<MonthlyWinRateDTO[]>(ENDPOINT.winsMonth).catch(() => []);
+        const data = labels.map((lbl) => dict[lbl.slice(0, 3)] ?? 0);
 
-  const dict: Record<string, number> = {};
-  for (const r of raw) dict[r.month] = r.winRate;
+        new Chart(document.getElementById("monthly-chart") as HTMLCanvasElement, {
+          type: "bar",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: "Win rate (%)",
+                data,
+                backgroundColor: "rgba(252,211,77,0.9)",
+              },
+            ],
+          },
+          options: {
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { beginAtZero: true, ticks: { color: "#fff" } },
+              x: { ticks: { color: "#fff" } },
+            },
+          },
+        });
+  } catch(err) {
+    console.error(err);
+    showStatsError("monthly-chart");
+  }
 
-  const data = labels.map((lbl) => dict[lbl.slice(0, 3)] ?? 0);
-
-  new Chart(document.getElementById("monthly-chart") as HTMLCanvasElement, {
-    type: "bar",
-    data: {
-      labels,
-      datasets: [
-        {
-          label: "Win rate (%)",
-          data,
-          backgroundColor: "rgba(252,211,77,0.9)",
-        },
-      ],
-    },
-    options: {
-      plugins: { legend: { display: false } },
-      scales: {
-        y: { beginAtZero: true, ticks: { color: "#fff" } },
-        x: { ticks: { color: "#fff" } },
-      },
-    },
-  });
+  
 }
 
 /* 2) Life-time wins vs losses pie */
 async function drawLifePie(): Promise<void> {
   zap("monthly-chart");
-  const t = USE_MOCK_DATA
-    ? MOCK.winsTotal
-    : await fetchJSON<WinsTotalDTO>(ENDPOINT.winsTotal).catch(() => ({
-        wins: 0,
-        losses: 0,
-      }));
+  try {
+    const t = await fetchJSON<WinsTotalDTO>(ENDPOINT.winsTotal);
 
-  new Chart(document.getElementById("life-chart") as HTMLCanvasElement, {
-    type: "pie",
-    data: {
-      labels: ["Wins", "Losses"],
-      datasets: [
-        {
-          data: [t.wins, t.losses],
-          backgroundColor: ["#4ade80", "#f87171"],
-        },
-      ],
-    },
-    options: {
-      plugins: { legend: { labels: { color: "#fff", boxWidth: 10 } } },
-    },
-  });
+    new Chart(document.getElementById("life-chart") as HTMLCanvasElement, {
+      type: "pie",
+      data: {
+        labels: ["Wins", "Losses"],
+        datasets: [
+          {
+            data: [t.wins, t.losses],
+            backgroundColor: ["#4ade80", "#f87171"],
+          },
+        ],
+      },
+      options: {
+        plugins: { legend: { labels: { color: "#fff", boxWidth: 10 } } },
+      },
+    });
+  }
+  catch(err) {
+    console.error(err);
+    showStatsError("life-chart");
+  }
 }
 
 /* 3) Total goals pie */
 async function drawGoalsPie(): Promise<void> {
   zap("monthly-chart");
-  const g = USE_MOCK_DATA
-    ? MOCK.goalsTotal
-    : await fetchJSON<GoalsTotalDTO>(ENDPOINT.goalsTotal).catch(() => ({
-        scored: 0,
-        conceded: 0,
-      }));
+  try {
+    const g = await fetchJSON<GoalsTotalDTO>(ENDPOINT.goalsTotal);
 
   new Chart(document.getElementById("goals-chart") as HTMLCanvasElement, {
     type: "pie",
@@ -184,22 +171,18 @@ async function drawGoalsPie(): Promise<void> {
       plugins: { legend: { labels: { color: "#fff", boxWidth: 10 } } },
     },
   });
+  }catch(err) {
+    console.error(err);
+    showStatsError("goals-chart");
+  }
 }
 
 /* 4) Monthly goals scored vs conceded bars */
 async function drawMonthlyGoalsBars(): Promise<void> {
   zap("monthly-chart");
   const labels = last12Labels();
-
-  const raw = USE_MOCK_DATA
-    ? labels.map((_, i) => ({
-        month: labels[i].slice(0, 3),
-        scored: MOCK.goalsMonth.scored[i] ?? 0,
-        conceded: MOCK.goalsMonth.conceded[i] ?? 0,
-      }))
-    : await fetchJSON<MonthlyGoalsRowDTO[]>(ENDPOINT.goalsMonth).catch(
-        () => []
-      );
+  try {
+    const raw = await fetchJSON<MonthlyGoalsRowDTO[]>(ENDPOINT.goalsMonth);
 
   const scoredDict: Record<string, number> = {};
   const concDict: Record<string, number> = {};
@@ -236,16 +219,17 @@ async function drawMonthlyGoalsBars(): Promise<void> {
       },
     },
   });
+  }catch(err) {
+      console.error(err);
+      showStatsError("hits-chart");
+    }
 }
 
 /* 5-b  total trophies */
 async function renderTrophies(): Promise<void> {
   zap("monthly-chart");
-  const total = USE_MOCK_DATA
-    ? MOCK.trophy.total
-    : await fetchJSON<{ trophies?: number }>(ENDPOINT.me)
-        .then(d => d.trophies ?? 0)
-        .catch(() => 0);
+  try {
+    const { trophies: total } = await fetchJSON<{ trophies: number }>(ENDPOINT.me);
 
   (document.getElementById("trophies") as HTMLElement).innerHTML = `
     <div class="flex flex-col items-center justify-center gap-2 p-6
@@ -254,4 +238,10 @@ async function renderTrophies(): Promise<void> {
       <span class="text-4xl font-extrabold">${total}</span>
       <p class="text-sm text-white/70">Total trophies</p>
     </div>`;
+  } catch (err) {
+    console.error(err);
+    const t = document.getElementById("trophies");
+    if (t) t.innerHTML =
+      `<p class="py-4 text-center text-red-400">Failed to load stats.</p>`;
+  }
 }

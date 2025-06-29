@@ -4,31 +4,6 @@
 import { HOST } from "./config.js";
 import { openFriendStats } from "./friendstats.js";
 
-
-/* 1 ░ mock toggle + dummy users -----------------------------------*/
-const USE_MOCK_DATA = false;
-
-const MOCK_FRIENDS = [
-    {
-        userId: 1,
-        username: "Aya",
-        email: "aya@example.com",
-        avatar_url: "https://i.pravatar.cc/40?u=aya",
-    },
-    {
-        userId: 2,
-        username: "Karim",
-        email: "karim@example.com",
-        avatar_url: "https://i.pravatar.cc/40?u=karim",
-    },
-    {
-        userId: 3,
-        username: "Maya",
-        email: "maya@example.com",
-        avatar_url: "https://i.pravatar.cc/40?u=maya",
-    },
-];
-
 /* 2 ░ helpers ------------------------------------------------------*/
 function getAuthHeader(): HeadersInit {
     const t = localStorage.getItem("token");
@@ -48,19 +23,22 @@ function showToast(msg: string, isError = false): void {
     }, 2_000);
 }
 
-export async function fetchFriends(): Promise<any[]> {
-    if (USE_MOCK_DATA) return MOCK_FRIENDS;
 
-    try {
-        const r = await fetch(`http://${HOST}:3000/api/users/me/friends`, {
-            headers: getAuthHeader(),
-        });
-        if (!r.ok) throw await r.json();
-        return (await r.json()) as any[];
-    } catch {
-        return MOCK_FRIENDS; // offline fallback
-    }
+/* ░ API ──────────────────────────────────────────────────────────── */
+export async function fetchFriends(): Promise<any[]> {
+  const res = await fetch(`http://${HOST}:3000/api/users/me/friends`, {
+    headers: getAuthHeader(),
+  });
+
+  if (!res.ok) {
+    /* optional: log the full response for debugging */
+    console.error("fetchFriends()", res.status, await res.text());
+    throw new Error("Failed to load friends.");
+  }
+
+  return (await res.json()) as any[];
 }
+
 
 	const ASTRONAUT =
 	"https://img.freepik.com/free-vector/" +
