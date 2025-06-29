@@ -1157,3 +1157,38 @@ resetObjects();
 resizeCanvas();
 render();
 updateScore();
+
+// /* top spacer so items don’t “stick” to the rounded border */
+// 	const header = document.createElement("div");
+// 	header.className = "relative h-6 mb-2";   // 1.5 rem tall spacer
+
+// 	/* red trash-can to clear the list */
+// 	const clearBtn = document.createElement("button");
+// 	clearBtn.setAttribute("aria-label", "Clear notifications");
+// 	clearBtn.className =
+// 		"absolute right-0 top-0 text-red-500 hover:text-red-600 " +
+// 		"transition-transform duration-200 hover:scale-110";
+
+// 	/* heroicons/solid trash 20 px  – drop in any SVG you like */
+// 	clearBtn.innerHTML = `
+// 		<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+// 		  <path fill-rule="evenodd"
+// 		    d="M6 2a1 1 0 011-1h6a1 1 0 011 1v1h4a1 1 0 010 2h-1v11a3 3 0
+// 		       01-3 3H5a3 3 0 01-3-3V5H1a1 1 0 010-2h4V2zm2 4a1 1 0
+// 		       10-2 0v9a1 1 0 102 0V6zm4 0a1 1 0
+// 		       10-2 0v9a1 1 0 102 0V6z"
+// 		    clip-rule="evenodd"/>
+// 		</svg>`;
+
+// 	/* optional behaviour – wipe client list & refresh badge */
+// 	clearBtn.onclick = async (e) => {
+// 		e.stopPropagation();
+// 		notifications = [];
+// 		renderPanel();      // re-render empty state
+// 		updateBadge();      // badge already exists lower in the file
+
+// 		//here you will apply the logic to remove the notf from the db
+// 	};
+
+// 	header.appendChild(clearBtn);
+// 	panel.appendChild(header);
