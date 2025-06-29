@@ -400,6 +400,7 @@ function startCountdown(sec: number, callback: () => void): void {
     let remaining = sec;
     const overlay = document.createElement("div");
     overlay.id = "countdown-overlay";
+    document.body.classList.add("game-playing");
     Object.assign(overlay.style, {
         position: "fixed",
         inset: "0",
