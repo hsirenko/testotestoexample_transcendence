@@ -27,36 +27,36 @@ export function setAIRefresh(sec: number): void {
 
 /** Predict the Y coordinate (centre) where the ball will cross paddle.x */
 function predictImpactY(
-  ball: Ball,
-  paddleX: number,
-  canvasH: number
-): number {
-  const r        = ball.r;
-  let   bx = ball.x,
-        by = ball.y,
-        vx = ball.v.x,
-        vy = ball.v.y;
+  ball: Ball, //Ball object (position, velocity, radius).
+  paddleX: number, // X postion of the AI padel
+  canvasH: number // hight of the playground 
+): number  { //the future y-coordinate of the ball’s centre when its x matches paddleX
+  const r        = ball.r; // raduis of the ball
+  let   bx = ball.x, // ball position x
+        by = ball.y, // ball position y
+        vx = ball.v.x, // ball horizantal velocity
+        vy = ball.v.y; // ball vertical velocity
 
   /* Step the virtual ball until it reaches paddleX (same algo as before) */
-  while (true) {
-    const dtX  = (paddleX - bx) / vx;
-    const next = by + vy * dtX;
+  while (true) { // open an infinite loop once we know the answer we send it.
+    const dtX  = (paddleX - bx) / vx; // delta t (time) = distance to reach the AI paddle over the speed
+    const next = by + vy * dtX; // calculate where the ball could be if it does not bounce on a wall.. 
 
-    if (next >= r && next <= canvasH - r) {
+    if (next >= r && next <= canvasH - r) { // checking if the calculation will be in the range of the playground
       return next;                    // straight-line hit – done
     }
 
     /* Bounce off a wall and continue */
-    if (vy > 0) {
-      const dtWall = (canvasH - r - by) / vy;
-      bx += vx * dtWall;
-      by  = canvasH - r;
-      vy  = -vy;
-    } else {
-      const dtWall = (r - by) / vy;
-      bx += vx * dtWall;
-      by  = r;
-      vy  = -vy;
+    if (vy > 0) { // If ball is travelling downward
+      const dtWall = (canvasH - r - by) / vy; // time untill the ball touch the down wall
+      bx += vx * dtWall; // update where the x position of the ball when it hit the down wall
+      by  = canvasH - r; // update where the y position of the ball when it hit the down wall
+      vy  = -vy; // the speed will reverse since after bounceing the ball will go up
+    } else { // If ball is travelling upward
+      const dtWall = (r - by) / vy; // time untill the ball touch the up wall
+      bx += vx * dtWall; // update where the x position of the ball when it hit the up wall
+      by  = r; // update where the y position of the ball when it hit the up wall
+      vy  = -vy; // the speed will reverse since after bounceing the ball will go down
     }
   }
 }
@@ -66,14 +66,14 @@ function predictImpactY(
  * ----------------------------------------------------------------*/
 function computeMove(
   ball: Ball,
-  paddle: Paddle,
-  dt: number,
-  canvasH: number
+  paddle: Paddle, 
+  dt: number, //wall-clock time since the previous frame
+  canvasH: number // hight of the playground
 ): { up: boolean; down: boolean } {
   /* ①  Accumulate frame time; “see” the world only once per <refresh> sec */
-  acc += dt;
-  if (acc >= refresh) {
-    acc -= refresh;
+  acc += dt; //is a running timer
+  if (acc >= refresh) { // refresh is the 1.5 or 1 or 0.5, change on the mode
+    acc -= refresh; //acc is the calculation of the time so that if acc >= the mode selected then we subtract acc from the mode time...
 
     /* ②  Decide a new target position for our paddle centre */
     if (ball.v.x > 0) {
@@ -84,19 +84,19 @@ function computeMove(
       targetCentreY = ball.y;
     }
     /* Clamp so the paddle never tries to leave the arena */
-    const halfH = paddle.h / 2;
-    targetCentreY = Math.max(halfH, Math.min(canvasH - halfH, targetCentreY));
+    const halfH = paddle.h / 2; // prevent future out-of-bounds
+    targetCentreY = Math.max(halfH, Math.min(canvasH - halfH, targetCentreY)); // prevemt the paddle will never try to move outside the playground
   }
 
   /* ③  Compute keyboard-like direction every frame until we’re “close” */
-  const centre = paddle.y + paddle.h / 2;
-  const diff   = targetCentreY - centre;
+  const centre = paddle.y + paddle.h / 2; // centre is the center of the paddle
+  const diff   = targetCentreY - centre; // diff is the different of how many pixels i need to move
 
-  if (Math.abs(diff) < 4) {
+  if (Math.abs(diff) < 4) { // this means that the paddle is in the range of the commping ball (as preticted)
     lastDir = { up: false, down: false };
-  } else if (diff < 0) {
+  } else if (diff < 0) { // if the difference is negative so the ball will be above the padel so move the paddle up
     lastDir = { up: true,  down: false };
-  } else {
+  } else { // if the difference is positive so the ball will be above the padel so move the paddle down
     lastDir = { up: false, down: true  };
   }
 
