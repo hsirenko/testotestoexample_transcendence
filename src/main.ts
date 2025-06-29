@@ -708,9 +708,9 @@ export function connectWebSocket() {
     // }
 	if (socket && socket.readyState === WebSocket.OPEN) return;
 	if (hasJoined) return;
-    console.log(`[client] 🎾 connecting to wss://${HOST}:3000/ws/game`);
+    console.log(`[client] 🎾 connecting to ws://${HOST}:3000/ws/game`);
     socket = new WebSocket(
-        `wss://${HOST}:3000/ws/game?token=${localStorage.getItem("token")}`
+        `ws://${HOST}:3000/ws/game?token=${localStorage.getItem("token")}`
     );
     socket.onopen = () => {
 		/* Always send exactly one JOIN on the first successful open */
@@ -731,6 +731,25 @@ export function connectWebSocket() {
         }
         if (msg.type === "ready") {
             opponentId = msg.opponentId;
+            // const token = localStorage.getItem("token");
+            // if (token && opponentId) {
+            //     const res = await fetch(`http://${HOST}:3000/api/match/start`, {
+            //         method: "POST",
+            //         headers: {
+            //             "Content-Type": "application/json",
+            //             Authorization: `Bearer ${token}`,
+            //         },
+            //         body: JSON.stringify({
+            //             player2_id: isJoiner ?  opponentId : yourUserId,
+            //             player1_id: isJoiner ? yourUserId : opponentId,
+            //         }),
+            //     });
+            //     if (res.ok) {
+            //         const { match_id } = await res.json();
+            //         currentMatchId    = match_id;
+            //         console.log("📝 match started →", currentMatchId);
+            //     }
+            // }
             const waitingOverlay = document.getElementById("waiting-overlay");
             const modal = document.getElementById("remote-modal")!;
             document.getElementById("win-message")?.remove();
@@ -790,9 +809,34 @@ export function connectWebSocket() {
             RScore = msg.scores.right;
             updateScore();
             socket!.close();
+            // if (currentMatchId != null && opponentId != null) {
+            //     const token = localStorage.getItem("token");
+            //     console.log("XX =:" + yourUserId);
+            //     if (token) {
+            //         fetch(`http://${HOST}:3000/api/match/submit`, {
+            //             method: "POST",
+            //             headers: {
+            //                 "Content-Type": "application/json",
+            //                 Authorization: `Bearer ${token}`,
+            //             },
+            //             body: JSON.stringify({
+            //                 match_id: currentMatchId,
+            //                 winner_id:
+            //                     msg.winner === "left"
+            //                         ? /* left’s userId */ yourUserId
+            //                         : opponentId,
+            //                 score_p1: LScore,
+            //                 score_p2: RScore,
+            //             }),
+            //         }).catch(console.error);
+            //     }
+            //     currentMatchId = null;
+            // }
             handleWin(true);
             btnCreate.disabled = false;
             btnJoin.disabled = false;
+            // isMatchCreator = false;
+            // isCreator      = false;
             hasJoined = false;
             gameId = "";
         }
@@ -910,7 +954,7 @@ document.addEventListener("click", async (e) => {
    * we create the room here on-the-fly.
    * ----------------------------------------------------------------*/
   if (!gameId) {
-    const resGame = await fetch(`https://${HOST}:8443/api/game`, {
+    const resGame = await fetch(`http://${HOST}:3000/api/game`, {
       method: "POST",
       headers: auth(),
     });
@@ -927,7 +971,7 @@ document.addEventListener("click", async (e) => {
    * recipient can join this same room instead of spinning up a new one
    * ----------------------------------------------------------------*/
   const token = localStorage.getItem("token");
-  await fetch(`https://${HOST}:8443/api/challenge`, {
+  await fetch(`http://${HOST}:3000/api/challenge`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -977,7 +1021,7 @@ export function initRemoteModal(): void {
     btnCreate.onclick = async () => {
         btnCreate.disabled = true;
         btnJoin.disabled = true;
-        const res = await fetch(`https://${HOST}:8443/api/game`, {
+        const res = await fetch(`http://${HOST}:3000/api/game`, {
             method: "POST",
             headers: auth(),
         });

@@ -64,7 +64,7 @@ document.getElementById('tour-confirm-join-btn')?.addEventListener('click', asyn
  *  Web-socket helper
  *──────────────────────────────────────────────────────────────*/
 function connectWs() {
-  socket = new WebSocket(`wss://${HOST}:3000/ws/tournament?token=${localStorage.getItem('token')}&code=${code}`);
+  socket = new WebSocket(`ws://${HOST}:3000/ws/tournament?token=${localStorage.getItem('token')}&code=${code}`);
 
 	socket.addEventListener('message', ev => {
 	const msg = JSON.parse(ev.data);

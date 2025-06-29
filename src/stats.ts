@@ -21,7 +21,7 @@ import { HOST } from './config.js';
 const USE_MOCK_DATA = false;
 
 /* base URL */
-const API_BASE = `https://${HOST}:8443`;
+const API_BASE = `http://${HOST}:3000`;
 
 /* REST endpoints */
 const ENDPOINT = {

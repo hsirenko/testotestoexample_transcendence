@@ -15,10 +15,4 @@ declare module 'fastify' {
     googleOAuth2: OAuth2Namespace;
 	notifConns: Map<number, WebSocket>;
   }
-
-  interface FastifyRequest {
-    locals: {
-      realIpHeader?: string;
-    };
-  }
 }

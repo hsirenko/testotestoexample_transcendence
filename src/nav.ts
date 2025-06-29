@@ -213,7 +213,7 @@ document.getElementById('remove-2fa-confirm-btn')?.addEventListener('click', asy
   const tokenStorage = localStorage.getItem('token');
 
   try {
-    const res = await fetch(`https://${HOST}:8443/api/2fa/remove`, {
+    const res = await fetch(`http://${HOST}:3000/api/2fa/remove`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

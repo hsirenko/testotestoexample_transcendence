@@ -18,14 +18,7 @@ export const fastify = Fastify({
 	logger: {
 		level: 'warn',
 		// prettyPrint: true   // optional, if you want human-readable
-	},
-	trustProxy: true
-});
-
-fastify.addHook('onRequest', (req, _reply, done) => {
-  const raw = req.headers['x-forwarded-for'] as string | undefined;
-  req.locals = { realIpHeader: raw };
-  done();
+	}
 });
 
 fastify.register(websocketPlugin);
@@ -53,14 +46,20 @@ const start = async () => {
 			auth: fastifyOauth2.GOOGLE_CONFIGURATION,
 		},
 		startRedirectPath: '/auth/google',
-		callbackUri: `https://${HOST}:3000/auth/google/callback`,
+		callbackUri: `http://${HOST}:3000/auth/google/callback`,
 	});
     // Register CORS inside start()
+	const CLIENT_ORIGINS = [
+		'http://localhost:5500',
+		'http://127.0.0.1:5500',
+		`http://${process.env.IP_ADDR}:5500`
+	];
     await fastify.register(cors, {
-      origin: true,
+      origin: CLIENT_ORIGINS,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
       credentials: true,
+      preflight: true,
       preflightContinue: false
     });
 
@@ -77,7 +76,7 @@ const start = async () => {
 
     // Start the server
     await fastify.listen({ port: 3000, host: '0.0.0.0' });
-    console.log(`Server started on https://${HOST}:3000`);
+    console.log(`Server started on http://${HOST}:3000`);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

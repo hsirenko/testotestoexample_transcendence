@@ -108,6 +108,31 @@ function renderPanel(): void {
 
 			accept.onclick = async (e) => {
 				e.stopPropagation();
+
+				/* 🔸 (optional tidying) mark as read on the server */
+				// const t = localStorage.getItem("token")!;
+				// await fetch(`http://${HOST}:3000/api/notifications/${n.id}/read`, {
+				// 	method: "POST",
+				// 	headers: { Authorization: `Bearer ${t}` },
+				// });
+
+				/* 🔸 start the match – useful for stats/history tables        */
+				// const me   = JSON.parse(localStorage.getItem("user") || "{}");
+				// if (n.reference_id) {
+				// 	await fetch(`http://${HOST}:3000/api/match/start`, {
+				// 		method: "POST",
+				// 		headers: {
+				// 			"Content-Type": "application/json",
+				// 			Authorization: `Bearer ${t}`,
+				// 		},
+				// 		body: JSON.stringify({
+				// 			player1_id: n.reference_id, // challenger
+				// 			player2_id: me.id,          // us
+				// 			tournament_id: null,
+				// 		}),
+				// 	});
+				// }
+
 				/* 🔸 jump into the challenger’s room */
 				setGameId(n.gameId!);
 				enableRemoteMode();
@@ -130,7 +155,7 @@ function renderPanel(): void {
 			decline.onclick = async (e) => {
 				e.stopPropagation();
 				const t = localStorage.getItem("token")!;
-				await fetch(`https://${HOST}:8443/api/notifications/${n.id}`, {
+				await fetch(`http://${HOST}:3000/api/notifications/${n.id}`, {
 					method: "DELETE",
 					headers: { Authorization: `Bearer ${t}` },
 				});
@@ -157,7 +182,7 @@ function renderPanel(): void {
 				btn.disabled = true;  // prevent double-clicks
 
 				const token = localStorage.getItem("token")!;
-				await fetch(`https://${HOST}:8443/api/users/respond-friend`, {
+				await fetch(`http://${HOST}:3000/api/users/respond-friend`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
@@ -168,7 +193,7 @@ function renderPanel(): void {
 						action,
 					}),
 				});
-				await fetch(`https://${HOST}:8443/api/notifications/${n.id}`, {
+				await fetch(`http://${HOST}:3000/api/notifications/${n.id}`, {
 					method: "DELETE",
 					headers: { Authorization: `Bearer ${token}` },
 				});
@@ -243,7 +268,7 @@ export async function fetchNotifications(): Promise<void> {
 	try {
 		const token = localStorage.getItem("token");
 		if (!token) return;
-		const res = await fetch(`https://${HOST}:8443/api/notifications`, {
+		const res = await fetch(`http://${HOST}:3000/api/notifications`, {
 			headers: { "Authorization": `Bearer ${token}` },
 		});
 		if (!res.ok) return;
@@ -261,7 +286,7 @@ export async function fetchNotifications(): Promise<void> {
 bell?.addEventListener("click", async ev => {
 	ev.stopPropagation();
 	const t = localStorage.getItem("token")!;
-	await fetch(`https://${HOST}:8443/api/notifications/read`, {
+	await fetch(`http://${HOST}:3000/api/notifications/read`, {
 		method: "POST",
 		headers: { Authorization: `Bearer ${t}` },
 	});
@@ -294,7 +319,7 @@ function startNotificationsSocket(): void {
 		return;
 	}
 
-	const wsUrl = `wss://${HOST}:3000/ws/notifications?token=${token}`;
+	const wsUrl = `ws://${HOST}:3000/ws/notifications?token=${token}`;
 	const me = JSON.parse(localStorage.getItem("user") || "{}");
 	const myUserId = me.id;
 
@@ -313,6 +338,48 @@ function startNotificationsSocket(): void {
 			updateBadge();
 			if (!panel?.classList.contains("hidden")) renderPanel();
 			if (incoming.type === "friend_accept") loadFriendsSidebar();
+
+			/* ------------------------------------------------------------
+			 * CHALLENGE – user clicks “Accept”
+			 * -----------------------------------------------------------*/
+			// if (incoming.type === "challenge") {
+			// 	const accepted = confirm(`${incoming.text}\nAccept?`);
+			// 	if (!accepted) {
+			// 		const t = localStorage.getItem("token")!;
+			// 		await fetch(
+			// 			`http://${HOST}:3000/api/notifications/${incoming.id}`,
+			// 			{ method: "DELETE", headers: { Authorization: `Bearer ${t}` } }
+			// 		);
+			// 		return;
+			// 	}
+
+			// 	if (!incoming.gameId) {
+			// 		alert("Challenge did not include a game ID. Please try again.");
+			// 		return;
+			// 	}
+
+			// 	/* Join the challenger’s existing room */
+			// 	setGameId(incoming.gameId);
+			// 	enableRemoteMode();
+			// 	connectWebSocket();
+
+			// 	// /* Announce the match so stats & history tables stay in sync */
+			// 	// const t = localStorage.getItem("token");
+			// 	// if (t) {
+			// 	// 	await fetch(`http://${HOST}:3000/api/match/start`, {
+			// 	// 		method: "POST",
+			// 	// 		headers: {
+			// 	// 			"Content-Type": "application/json",
+			// 	// 			Authorization: `Bearer ${t}`,
+			// 	// 		},
+			// 	// 		body: JSON.stringify({
+			// 	// 			player1_id: incoming.reference_id, // challenger
+			// 	// 			player2_id: myUserId,              // us
+			// 	// 			tournament_id: null,
+			// 	// 		}),
+			// 	// 	});
+			// 	// }
+			// }
 		} catch (err) {
 			console.log("[notif] WS parse error", err);
 		}

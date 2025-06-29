@@ -35,7 +35,7 @@ return t ? { Authorization: `Bearer ${t}` } : {};
 /* ─── always-fresh /api/users/me fetch ─── */
 async function fetchMe(): Promise<any | null> {
   try {
-    const r = await fetch(`https://${HOST}:8443/api/users/me`, {
+    const r = await fetch(`http://${HOST}:3000/api/users/me`, {
       headers: getAuthHeader(),
     });
     if (!r.ok) return null;
@@ -44,6 +44,34 @@ async function fetchMe(): Promise<any | null> {
     return null;
   }
 }
+
+
+
+// /* profile-setting.ts  … */
+
+// /* ---------- fetchCreatedAt (lazy + memoised) ------------------- */
+// let cachedCreatedAt: string | null | undefined = undefined;   // ➊ NEW
+
+// async function fetchCreatedAt(): Promise<string | null> {
+// /* ➋ Return cached value if we already fetched once */
+// if (cachedCreatedAt !== undefined) return cachedCreatedAt;
+
+// try {
+// 	const r = await fetch(`http://${HOST}:3000/api/users/created-at`, {
+// 	headers: getAuthHeader(),                // unchanged helper
+// 	});
+// 	if (!r.ok) { cachedCreatedAt = null; return null; }
+
+// 	const { created_at } = (await r.json()) as { created_at?: string };
+// 	cachedCreatedAt = created_at ?? null;     // ➌ store for next time
+// 	return cachedCreatedAt;
+// } catch {
+// 	cachedCreatedAt = null;                   // ➍ remember failure, skip retry
+// 	return null;
+// }
+// }
+
+
 
 const enable2FABtn = document.getElementById('enable-2fa-btn')!;
 const status2FA    = document.getElementById('2fa-status')!;
@@ -72,7 +100,7 @@ enable2FABtn.addEventListener('click', async (e) => {
 	try {
 		e.preventDefault();
 		e.stopPropagation();
-		const res = await fetch(`https://${HOST}:8443/api/2fa/setup`, {
+		const res = await fetch(`http://${HOST}:3000/api/2fa/setup`, {
 		headers: { ...authHeader(), 'Content-Type': 'application/json' },
 		});
 		const { qrDataUrl, manualKey } = await res.json();
@@ -102,7 +130,7 @@ verifyBtn.addEventListener('click', async (e) => {
 		return;
 	}
 	try {
-		const res = await fetch(`https://${HOST}:8443/api/2fa/verify`, {
+		const res = await fetch(`http://${HOST}:3000/api/2fa/verify`, {
 		method: 'POST',
 		headers: { ...authHeader(), 'Content-Type': 'application/json' },
 		body: JSON.stringify({ token, secretFromReq }),
@@ -325,7 +353,7 @@ try {
 	if (newP)                                    {payload.newPassword = newP;payload.oldPassword = oldP;}
 
 	if (Object.keys(payload).length) {
-	const res  = await fetch(`https://${HOST}:8443/api/users/edit-profile`, {
+	const res  = await fetch(`http://${HOST}:3000/api/users/edit-profile`, {
 		method: "PUT",
 		headers: {
 		"Content-Type": "application/json",
