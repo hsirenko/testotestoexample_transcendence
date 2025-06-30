@@ -39,22 +39,52 @@ export function createTournament(name: string, creatorId: number): LiveTournamen
   return tour;
 }
 
+/* ── join a tournament ────────────────────────────────────── */
 export function joinTournament(code: string, userId: number): LiveTournament {
   const tour = tours.get(code);
-  if (!tour) throw new Error('NOT_FOUND');
+  if (!tour)                       throw new Error('NOT_FOUND');
   if (tour.playerIds.includes(userId)) return tour;
-  if (tour.playerIds.length >= 4)     throw new Error('FULL');
+  if (tour.playerIds.length >= 4)  throw new Error('FULL');
 
+  /* 1 – persist & keep in-memory */
   tour.playerIds.push(userId);
-  db.prepare(`INSERT INTO tournament_players (tournament_id, user_id) VALUES (?,?)`)
-    .run(tour.id, userId);
+  db.prepare(`
+      INSERT INTO tournament_players (tournament_id, user_id)
+      VALUES (?,?)
+  `).run(tour.id, userId);
+
+  /* 2 – broadcast the updated roster */
+  const roster = tour.playerIds.map(id => {
+    const { username } =
+      db.prepare('SELECT username FROM users WHERE id = ?')
+        .get(id) as { username: string };
+    return { id, username };
+  });
+  broadcast(tour, { type: 'playersUpdate', players: roster });
+
+  /* 3 – start automatically when the 4th player arrives */
   if (tour.playerIds.length === 4) startTournament(tour);
+
   return tour;
 }
 
 export function attachSocket(code: string, ws: WebSocket) {
   const tour = tours.get(code);
-  if (tour) tour.sockets.add(ws);
+  if (!tour) return;
+
+  tour.sockets.add(ws);
+
+  /* send the current roster immediately */
+  const roster = tour.playerIds.map(id => {
+    const { username } =
+      db.prepare('SELECT username FROM users WHERE id = ?')
+        .get(id) as { username: string };
+    return { id, username };
+  });
+
+  try {
+    ws.send(JSON.stringify({ type: 'playersUpdate', players: roster }));
+  } catch { /* ignore broken pipe */ }
 }
 
 export function detachSocket(code: string, ws: WebSocket) {
@@ -102,8 +132,10 @@ export function handleGameResult(gameId: string,
 
 /*──────────── internal helpers ───────────────────────────────────*/
 function startTournament(tour: LiveTournament) {
-  db.prepare(`UPDATE tournaments SET status='running' WHERE id=?`).run(tour.id);
-  /* pairing: 0-1  &  2-3 */
+  db.prepare(`UPDATE tournaments SET status = 'running' WHERE id = ?`)
+    .run(tour.id);
+
+  /* create & announce the two semi-finals */
   for (let i = 0; i < 2; ++i) {
     const p1 = tour.playerIds[i * 2];
     const p2 = tour.playerIds[i * 2 + 1];
@@ -117,7 +149,15 @@ function startTournament(tour: LiveTournament) {
       players: [p1, p2]
     });
   }
-  broadcast(tour, { type:'tournamentStart', players: tour.playerIds });
+
+  /* final “ready” notification with usernames */
+  const playersPayload = tour.playerIds.map(id => {
+    const { username } =
+      db.prepare('SELECT username FROM users WHERE id = ?')
+        .get(id) as { username: string };
+    return { id, username };
+  });
+  broadcast(tour, { type: 'tournamentStart', players: playersPayload });
 }
 
 function startFinal(tour: LiveTournament, p1: number, p2: number) {

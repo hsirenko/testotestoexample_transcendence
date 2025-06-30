@@ -64,68 +64,82 @@ document.getElementById('tour-confirm-join-btn')?.addEventListener('click', asyn
  *  Web-socket helper
  *──────────────────────────────────────────────────────────────*/
 function connectWs() {
-  socket = new WebSocket(`ws://${HOST}:3000/ws/tournament?token=${localStorage.getItem('token')}&code=${code}`);
+  socket = new WebSocket(
+    `ws://${HOST}:3000/ws/tournament?token=${localStorage.getItem('token')}&code=${code}`
+  );
 
-	socket.addEventListener('message', ev => {
-	const msg = JSON.parse(ev.data);
+  socket.addEventListener('message', ev => {
+    const msg = JSON.parse(ev.data);
 
-	if (msg.type === 'tournamentStart') {
-		updateSlots(msg.players);
-	}
+    /* live roster refresh */
+    if (msg.type === 'playersUpdate') {
+      updateSlots(msg.players);
 
-	/*───────────────────────────────────────────────*
-	*  When a semi-final or the final is assigned
-	*───────────────────────────────────────────────*/
-	if (msg.type === 'gameAssigned' || msg.type === 'finalAssigned') {
-		// ▲ this part was already there ▼ everything below is new / tweaked
-		const stored = localStorage.getItem('user');
-    const raw = stored ? JSON.parse(stored) : null;
-		const me = raw ? Number(raw.id ?? raw.userId) : NaN;
+      const missing = 4 - msg.players.length;
+      bracketHint.textContent =
+        missing > 0
+          ? `Waiting for ${missing} more player${missing > 1 ? 's' : ''}…`
+          : 'Bracket ready – pairing players…';
+    }
 
-		if (msg.players.includes(me)) {
-		/* I’m playing → close bracket modal & jump into the game */
-		hideOverlay(ov, box);
-    
+    /* server confirms the bracket begins */
+    if (msg.type === 'tournamentStart') {
+      updateSlots(msg.players);
+      bracketHint.textContent = 'Pairing players…';
+    }
 
-		enableRemoteMode();          // switch main UI to remote-play
-		setGameId(msg.gameId);       // store the id for /ws/game
-    pushGame(msg.gameId);
-		connectWebSocket();          // actually join the match
-		}
+    /* semi-final or final assignment */
+    if (msg.type === 'gameAssigned' || msg.type === 'finalAssigned') {
+      const stored = localStorage.getItem('user');
+      const raw    = stored ? JSON.parse(stored) : null;
+      const me     = raw ? Number(raw.id ?? raw.userId) : NaN;
 
-		bracketHint.textContent = 'A match is running…';
-	}
+      if (msg.players.includes(me)) {
+        hideOverlay(ov, box);          // leave the bracket modal
+        enableRemoteMode();
+        setGameId(msg.gameId);
+        pushGame(msg.gameId);
+        connectWebSocket();            // hook into /ws/game
+      }
 
-	if (msg.type === 'tournamentFinished') {
-		bracketHint.textContent = `🏆  Winner: ${msg.winnerId}`;
-    pushHome();
-	}
-	});
+      bracketHint.textContent = 'A match is running…';
+    }
+
+    if (msg.type === 'tournamentFinished') {
+      bracketHint.textContent = `🏆 Winner: ${msg.winnerId}`;
+      pushHome();
+    }
+  });
 }
 
 /*──────────────────────────────────────────────────────────────*
  *  UI helpers – identical animation helpers from original file
  *──────────────────────────────────────────────────────────────*/
-function updateSlots(usrIds: number[]) {
-	const stored = localStorage.getItem('user');
-	const raw = stored ? JSON.parse(stored) : null;
-	const me = raw ? Number(raw.id ?? raw.userId) : NaN;
+/* unified slot updater */
+/* ── fill the four bracket slots ──────────────────────────── */
+function updateSlots(
+  players: Array<number | { id: number; username: string }>
+) {
+  const stored = localStorage.getItem('user');
+  const raw    = stored ? JSON.parse(stored) : null;
+  const me     = raw ? Number(raw.id ?? raw.userId) : NaN;
 
   slotEls.forEach((el, i) => {
-    const id = usrIds[i];
+    const player = players[i];
 
-    let label: string;               // always a string for textContent
-    if (id === undefined || id === null) {
-      label = '—';                   // empty slot
-    } else if (id === me) {
-      label = YOU;                   // your own seat
-    } else {
-      label = String(id);            // any other player → cast to string
+    if (!player) {
+      el.textContent = '—';
+      return;
     }
 
-    el.textContent = label;
+    const id   = typeof player === 'number' ? player         : player.id;
+    const name = typeof player === 'number' ? String(player) : player.username;
+
+    el.textContent = id === me ? YOU : name;
   });
 }
+
+
 
 function goto(el:HTMLElement) {
   [stepMain, stepCreated, stepJoin, stepBracket].forEach(s => s.classList.add('hidden'));
