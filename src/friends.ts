@@ -68,8 +68,13 @@ function render(friends: any[]): void {
         if (Number.isNaN(friendId)) return; // skip bad rows
 
         /* fill visuals */
+        const avatar = f.avatar_url?.trim();
         (row.querySelector(".avatar") as HTMLImageElement).src =
-            f.avatar_url ?? ASTRONAUT;
+            avatar
+                ? `http://${HOST}:3000/uploads/${avatar}`
+                : ASTRONAUT;
+            // console.log("Friend avatar_url", f.username, f.avatar_url);
+
         (row.querySelector(".username") as HTMLElement).textContent =
             f.username;
         (row.querySelector(".email") as HTMLElement).textContent = f.email;

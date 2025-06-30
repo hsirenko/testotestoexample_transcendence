@@ -876,9 +876,12 @@ const ASTRONAUT =
   "illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
 
 function getAvatarUrl(f: Friend): string {
-  const url = (f.avatar_url ?? "").trim();
-  return url.length ? url : ASTRONAUT;
+  const avatar = f.avatar_url?.trim();
+  return avatar
+    ? `http://${HOST}:3000/uploads/${avatar}`
+    : ASTRONAUT;
 }
+
 //open and close functionality for the challenge pop up
 function openChallengeModal(): void {
     challengeModal.classList.remove("hidden");

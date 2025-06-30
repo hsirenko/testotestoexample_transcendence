@@ -233,8 +233,12 @@ function closeFriendStats(): void {
 	friend: { username: string; email?: string; avatar_url?: string }
 	) {
 	/* header visuals */
+	const avatar = friend.avatar_url?.trim();
 	(document.getElementById("friendstats-avatar") as HTMLImageElement).src =
-		friend.avatar_url ?? ASTRONAUT;
+		avatar
+			? `http://${HOST}:3000/uploads/${avatar}`
+			: ASTRONAUT;
+			// console.log("Friend avatar (stats):", avatar);
 	(document.getElementById("friendstats-name")  as HTMLElement).textContent = friend.username;
 	(document.getElementById("friendstats-email") as HTMLElement).textContent = friend.email ?? "";
 
