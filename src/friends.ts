@@ -40,11 +40,17 @@ export async function fetchFriends(): Promise<any[]> {
 }
 
 
-	const ASTRONAUT =
-	"https://img.freepik.com/free-vector/" +
-	"cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-" +
-	"illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
+    const ASTRONAUT =
+    "https://img.freepik.com/free-vector/" +
+    "cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-" +
+    "illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
 
+    export function resolveAvatar(raw?: string | null): string {
+    const val = raw?.trim() ?? "";
+    if (!val) return ASTRONAUT;                   // empty  → robot
+    if (/^https?:\/\//i.test(val)) return val;   // full URL → use as-is
+    return `http://${HOST}:3000/uploads/${val}`; // relative → prepend
+    }
 /* 3 ░ render list --------------------------------------------------*/
 function render(friends: any[]): void {
     const list = document.getElementById("friends-list")!;
@@ -68,12 +74,7 @@ function render(friends: any[]): void {
         if (Number.isNaN(friendId)) return; // skip bad rows
 
         /* fill visuals */
-        const avatar = f.avatar_url?.trim();
-        (row.querySelector(".avatar") as HTMLImageElement).src =
-            avatar
-                ? `http://${HOST}:3000/uploads/${avatar}`
-                : ASTRONAUT;
-            // console.log("Friend avatar_url", f.username, f.avatar_url);
+        (row.querySelector(".avatar") as HTMLImageElement).src = resolveAvatar(f.avatar_url);
 
         (row.querySelector(".username") as HTMLElement).textContent =
             f.username;
