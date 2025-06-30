@@ -7,6 +7,7 @@
 */
 
 import { HOST } from './config.js';
+import {resolveAvatar} from "./friends.js"
 
 export function $(sel: string): HTMLElement | null {
 return document.querySelector(sel);
@@ -199,20 +200,15 @@ try {
 	const user = JSON.parse(localStorage.getItem("user") ?? "{}");
 	const nameEl = document.getElementById("profile-name");
 	const mailEl = document.getElementById("profile-mail");
-	const avatar = $("#avatar-img")   as HTMLInputElement;
+	const avatar = $("#avatar-img") as HTMLImageElement | null;
 	const token = localStorage.getItem('token');
 	const status2FA    = document.getElementById('2fa-status')!;
 	const enable2FABtn    = document.getElementById('enable-2fa-btn')!;
 	const remove2FABtn = document.getElementById('remove-2fa-btn')!;
 	if (nameEl && user.username) nameEl.textContent = user.username;
 	if (mailEl && user.email   ) mailEl.textContent = user.email;
-	if (avatar && user.avatar_url) {
-	avatar.src = user.avatar_url.startsWith('http')
-		? user.avatar_url                                  // in case you migrate later
-		: `http://${HOST}:3000/uploads/${user.avatar_url}`; // normal case
-	} else if (avatar) {
-	avatar.src = "https://img.freepik.com/free-vector/cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
-	}
+	if (avatar) avatar.src = resolveAvatar(user.avatar_url);
+
 
 	// if (avatar && user.avatar_url) avatar.src = user.avatar_url;
 	// else if (avatar && !user.avatar_url) avatar.src = "https://img.freepik.com/free-vector/cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
