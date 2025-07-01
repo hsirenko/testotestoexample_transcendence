@@ -54,9 +54,67 @@ addEventListener("resize", () => {
   else applyMobile(true);
 });
 
+/* ── Friendly toast used only for avatar messages ─────────────── */
+function flashAvatarWarn(text: string): void {
+  let n = document.getElementById("avatar-warn") as HTMLDivElement | null;
+
+  if (!n) {
+    n = document.createElement("div");
+    n.id = "avatar-warn";
+    n.className =
+      "fixed top-6 left-1/2 -translate-x-1/2 z-[80] " +
+      "px-4 py-2 rounded-full text-sm font-medium " +
+      "bg-emerald-500/90 text-white shadow-lg " +   // ← here
+      "opacity-0 pointer-events-none transition-opacity duration-300";
+    document.body.appendChild(n);
+  }
+
+  n.textContent = text;
+
+  /* trigger fade-in */
+  n.classList.remove("opacity-0");
+
+  /* auto-hide after 2 s */
+  setTimeout(() => n!.classList.add("opacity-0"), 2_000);
+}
+
+
 /* PROFILE OVERLAY – avatar upload */
 const avatarInput = document.getElementById('avatar-input') as HTMLInputElement | null;
 const avatarImg   = document.getElementById('avatar-img')   as HTMLImageElement  | null;
+
+/* --------------- remove-avatar button -------------------------- */
+const removeBtn = document.getElementById('avatar-remove-btn') as HTMLButtonElement | null;
+
+if (removeBtn) {
+  removeBtn.addEventListener('click', async () => {
+    /* 1) optimistic UI */
+    const FALLBACK =
+      "https://img.freepik.com/free-vector/" +
+      "cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-" +
+      "illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
+    if (avatarImg) avatarImg.src = FALLBACK;
+    if (avatarInput) avatarInput.value = "";
+
+    /* 2) API call */
+    const token = localStorage.getItem('token');
+    const res = await fetch(`http://${HOST}:3000/api/users/avatar`, {
+      method: 'DELETE',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) {
+      console.error('Avatar delete failed');
+      return;
+    }
+
+    /* 3) update localStorage cache */
+    const user = JSON.parse(localStorage.getItem('user') ?? '{}');
+    user.avatar_url = null;
+    localStorage.setItem('user', JSON.stringify(user));
+    flashAvatarWarn("Avatar removed 👌");
+  });
+}
+
 
 if (avatarInput) {
   avatarInput.addEventListener('change', async (ev) => {
@@ -91,6 +149,7 @@ if (avatarInput) {
     const user = JSON.parse(localStorage.getItem('user') ?? '{}');
     user.avatar_url = avatar_url;                        // keep *relative* in LS
     localStorage.setItem('user', JSON.stringify(user));
+    flashAvatarWarn("Avatar updated 👍");
   });
 }
 

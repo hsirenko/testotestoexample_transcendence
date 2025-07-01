@@ -4,6 +4,16 @@ import db from '../utils/db';
 import { authMiddleware } from '../middleware/auth';
 import { JWTPayload } from '../utils/jwt';
 import { verifyPassword, hashPassword } from '../utils/hash';
+import path from "path";
+import fs   from "fs";   
+
+function deleteAvatarFile(rel?: string | null): void {
+  if (!rel || /^https?:\/\//i.test(rel)) return;
+  const full = path.join(process.cwd(), "uploads", rel);
+  fs.promises.unlink(full).catch(() =>
+    console.warn("⚠️  could not delete old avatar:", full)
+  );
+}
 
 function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -163,67 +173,109 @@ export default async function userRoutes(fastify: FastifyInstance) {
       return reply.send(user);
     }
   );
-  fastify.put(
-  '/api/users/avatar',
+
+// ────────────────────────────────────────────────────────────────────
+// REMOVE current avatar  +  delete the file from /uploads/avatars
+// ────────────────────────────────────────────────────────────────────
+fastify.delete(
+  "/api/users/avatar",
   { preHandler: authMiddleware },
   async (req, reply) => {
     const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
 
-    /* 1) ── multipart upload (preferred by <input type="file">) ─────────── */
+    // 1) fetch the existing relative path (if any)
+    const row = db
+      .prepare("SELECT avatar_url FROM users WHERE id = ?")
+      .get(userId) as { avatar_url?: string | null };
+
+    const rel = row?.avatar_url?.trim() ?? "";
+
+    // 2) delete the file from disk **only** if it’s a local relative path
+    if (rel && !/^https?:\/\//i.test(rel)) {
+      const fullPath = path.join(process.cwd(), "uploads", rel);
+      try {
+        await fs.promises.unlink(fullPath);
+        console.log("🗑️  deleted avatar file", fullPath);
+      } catch (err) {
+        // file might already be gone – don’t fail the request
+        console.warn("⚠️  could not delete avatar file:", err);
+      }
+    }
+
+    // 3) clear DB field
+    db.prepare("UPDATE users SET avatar_url = NULL WHERE id = ?").run(userId);
+
+    return reply.send({ message: "Avatar removed" });
+  }
+);
+
+fastify.put(
+  "/api/users/avatar",
+  { preHandler: authMiddleware },
+  async (req, reply) => {
+    const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
+
+    /* 1) fetch current avatar path once – but DON'T delete yet */
+    const prev = db
+      .prepare("SELECT avatar_url FROM users WHERE id = ?")
+      .get(userId) as { avatar_url?: string | null };
+
+    /* 2) ─ multipart upload branch ───────────────────────────── */
     if (req.isMultipart()) {
-      const mp = await req.file({ limits: { fileSize: 5 * 1024 * 1024 } }); // 5 MB
-      if (!mp) return reply.code(400).send({ error: 'No file uploaded' });
+      const mp = await req.file({ limits: { fileSize: 5 * 1024 * 1024 } });
+      if (!mp) return reply.code(400).send({ error: "No file uploaded" });
 
       const mime = mp.mimetype;
       if (!/^image\/(png|jpe?g|webp)$/i.test(mime))
-        return reply.code(400).send({ error: 'Unsupported image type' });
+        return reply.code(400).send({ error: "Unsupported image type" });
 
-      const ext   = mime === 'image/jpeg' ? 'jpg' : mime.split('/')[1];
-      const fileName = `avatar_${userId}_${Date.now()}.${ext}`;
+      const extRaw = mime === "image/jpeg" ? "jpg" : mime.split("/")[1];
+      const fileName = `avatar_${userId}_${Date.now()}.${extRaw}`;
 
-      const fs = await import('fs');
-      const fullDir = 'uploads/avatars';                 // physical path
+      const fullDir = "uploads/avatars";
       await fs.promises.mkdir(fullDir, { recursive: true });
-
-      const fullPath = `${fullDir}/${fileName}`;         // uploads/avatars/…
+      const fullPath = `${fullDir}/${fileName}`;
       await fs.promises.writeFile(fullPath, await mp.toBuffer());
 
-      /* store *relative* path: avatars/xxx.png  (no leading “uploads/”) */
       const relative = `avatars/${fileName}`;
-      db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?')
+      db.prepare("UPDATE users SET avatar_url = ? WHERE id = ?")
         .run(relative, userId);
+
+      /** 🔑 only now – after a successful write – delete the previous file */
+      deleteAvatarFile(prev?.avatar_url);
 
       return reply.send({ avatar_url: relative });
     }
 
-    /* 2) ── fallback: JSON body with data-URL ───────────────────────────── */
+    /* 3) ─ data-URL fallback branch ──────────────────────────── */
     const { dataUrl } = req.body as { dataUrl?: string };
-    if (!dataUrl?.startsWith('data:image/'))
-      return reply.code(400).send({ error: 'Missing avatar dataUrl' });
+    if (!dataUrl?.startsWith("data:image/"))
+      return reply.code(400).send({ error: "Missing avatar dataUrl" });
 
     const m = dataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
-    if (!m) return reply.code(400).send({ error: 'Malformed dataUrl' });
+    if (!m) return reply.code(400).send({ error: "Malformed dataUrl" });
 
     const [, extRaw, b64] = m;
-    const ext = extRaw === 'jpeg' ? 'jpg' : extRaw.toLowerCase();
+    const ext = extRaw === "jpeg" ? "jpg" : extRaw.toLowerCase();
     if (!/(png|jpg|jpeg|webp)/.test(ext))
-      return reply.code(400).send({ error: 'Unsupported image type' });
+      return reply.code(400).send({ error: "Unsupported image type" });
 
-    const buf = Buffer.from(b64, 'base64');
+    const buf = Buffer.from(b64, "base64");
     if (buf.length > 5 * 1024 * 1024)
-      return reply.code(400).send({ error: 'Image too large' });
+      return reply.code(400).send({ error: "Image too large" });
 
     const fileName = `avatar_${userId}_${Date.now()}.${ext}`;
-    const fs = await import('fs');
-    const fullDir = 'uploads/avatars';
+    const fullDir = "uploads/avatars";
     await fs.promises.mkdir(fullDir, { recursive: true });
-
     const fullPath = `${fullDir}/${fileName}`;
     await fs.promises.writeFile(fullPath, buf);
 
     const relative = `avatars/${fileName}`;
-    db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?')
+    db.prepare("UPDATE users SET avatar_url = ? WHERE id = ?")
       .run(relative, userId);
+
+    /** 🔑 safe to delete the old one now */
+    deleteAvatarFile(prev?.avatar_url);
 
     return reply.send({ avatar_url: relative });
   }

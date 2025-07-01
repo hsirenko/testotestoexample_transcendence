@@ -18,6 +18,7 @@ import { showOverlay, hideOverlay } from "./tournament.js";
 
 /* ---------- NEW AI IMPORTS -------------------------------------- */
 import { nextAIPaddleY, setAIRefresh as setAIRefreshAI } from "./ai.js";
+import { resolveAvatar } from "./friends.js"
 
 /* ------------------------------------------------------------------
  * Game constants (unchanged)
@@ -68,6 +69,60 @@ const CanvasHtml = document.getElementById("pong-canvas") as HTMLCanvasElement;
 const ctx = CanvasHtml.getContext("2d")!;
 const sLeft = document.getElementById("score-left")!;
 const sRight = document.getElementById("score-right")!;
+/* ------------------------------------------------------------------
+ * Badge handles
+ * ----------------------------------------------------------------*/
+/* chips already exist in index.html – just cache handles */
+const badgeLeft   = document.querySelector<HTMLDivElement> ('#badge-left')!;
+const badgeRight  = document.querySelector<HTMLDivElement> ('#badge-right')!;
+const avatarLeft  = document.querySelector<HTMLImageElement>('#avatar-left')!;
+const avatarRight = document.querySelector<HTMLImageElement>('#avatar-right')!;
+const nameLeft    = document.querySelector<HTMLSpanElement> ('#name-left')!;
+const nameRight   = document.querySelector<HTMLSpanElement> ('#name-right')!;
+
+function hidePlayerBadges() {
+  [badgeLeft, badgeRight].forEach(b => (b.style.opacity = "0"));
+}
+
+/* auth header for plain fetches ---------------------------------- */
+const authHdr = (): HeadersInit => {
+  const t = localStorage.getItem('token');
+  return t ? { Authorization: `Bearer ${t}` } : {};
+};
+
+
+async function showPlayerBadges(selfId: number, oppId: number) {
+  try {
+    const fetchUser = (id: number) =>
+      fetch(`http://${HOST}:3000/api/users/${id}`, { headers: authHdr() })
+        .then(r => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.json();
+        });
+
+    const [me, opp] = await Promise.all([fetchUser(selfId), fetchUser(oppId)]);
+
+    /* side-assignment block you already added — unchanged */
+    const selfOnLeft = !!ownGameId;
+
+    if (selfOnLeft) {
+      avatarLeft .src       = resolveAvatar(me.avatar_url);
+      avatarRight.src       = resolveAvatar(opp.avatar_url);
+      nameLeft .textContent = me .username;
+      nameRight.textContent = opp.username;
+    } else {
+      avatarLeft .src       = resolveAvatar(opp.avatar_url);
+      avatarRight.src       = resolveAvatar(me .avatar_url);
+      nameLeft .textContent = opp.username;
+      nameRight.textContent = me .username;
+    }
+
+    [badgeLeft, badgeRight].forEach(b => (b.style.opacity = "1"));
+  } catch (err) {
+    console.error("⚠️  Could not load player badges", err);
+  }
+}
+
 
 /* ------------------------------------------------------------------
  * Game-state variables
@@ -585,6 +640,7 @@ function handleWin(remote: boolean): void {
 }
 
 function beginPlay(): void {
+    if (!remoteMode) hidePlayerBadges();
     playing = true;
     document.body.classList.add("game-playing");
     lastTime = performance.now();
@@ -688,6 +744,7 @@ function cleanupRemote() {
     document.getElementById("countdown-overlay")?.remove();
     // hide remote modal if it’s still up
     document.getElementById("remote-modal")?.classList.add("hidden");
+    hidePlayerBadges();
 }
 
 export function setGameId(id: string) {
@@ -732,6 +789,7 @@ export function connectWebSocket() {
         }
         if (msg.type === "ready") {
             opponentId = msg.opponentId;
+            showPlayerBadges(yourUserId!, opponentId);
             // const token = localStorage.getItem("token");
             // if (token && opponentId) {
             //     const res = await fetch(`http://${HOST}:3000/api/match/start`, {
