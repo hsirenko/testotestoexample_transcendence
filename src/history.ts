@@ -29,14 +29,22 @@ export async function initHistoryTab(): Promise<void> {
   try {
     /* 1) Fetch + parse */
     const r = await fetch(ENDPOINT, { headers: getAuthHeader() });
-    if (!r.ok) throw new Error(String(r.status));
+    if (!r.ok) throw new Error("Failed to load history.");
     const rows = (await r.json()) as MatchRow[];
 
     /* 2) Render */
     renderRows(rows);
-  } catch (err) {
-    console.error("History fetch failed:", err);
-    // leave table blank on error
+  } catch (err: any) {
+  console.error("History fetch failed:", err);
+
+  const tbody = document.getElementById("history-body") as HTMLTableSectionElement | null;
+  if (tbody) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="py-4 text-center text-red-400">
+          Failed to load history.
+        </td>
+      </tr>`;
   }
 }
 
@@ -65,4 +73,5 @@ function renderRows(rows: MatchRow[]): void {
     `;
     tbody.appendChild(tr);
   });
+}
 }

@@ -28,7 +28,7 @@ export default async function tournamentRoutes (fastify: FastifyInstance) {
         const tour = joinTournament(code.toUpperCase(), userId);
         return reply.send({ ok:true, tournamentId: tour.id });
       } catch (err:any) {
-        if (err.message === 'NOT_FOUND') return reply.code(404).send({ error:'not-found' });
+        if (err.message === 'NOT_FOUND') return ;
         if (err.message === 'FULL')      return reply.code(409).send({ error:'full' });
         throw err;
       }

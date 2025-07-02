@@ -4,31 +4,6 @@
 import { HOST } from "./config.js";
 import { openFriendStats } from "./friendstats.js";
 
-
-/* 1 ░ mock toggle + dummy users -----------------------------------*/
-const USE_MOCK_DATA = false;
-
-const MOCK_FRIENDS = [
-    {
-        userId: 1,
-        username: "Aya",
-        email: "aya@example.com",
-        avatar_url: "https://i.pravatar.cc/40?u=aya",
-    },
-    {
-        userId: 2,
-        username: "Karim",
-        email: "karim@example.com",
-        avatar_url: "https://i.pravatar.cc/40?u=karim",
-    },
-    {
-        userId: 3,
-        username: "Maya",
-        email: "maya@example.com",
-        avatar_url: "https://i.pravatar.cc/40?u=maya",
-    },
-];
-
 /* 2 ░ helpers ------------------------------------------------------*/
 function getAuthHeader(): HeadersInit {
     const t = localStorage.getItem("token");
@@ -48,25 +23,34 @@ function showToast(msg: string, isError = false): void {
     }, 2_000);
 }
 
-export async function fetchFriends(): Promise<any[]> {
-    if (USE_MOCK_DATA) return MOCK_FRIENDS;
 
-    try {
-        const r = await fetch(`http://${HOST}:3000/api/users/me/friends`, {
-            headers: getAuthHeader(),
-        });
-        if (!r.ok) throw await r.json();
-        return (await r.json()) as any[];
-    } catch {
-        return MOCK_FRIENDS; // offline fallback
-    }
+/* ░ API ──────────────────────────────────────────────────────────── */
+export async function fetchFriends(): Promise<any[]> {
+  const res = await fetch(`http://${HOST}:3000/api/users/me/friends`, {
+    headers: getAuthHeader(),
+  });
+
+  if (!res.ok) {
+    /* optional: log the full response for debugging */
+    console.error("fetchFriends()", res.status, await res.text());
+    throw new Error("Failed to load friends.");
+  }
+
+  return (await res.json()) as any[];
 }
 
-	const ASTRONAUT =
-	"https://img.freepik.com/free-vector/" +
-	"cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-" +
-	"illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
 
+    const ASTRONAUT =
+    "https://img.freepik.com/free-vector/" +
+    "cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-" +
+    "illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
+
+    export function resolveAvatar(raw?: string | null): string {
+    const val = raw?.trim() ?? "";
+    if (!val) return ASTRONAUT;                   // empty  → robot
+    if (/^https?:\/\//i.test(val)) return val;   // full URL → use as-is
+    return `http://${HOST}:3000/uploads/${val}`; // relative → prepend
+    }
 /* 3 ░ render list --------------------------------------------------*/
 function render(friends: any[]): void {
     const list = document.getElementById("friends-list")!;
@@ -90,8 +74,8 @@ function render(friends: any[]): void {
         if (Number.isNaN(friendId)) return; // skip bad rows
 
         /* fill visuals */
-        (row.querySelector(".avatar") as HTMLImageElement).src =
-            f.avatar_url ?? ASTRONAUT;
+        (row.querySelector(".avatar") as HTMLImageElement).src = resolveAvatar(f.avatar_url);
+
         (row.querySelector(".username") as HTMLElement).textContent =
             f.username;
         (row.querySelector(".email") as HTMLElement).textContent = f.email;
@@ -187,6 +171,26 @@ export async function loadFriendsSidebar(): Promise<void> {
 
 if (localStorage.getItem("token")) loadFriendsSidebar();
 
+/* ------------------------------------------------------------------
+ * Refresh-button handler
+ * ----------------------------------------------------------------*/
+const refreshBtn = document.getElementById('friends-refresh') as HTMLButtonElement | null;
+
+if (refreshBtn) {
+  refreshBtn.addEventListener('click', async () => {
+    /* quick visual feedback – spin while we’re loading */
+    refreshBtn.classList.add('animate-spin');
+    refreshBtn.disabled = true;
+
+    try {
+      await loadFriendsSidebar();      // already shows “Loading…” etc.
+    } finally {
+      refreshBtn.disabled = false;
+      refreshBtn.classList.remove('animate-spin');
+    }
+  });
+}
+
 export function initFriendsSidebarToggle(): void {
     const sidebar = document.getElementById(
         "friends-sidebar"
@@ -220,4 +224,3 @@ if (document.readyState !== "loading") {
 } else {
     document.addEventListener("DOMContentLoaded", initFriendsSidebarToggle);
 }
-
