@@ -11,14 +11,13 @@ import {
     ServerMsg,
 } from "./types/ws.js";
 
-import { fetchFriends } from "./friends.js";
+import { fetchFriends, resolveAvatar } from "./friends.js";
 
 import { HOST } from "./config.js";
 import { showOverlay, hideOverlay } from "./tournament.js";
 
 /* ---------- NEW AI IMPORTS -------------------------------------- */
 import { nextAIPaddleY, setAIRefresh as setAIRefreshAI } from "./ai.js";
-import { resolveAvatar } from "./friends.js"
 
 /* ------------------------------------------------------------------
  * Game constants (unchanged)
