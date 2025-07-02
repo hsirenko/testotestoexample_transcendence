@@ -43,9 +43,6 @@ let socket: WebSocket;
 /*──────────────────────────────────────────────────────────────*
  *  CREATE  (owner)
  *──────────────────────────────────────────────────────────────*/
-/*──────────────────────────────────────────────────────────────*
- *  CREATE  (owner)
- *──────────────────────────────────────────────────────────────*/
 document.getElementById('tour-create-btn')?.addEventListener('click', async () => {
   try {
     const { code: c } = await createTournament(
@@ -130,12 +127,7 @@ document.getElementById('tour-confirm-join-btn')?.addEventListener('click', asyn
   }
 });
 
-/*──────────────────────────────────────────────────────────────*
- *  Web-socket helper
- *──────────────────────────────────────────────────────────────*/
-/*──────────────────────────────────────────────────────────────*
- *  Web-socket helper
- *──────────────────────────────────────────────────────────────*/
+
 /*──────────────────────────────────────────────────────────────*
  *  Web-socket helper  – now clears stale data when finished
  *──────────────────────────────────────────────────────────────*/
@@ -153,6 +145,13 @@ function connectWs() {
 
   socket.addEventListener('message', ev => {
     const msg = JSON.parse(ev.data);
+
+    if (msg.type === 'tournamentClosed'){
+      socket.close();
+      hideOverlay(ov, box);
+      alert('The creator cancelled the tournament.');
+      pushHome();
+    }
 
     /* live roster refresh --------------------------------------------------*/
     if (msg.type === 'playersUpdate') {
@@ -278,14 +277,22 @@ document.getElementById('tour-back-btn')?.addEventListener('click', () => {
 });
 
 /* CLOSE via × or Esc */
+/* CLOSE via × button */
 closeBtn.addEventListener('click', () => {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.close(1000, 'left');          // tell server we’re gone
+  }
   hideOverlay(ov, box);
-  pushHome();                                            // NEW
+  pushHome();
 });
 
+/* CLOSE via Esc key */
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && !ov.classList.contains('hidden')) {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.close(1000, 'left');
+    }
     hideOverlay(ov, box);
-    pushHome();                                          // NEW
+    pushHome();
   }
 });

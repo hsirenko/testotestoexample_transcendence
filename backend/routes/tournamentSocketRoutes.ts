@@ -6,7 +6,8 @@ import { verifyToken }               from '../utils/jwt';
 import {
   attachSocket,
   detachSocket,
-  tours
+  tours,
+  leaveTournament
 } from '../tournamentManager';
 import db from '../utils/db'; 
 
@@ -45,6 +46,9 @@ export default async function tournamentSocketRoutes (fastify: FastifyInstance) 
         }
       }
 
-      socket.on('close', () => detachSocket(code.toUpperCase(), socket));
+      socket.on('close', () => {
+  detachSocket(code.toUpperCase(), socket);
+  leaveTournament(code.toUpperCase(), user.userId);   // ← remove the leaver
+});
   });
 }
