@@ -177,7 +177,16 @@ function connectWs() {
       const me     = raw ? Number(raw.id ?? raw.userId) : NaN;
 
       if (msg.players.includes(me)) {
-        hideOverlay(ov, box);
+        
+        //hideOverlay(ov, box);
+
+        const ov = document.getElementById('tournament-overlay')!;
+        ov.style.zIndex        = '0';
+        ov.style.pointerEvents = 'none';         
+        ov.style.background    = 'transparent';
+
+
+
         enableRemoteMode();
         setGameId(msg.gameId);
         pushGame(msg.gameId);
@@ -189,6 +198,12 @@ function connectWs() {
 
     /* tournament over – tidy up & forget the code -------------------------*/
     if (msg.type === 'tournamentFinished') {
+
+      const ov = document.getElementById('tournament-overlay')!;
+      ov.style.zIndex        = '40';
+      ov.style.pointerEvents = 'auto';
+      ov.style.background    = 'rgba(0,0,0,0.6)';
+
       bracketHint.textContent = `🏆 Winner: ${msg.winnerId}`;
 
       localStorage.removeItem('tournamentCode');  // ← NEW: prevent stale restores

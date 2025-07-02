@@ -486,6 +486,12 @@ function startCountdown(sec: number, callback: () => void): void {
 /* ═════════════ WIN MESSAGE ═════════════ */
 function handleWin(remote: boolean): void {
 
+    const ov = document.getElementById('tournament-overlay')!;
+      ov.style.zIndex        = '40';
+      ov.style.pointerEvents = 'auto';
+      ov.style.background    = 'rgba(0,0,0,0.6)';
+
+      
     playing = false;
     //reshow that shit
     document.body.classList.remove("game-playing");
