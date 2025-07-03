@@ -22,7 +22,13 @@ export default async function friendsRoutes(fastify: FastifyInstance) {
       WHERE (f.sender_id = ? OR f.receiver_id = ?) AND f.status = 'accepted'
     `).all(userId, userId, userId);
 
-    return reply.send(friends);
+    // inside fastify.get('/api/users/me/friends', …)
+    const rowsWithOnline = friends.map((r: any) => ({
+      ...r,
+      online: fastify.presence.has(r.id)     // <- NEW boolean
+    }));
+    return reply.send(rowsWithOnline);
+
   });
 
   // 2. Get pending friend requests

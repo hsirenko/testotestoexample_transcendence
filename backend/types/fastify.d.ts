@@ -21,5 +21,6 @@ declare module 'fastify' {
   interface FastifyInstance {
     googleOAuth2: OAuth2Namespace;
 	notifConns: Map<number, WebSocket>;
+  presence:   Set<number>;
   }
 }
