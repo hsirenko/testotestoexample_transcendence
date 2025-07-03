@@ -191,29 +191,6 @@ export async function loadFriendsSidebar(): Promise<void> {
     }
 }
 
-/* ░░ LIVE ONLINE STATUS ░░
- * Back-end sends:  { "userId": 17, "online": true }
- * Endpoint:  ws://HOST:3000/ws/status   (token in query for auth)
- */
-// function initStatusSocket(): void {
-//     const token = localStorage.getItem("token");
-//     if (!token) return;
-
-//     const ws = new WebSocket(`ws://${HOST}:3000/ws/status?token=${token}`);
-
-//     ws.onmessage = (ev) => {
-//         try {
-//             const { userId, online } = JSON.parse(ev.data);
-//             const dot = statusDots.get(Number(userId));
-//             if (dot) updateDot(dot, online);
-//         } catch {
-//             /* silently ignore malformed events */
-//         }
-//     };
-
-//     ws.onerror = console.error;
-// }
-
 (async () => {
   if (!localStorage.getItem("token")) return;
 
