@@ -241,26 +241,6 @@ if (refreshBtn) {
   });
 }
 
-/* ------------------------------------------------------------------
- * Refresh-button handler
- * ----------------------------------------------------------------*/
-const refreshBtn = document.getElementById('friends-refresh') as HTMLButtonElement | null;
-
-if (refreshBtn) {
-  refreshBtn.addEventListener('click', async () => {
-    /* quick visual feedback – spin while we’re loading */
-    refreshBtn.classList.add('animate-spin');
-    refreshBtn.disabled = true;
-
-    try {
-      await loadFriendsSidebar();      // already shows “Loading…” etc.
-    } finally {
-      refreshBtn.disabled = false;
-      refreshBtn.classList.remove('animate-spin');
-    }
-  });
-}
-
 export function initFriendsSidebarToggle(): void {
     const sidebar = document.getElementById(
         "friends-sidebar"
