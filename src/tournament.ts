@@ -11,6 +11,10 @@ import {
 
 export { showOverlay, hideOverlay };
 
+/* cache DOM -----------------------------------------------------------*/
+const sharePanel   = document.getElementById('tour-share-panel')  as HTMLDivElement;
+
+
 /* ───── html refs (same IDs as before) ───── */
 const ov          = document.getElementById('tournament-overlay')   as HTMLElement;
 const box         = document.getElementById('tournament-container') as HTMLElement;
@@ -21,7 +25,8 @@ const stepCreated = document.getElementById('tour-step-created')!;
 const stepJoin    = document.getElementById('tour-step-join')!;
 const stepBracket = document.getElementById('tour-step-bracket')!;
 
-const createdCode = document.getElementById('tour-created-code')!;
+/* grab the <div> that will hold the tournament code */
+const createdCode = document.getElementById('tour-created-code') as HTMLDivElement;
 const codeInput   = document.getElementById('tour-code-input')  as HTMLInputElement;
 const errorEl     = document.getElementById('tour-error')!;
 const bracketHint = document.getElementById('bracket-hint')!;
@@ -33,6 +38,52 @@ const YOU     = localStorage.getItem('username') ?? 'you';
 let code       = '';
 let socket: WebSocket;
 
+
+
+/*──────────────────────────────────────────────────────────────*
+ *  CREATE  (owner)
+ *──────────────────────────────────────────────────────────────*/
+document.getElementById('tour-create-btn')?.addEventListener('click', async () => {
+  try {
+    const { code: c } = await createTournament(
+      localStorage.getItem('token')!,
+      'Bracket'
+    );
+
+    code = c;
+    localStorage.setItem('tournamentCode', c);   // ★ persist for reloads
+    createdCode.textContent = c;
+
+    sharePanel.classList.remove('hidden');       // show “share” strip
+    connectWs();                                 // open socket with valid code
+    goto(stepBracket);                           // jump to lobby
+  } catch (err: any) {
+    alert(err.message || err);
+  }
+});
+
+
+/*──────────────────────────────────────────────────────────────*
+ *  JOIN  (other players)
+ *──────────────────────────────────────────────────────────────*/
+document.getElementById('tour-join-btn')?.addEventListener('click', async () => {
+  try {
+    const input = document.getElementById('tour-code-input') as HTMLInputElement;
+    code = input.value.trim().toUpperCase();
+    await joinTournament(localStorage.getItem('token')!, code);
+
+    localStorage.setItem('tournamentCode', code); // ★ persist for reloads
+    sharePanel.classList.add('hidden');           // hide for joiners
+    connectWs();                                  // open socket with valid code
+    goto(stepBracket);                            // jump to lobby
+  } catch (err: any) {
+    alert(err.message || err);
+  }
+});
+
+
+
+
 /*──────────────────────────────────────────────────────────────*
  *  CREATE / JOIN handlers
  *──────────────────────────────────────────────────────────────*/
@@ -41,13 +92,29 @@ document.getElementById('tour-create-btn')?.addEventListener('click', async () =
     const { code: c } = await createTournament(localStorage.getItem('token')!, 'Bracket');
     code = c;
     createdCode.textContent = c;
-    goto(stepCreated);
 
     connectWs();                      // connect early
+    goto(stepBracket);                // 👈 show bracket immediately
   } catch (err:any) {
     alert(err.message);
   }
 });
+
+/*──────────────────────────────────────────────────────────────*
+ *  SHARE-CODE copy helper  (NEW)
+ *──────────────────────────────────────────────────────────────*/
+document.getElementById('tour-copy-code')?.addEventListener('click', () => {
+  if (!code) return;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.getElementById('tour-copy-code') as HTMLButtonElement;
+    if (!btn) return;
+    const old = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => (btn.textContent = old), 1500);
+  });
+});
+
+
 
 document.getElementById('tour-confirm-join-btn')?.addEventListener('click', async () => {
   try {
@@ -60,10 +127,18 @@ document.getElementById('tour-confirm-join-btn')?.addEventListener('click', asyn
   }
 });
 
+
 /*──────────────────────────────────────────────────────────────*
- *  Web-socket helper
+ *  Web-socket helper  – now clears stale data when finished
  *──────────────────────────────────────────────────────────────*/
 function connectWs() {
+  /* after a hard-refresh, resurrect the stored code (if any) */
+  if (!code) {
+    const stored = localStorage.getItem('tournamentCode');
+    if (stored) code = stored;
+  }
+  if (!code) return;            // nothing to connect to → abort
+
   socket = new WebSocket(
     `ws://${HOST}:3000/ws/tournament?token=${localStorage.getItem('token')}&code=${code}`
   );
@@ -71,7 +146,14 @@ function connectWs() {
   socket.addEventListener('message', ev => {
     const msg = JSON.parse(ev.data);
 
-    /* live roster refresh */
+    if (msg.type === 'tournamentClosed'){
+      socket.close();
+      hideOverlay(ov, box);
+      alert('The creator cancelled the tournament.');
+      pushHome();
+    }
+
+    /* live roster refresh --------------------------------------------------*/
     if (msg.type === 'playersUpdate') {
       updateSlots(msg.players);
 
@@ -82,35 +164,62 @@ function connectWs() {
           : 'Bracket ready – pairing players…';
     }
 
-    /* server confirms the bracket begins */
+    /* server confirms the bracket begins ----------------------------------*/
     if (msg.type === 'tournamentStart') {
       updateSlots(msg.players);
       bracketHint.textContent = 'Pairing players…';
     }
 
-    /* semi-final or final assignment */
+    /* semi-final or final assignment --------------------------------------*/
     if (msg.type === 'gameAssigned' || msg.type === 'finalAssigned') {
       const stored = localStorage.getItem('user');
       const raw    = stored ? JSON.parse(stored) : null;
       const me     = raw ? Number(raw.id ?? raw.userId) : NaN;
 
       if (msg.players.includes(me)) {
-        hideOverlay(ov, box);          // leave the bracket modal
+        
+        //hideOverlay(ov, box);
+
+        const ov = document.getElementById('tournament-overlay')!;
+        ov.style.zIndex        = '0';
+        ov.style.pointerEvents = 'none';         
+        ov.style.background    = 'transparent';
+
+
+
         enableRemoteMode();
         setGameId(msg.gameId);
         pushGame(msg.gameId);
-        connectWebSocket();            // hook into /ws/game
+        connectWebSocket();          // hook into /ws/game
       }
 
       bracketHint.textContent = 'A match is running…';
     }
 
+    /* tournament over – tidy up & forget the code -------------------------*/
     if (msg.type === 'tournamentFinished') {
+
+      const ov = document.getElementById('tournament-overlay')!;
+      ov.style.zIndex        = '40';
+      ov.style.pointerEvents = 'auto';
+      ov.style.background    = 'rgba(0,0,0,0.6)';
+
       bracketHint.textContent = `🏆 Winner: ${msg.winnerId}`;
+
+      localStorage.removeItem('tournamentCode');  // ← NEW: prevent stale restores
+      code = '';                                  // ← NEW
       pushHome();
     }
   });
+
+  /* if the socket ever drops, also remove the stored code */
+  socket.addEventListener('close', () => {
+    localStorage.removeItem('tournamentCode');    // ← NEW
+    code = '';                                    // ← NEW
+  });
 }
+
+
 
 /*──────────────────────────────────────────────────────────────*
  *  UI helpers – identical animation helpers from original file
@@ -141,10 +250,12 @@ function updateSlots(
 
 
 
-function goto(el:HTMLElement) {
-  [stepMain, stepCreated, stepJoin, stepBracket].forEach(s => s.classList.add('hidden'));
+function goto(el: HTMLElement) {
+  [stepMain, stepJoin, /* stepCreated, */ stepBracket]  // ← removed stepCreated
+    .forEach(s => s.classList.add('hidden'));
   el.classList.remove('hidden');
 }
+
 
 /*──── exported overlay helpers (unchanged) ────*/
 function showOverlay(overlay: HTMLElement, inner?: HTMLElement) {
@@ -181,14 +292,22 @@ document.getElementById('tour-back-btn')?.addEventListener('click', () => {
 });
 
 /* CLOSE via × or Esc */
+/* CLOSE via × button */
 closeBtn.addEventListener('click', () => {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.close(1000, 'left');          // tell server we’re gone
+  }
   hideOverlay(ov, box);
-  pushHome();                                            // NEW
+  pushHome();
 });
 
+/* CLOSE via Esc key */
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && !ov.classList.contains('hidden')) {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.close(1000, 'left');
+    }
     hideOverlay(ov, box);
-    pushHome();                                          // NEW
+    pushHome();
   }
 });

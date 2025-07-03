@@ -98,8 +98,20 @@
               opacity: 0.4;           /* give a visual “disabled” effect  */
               cursor: default;
             }
+            /* custom utilities for the tournament overlay */
+            .front-of-all {             /* visible & clickable */
+            z-index: 40;
+            pointer-events: auto;
+            background: rgba(0,0,0,0.6); /* same as bg-black/60 */
+            }
+            .behind-game {              /* rendered but inert */
+            z-index: 0;
+            pointer-events: none;
+            background: transparent;
+            }
         </style>
     </head>
+    <script type="module" src="/dist/auth.js"></script>
 
     <body
         class="min-h-screen flex flex-col bg-gradient-to-br from-indigo-700 via-purple-700 to-rose-600 text-white selection:bg-pink-400/40"
@@ -568,14 +580,18 @@
             <main class="flex-grow flex items-center justify-center p-8">
                 <div
                     id="game-container"
-					class="relative w-full max-w-4xl aspect-video bg-gray-900/70 rounded-3xl shadow-2xl overflow-visible"
+					class="relative z-20 w-full max-w-4xl aspect-video bg-gray-900/70 rounded-3xl shadow-2xl overflow-visible"
                 >
                     <canvas
                         id="pong-canvas"
                         class="w-full h-full rounded-3xl"
                     ></canvas>
 
+<<<<<<< HEAD
                     <!-- ░░ GAME-HEADER  (avatars · names · score) ░░ -->
+=======
+                     <!-- ░░ GAME-HEADER  (avatars · names · score) ░░ -->
+>>>>>>> origin/main
                     <div id="game-header"
                         class="absolute left-0 right-0 top-0 -translate-y-full
                                 -mt-2 sm:-mt-3 px-4 sm:px-6
@@ -607,6 +623,7 @@
                         <span>:</span>
                         <span id="score-right" class="text-amber-300">0</span>
                     </div>
+<<<<<<< HEAD
 
                     <!-- RIGHT (name + avatar) -->
                     <div id="badge-right"
@@ -622,6 +639,21 @@
                     </div>
 
 
+=======
+
+                    <!-- RIGHT (name + avatar) -->
+                    <div id="badge-right"
+                        class="relative flex items-center gap-2 opacity-0">
+                        <span id="name-right"
+                            class="font-semibold truncate text-right
+                                    max-w-[6rem] sm:max-w-none"></span>
+                        <img  id="avatar-right"
+                            class="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover
+                                    ring-2 ring-amber-300"
+                            src="" alt="">
+                    </div>
+                    </div>
+>>>>>>> origin/main
 
             </main>
             <!-- ░░ PROFILE MINI-PAGE ░░ -->
@@ -688,7 +720,11 @@
                                 accept="image/*"
                                 class="hidden"
                             />
+<<<<<<< HEAD
                             <!-- NEW remove-avatar “×” -->
+=======
+                             <!-- NEW remove-avatar “×” -->
+>>>>>>> origin/main
                             <button id="avatar-remove-btn"
                                     title="Remove picture"
                                     class="absolute -top-2 -right-2 w-6 h-6 rounded-full
@@ -1200,7 +1236,7 @@
             <!-- ░░ TOURNAMENT OVERLAY ░░ -->
             <section
                 id="tournament-overlay"
-                class="overlay fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0"
+                class="overlay fixed inset-0 z-0 flex items-center justify-center backdrop-blur-sm hidden opacity-0 front-of-all"
             >
                 <div
                     id="tournament-container"
@@ -1233,7 +1269,7 @@
                         </button>
                     </div>
 
-                    <!-- STEP 1A – created -->
+                    <!-- STEP 1A – created
                     <div
                         id="tour-step-created"
                         class="hidden space-y-4 text-center"
@@ -1251,7 +1287,7 @@
                         >
                             Copy code
                         </button>
-                    </div>
+                    </div> -->
 
                     <!-- STEP 1B – join -->
                     <div id="tour-step-join" class="hidden space-y-4">
@@ -1297,7 +1333,7 @@
                         <div
                             id="tour-bracket"
                             class="relative mx-auto w-[750px] h-[360px] font-handwriting hidden md:block"
-                        >
+                            >
                             <svg
                                 class="absolute inset-0 w-full h-full pointer-events-none"
                                 viewBox="0 0 750 460"
@@ -1514,6 +1550,30 @@
                         >
                             Waiting for 3 more players…
                         </p>
+
+                        <!-- SHARE-CODE panel (creator only) ----------------------------------- -->
+                <div
+                    id="tour-share-panel"
+                    class="space-y-4 text-center hidden"
+                >
+                    <p class="text-lg">
+                        Share this code with your friends:
+                    </p>
+                
+                    <div
+                        id="tour-created-code"
+                        class="mx-auto w-fit rounded-xl bg-white/10 px-6 py-3 text-3xl font-mono tracking-widest"
+                    ></div>
+                
+                    <button
+                        id="tour-copy-code"
+                        class="rounded-xl bg-white/20 px-4 py-2 hover:bg-white/30 transition"
+                    >
+                        Copy code
+                    </button>
+                </div>
+
+
                     </div>
                 </div>
                 <!-- end tournament-container -->
@@ -1687,7 +1747,11 @@
                 id="friends-sidebar"
                 class="fixed right-0 top-16 bottom-0 w-80 bg-black/30 backdrop-blur border-l border-white/20 flex flex-col z-[40] transform translate-x-full transition-transform duration-300 2xl:translate-x-0"
             >
+<<<<<<< HEAD
                 <h2 class="flex items-center justify-between text-lg font-bold
+=======
+                <h2 class="flex items-center justify-between text-lg font-boldAdd commentMore actions
+>>>>>>> origin/main
            px-4 py-3 border-b border-white/20">
             <span>Friends</span>
 
@@ -1702,7 +1766,10 @@
                 </svg>
             </button>
             </h2>
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
                 <!-- add-friend bar -->
                 <div
                     class="flex items-center gap-2 px-4 pb-3 pt-2 border-b border-white/20"
@@ -1741,6 +1808,8 @@
                 >
                     <!-- visible row -->
                     <div class="flex items-center gap-3 p-2">
+                        <span class="status-dot inline-block w-2 h-2 rounded-full bg-red-500
+                transition-colors duration-200"></span>
                         <img class="avatar w-8 h-8 rounded-full" src="" />
                         <div class="flex-1">
                             <p class="username text-sm font-semibold"></p>

@@ -20,6 +20,47 @@ const genCode        = customAlphabet(ALPHA, 8);
 export const tours   = new Map<string, LiveTournament>();          // key = code
 const gameToTourCode = new Map<string, string>();                  // reverse lookup
 
+
+/**
+ * Remove a single player that leaves before the bracket starts.
+ * If that player is the creator (first entry in playerIds), the whole
+ * tournament is cancelled and every other player is kicked out.
+ */
+export function leaveTournament(code: string, userId: number): void {
+  const tour = tours.get(code);
+  if (!tour) return;
+
+  /* creator leaves → cancel everything (only if not started) */
+  const isCreator = userId === tour.playerIds[0];
+  if (isCreator && tour.semiGames.length === 0) {
+    cancelTournament(code);
+    return;
+  }
+
+  /* normal player leaves (and tour not started) */
+  const idx = tour.playerIds.indexOf(userId);
+  if (idx === -1) return;
+  if (tour.semiGames.length > 0) return;   // already running
+
+  tour.playerIds.splice(idx, 1);
+
+  db.prepare(`
+      DELETE FROM tournament_players
+       WHERE tournament_id = ? AND user_id = ?
+  `).run(tour.id, userId);
+
+  const roster = tour.playerIds.map(id => {
+    const { username } =
+      db.prepare('SELECT username FROM users WHERE id = ?')
+        .get(id) as { username: string };
+    return { id, username };
+  });
+  broadcast(tour, { type: 'playersUpdate', players: roster });
+}
+
+
+
+
 /*──────────── public helpers ─────────────────────────────────────*/
 export function createTournament(name: string, creatorId: number): LiveTournament {
   const code = genCode();
@@ -37,6 +78,30 @@ export function createTournament(name: string, creatorId: number): LiveTournamen
   db.prepare(`INSERT INTO tournament_players (tournament_id, user_id) VALUES (?,?)`)
     .run(tour.id, creatorId);
   return tour;
+}
+
+export function cancelTournament(code: string): void {
+  const tour = tours.get(code);
+  if (!tour) return;
+
+  /* 1 – tell every client the tour is gone */
+  broadcast(tour, { type: 'tournamentClosed' });
+
+  /* 2 – close all sockets gracefully */
+  for (const sock of tour.sockets) {
+    try {
+      sock.close(1000, 'tournament cancelled');
+    } catch (_) {/* ignore */}
+  }
+
+  /* 3 – remove from DB */
+  db.prepare('DELETE FROM tournament_players WHERE tournament_id = ?')
+    .run(tour.id);
+  db.prepare('DELETE FROM tournaments WHERE id = ?')
+    .run(tour.id);
+
+  /* 4 – purge from RAM */
+  tours.delete(code);
 }
 
 /* ── join a tournament ────────────────────────────────────── */

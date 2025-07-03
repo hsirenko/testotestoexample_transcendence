@@ -374,58 +374,27 @@ function startNotificationsSocket(): void {
 		console.log("[notif] WS closed", ev.code, ev.reason);
 
 	notifSocket.onmessage = async (ev) => {
-		try {
-			const incoming = JSON.parse(ev.data) as Notification;
-			notifications.unshift({ ...incoming, read: false });
-			updateBadge();
-			if (!panel?.classList.contains("hidden")) renderPanel();
-			if (incoming.type === "friend_accept") loadFriendsSidebar();
+  try {
+    const incoming = JSON.parse(ev.data);
 
-			/* ------------------------------------------------------------
-			 * CHALLENGE – user clicks “Accept”
-			 * -----------------------------------------------------------*/
-			// if (incoming.type === "challenge") {
-			// 	const accepted = confirm(`${incoming.text}\nAccept?`);
-			// 	if (!accepted) {
-			// 		const t = localStorage.getItem("token")!;
-			// 		await fetch(
-			// 			`http://${HOST}:3000/api/notifications/${incoming.id}`,
-			// 			{ method: "DELETE", headers: { Authorization: `Bearer ${t}` } }
-			// 		);
-			// 		return;
-			// 	}
+    /* ───  A. PRESENCE UPDATE  ─────────────────────────────────── */
+    if (incoming.type === 'presence') {
+      // refresh just the dots (cheap) – no UI flicker
+      loadFriendsSidebar();
+      return;
+    }
 
-			// 	if (!incoming.gameId) {
-			// 		alert("Challenge did not include a game ID. Please try again.");
-			// 		return;
-			// 	}
+    /* ───  B. NORMAL NOTIFICATION  ─────────────────────────────── */
+    const n = incoming as Notification;
+    notifications.unshift({ ...n, read: false });
+    updateBadge();
+    if (!panel?.classList.contains("hidden")) renderPanel();
+    if (n.type === "friend_accept") loadFriendsSidebar();
+  } catch (err) {
+    console.log("[notif] WS parse error", err);
+  }
+};
 
-			// 	/* Join the challenger’s existing room */
-			// 	setGameId(incoming.gameId);
-			// 	enableRemoteMode();
-			// 	connectWebSocket();
-
-			// 	// /* Announce the match so stats & history tables stay in sync */
-			// 	// const t = localStorage.getItem("token");
-			// 	// if (t) {
-			// 	// 	await fetch(`http://${HOST}:3000/api/match/start`, {
-			// 	// 		method: "POST",
-			// 	// 		headers: {
-			// 	// 			"Content-Type": "application/json",
-			// 	// 			Authorization: `Bearer ${t}`,
-			// 	// 		},
-			// 	// 		body: JSON.stringify({
-			// 	// 			player1_id: incoming.reference_id, // challenger
-			// 	// 			player2_id: myUserId,              // us
-			// 	// 			tournament_id: null,
-			// 	// 		}),
-			// 	// 	});
-			// 	// }
-			// }
-		} catch (err) {
-			console.log("[notif] WS parse error", err);
-		}
-	};
 }
 
 

@@ -326,4 +326,3 @@ document.getElementById('remove-2fa-confirm-btn')?.addEventListener('click', asy
     errorEl.textContent = 'Network error';
   }
 });
-

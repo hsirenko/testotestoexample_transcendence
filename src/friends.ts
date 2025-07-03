@@ -4,6 +4,9 @@
 import { HOST } from "./config.js";
 import { openFriendStats } from "./friendstats.js";
 
+/* map friendId → <span.status-dot> for live updates */
+const statusDots = new Map<number, HTMLSpanElement>();
+
 /* 2 ░ helpers ------------------------------------------------------*/
 function getAuthHeader(): HeadersInit {
     const t = localStorage.getItem("token");
@@ -51,6 +54,18 @@ export async function fetchFriends(): Promise<any[]> {
     if (/^https?:\/\//i.test(val)) return val;   // full URL → use as-is
     return `http://${HOST}:3000/uploads/${val}`; // relative → prepend
     }
+
+function updateDot(el: HTMLSpanElement, online: boolean): void {
+  if (online) {
+    el.classList.remove("bg-red-500", "animate-none");
+    el.classList.add("bg-emerald-400", "animate-pulse");
+  } else {
+    el.classList.remove("bg-emerald-400", "animate-pulse");
+    el.classList.add("bg-red-500");           // ← red when offline
+  }
+}
+
+
 /* 3 ░ render list --------------------------------------------------*/
 function render(friends: any[]): void {
     const list = document.getElementById("friends-list")!;
@@ -79,6 +94,13 @@ function render(friends: any[]): void {
         (row.querySelector(".username") as HTMLElement).textContent =
             f.username;
         (row.querySelector(".email") as HTMLElement).textContent = f.email;
+        /* ─ ONLINE DOT ─────────────────────────────────────────────── */
+        const dot = row.querySelector(".status-dot") as HTMLSpanElement;
+        statusDots.set(friendId, dot);                    // remember it
+
+        const online = Boolean(f.online ?? f.isOnline);   // back-end flag
+        updateDot(dot, online);
+
 
         /* ─ DOM refs */
         const moreBtn = row.querySelector<HTMLButtonElement>(".more-btn")!;
@@ -169,7 +191,55 @@ export async function loadFriendsSidebar(): Promise<void> {
     }
 }
 
-if (localStorage.getItem("token")) loadFriendsSidebar();
+/* ░░ LIVE ONLINE STATUS ░░
+ * Back-end sends:  { "userId": 17, "online": true }
+ * Endpoint:  ws://HOST:3000/ws/status   (token in query for auth)
+ */
+function initStatusSocket(): void {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const ws = new WebSocket(`ws://${HOST}:3000/ws/status?token=${token}`);
+
+    ws.onmessage = (ev) => {
+        try {
+            const { userId, online } = JSON.parse(ev.data);
+            const dot = statusDots.get(Number(userId));
+            if (dot) updateDot(dot, online);
+        } catch {
+            /* silently ignore malformed events */
+        }
+    };
+
+    ws.onerror = console.error;
+}
+
+(async () => {
+  if (!localStorage.getItem("token")) return;
+
+  await loadFriendsSidebar();   // list ready – statusDots filled
+  initStatusSocket();           // start listening
+})();
+
+/* ------------------------------------------------------------------
+ * Refresh-button handler
+ * ----------------------------------------------------------------*/
+const refreshBtn = document.getElementById('friends-refresh') as HTMLButtonElement | null;
+
+if (refreshBtn) {
+  refreshBtn.addEventListener('click', async () => {
+    /* quick visual feedback – spin while we’re loading */
+    refreshBtn.classList.add('animate-spin');
+    refreshBtn.disabled = true;
+
+    try {
+      await loadFriendsSidebar();      // already shows “Loading…” etc.
+    } finally {
+      refreshBtn.disabled = false;
+      refreshBtn.classList.remove('animate-spin');
+    }
+  });
+}
 
 /* ------------------------------------------------------------------
  * Refresh-button handler
@@ -224,4 +294,3 @@ if (document.readyState !== "loading") {
 } else {
     document.addEventListener("DOMContentLoaded", initFriendsSidebarToggle);
 }
-
