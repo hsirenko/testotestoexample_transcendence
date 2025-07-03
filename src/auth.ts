@@ -19,6 +19,9 @@ const signupForm = document.getElementById("signup-form") as HTMLFormElement;
 const signupError = document.getElementById("signup-error") as HTMLElement;
 
 let resetMode = false;
+let resetEmail = "";
+let resetCode  = "";
+
 
 const $ = <T extends HTMLElement = HTMLElement>(sel: string) =>
     document.querySelector<T>(sel);
@@ -166,62 +169,91 @@ document.getElementById("reset-show-login")?.addEventListener("click", (e) => {
     overlay.classList.remove("hidden");
 });
 
-resetForm?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    resetError.textContent = "";
+/* 1️⃣  Ask server to e-mail the code --------------------------------------- */
+resetForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  resetError.textContent = "";
 
-    const email = (document.getElementById("reset-email") as HTMLInputElement).value.trim();
-    const emErr = validateEmail(email);
+  const email = (document.getElementById("reset-email") as HTMLInputElement).value.trim();
+  const emErr = validateEmail(email);
+  if (!email)          { resetError.textContent = "Email is required."; return; }
+  if (emErr)           { resetError.textContent = emErr;               return; }
 
-    if (!email)          resetError.textContent = "Email is required.";
-    else if (emErr)      resetError.textContent = emErr;
-    else {
-        // No backend change – we just give user feedback
-        resetError.textContent = "If the address is registered, a reset code has been sent.";
-        alert("Code sent");
-        resetOverlay.classList.add("hidden");
-        codeOverlay.classList.remove("hidden");
-    }
-    
+  try {
+    const res  = await fetch(`http://${HOST}:3000/password/forgot`, {
+      method : "POST",
+      headers: { "Content-Type": "application/json" },
+      body   : JSON.stringify({ email })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || "Failed to send code.");
 
+    resetEmail = email;
+    alert("If the address is registered, a reset code has been sent.");
+    resetOverlay.classList.add("hidden");
+    codeOverlay.classList.remove("hidden");
+    (document.getElementById("reset-code") as HTMLInputElement).focus();
+  } catch (err: any) {
+    resetError.textContent = err.message || "Network error — try again.";
+  }
 });
 
-codeForm?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    codeError.textContent = "";
+/* 2️⃣  Verify the six-digit code ------------------------------------------ */
+codeForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  codeError.textContent = "";
 
-    const codeInput = (document.getElementById("reset-code") as HTMLInputElement).value.trim();
+  const code = (document.getElementById("reset-code") as HTMLInputElement).value.trim();
+  if (!/^\d{6}$/.test(code)) { codeError.textContent = "Code must be 6 digits."; return; }
 
-    if (!/^\d{6}$/.test(codeInput)) {
-        codeError.textContent = "Code must be 6 digits.";
-        return;
-    }
+  try {
+    const res  = await fetch(`http://${HOST}:3000/password/verify`, {
+      method : "POST",
+      headers: { "Content-Type": "application/json" },
+      body   : JSON.stringify({ email: resetEmail, code })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || "Invalid or expired code.");
 
-    // here you should implement the backend of verification
-
+    resetCode = code;
     codeOverlay.classList.add("hidden");
     newpassOverlay.classList.remove("hidden");
+    (document.getElementById("new-pass") as HTMLInputElement).focus();
+  } catch (err: any) {
+    codeError.textContent = err.message || "Network error — try again.";
+  }
 });
 
+/* 3️⃣  Change the password ------------------------------------------------- */
+newpassForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  newpassError.textContent = "";
 
-newpassForm?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    newpassError.textContent = "";
+  const pass1 = (document.getElementById("new-pass")         as HTMLInputElement).value;
+  const pass2 = (document.getElementById("new-pass-confirm") as HTMLInputElement).value;
 
-    const pass1 = (document.getElementById("new-pass") as HTMLInputElement).value;
-    const pass2 = (document.getElementById("new-pass-confirm") as HTMLInputElement).value;
+  const pwErr = validatePassword(pass1);
+  if (pwErr)           { newpassError.textContent = pwErr;                   return; }
+  if (pass1 !== pass2) { newpassError.textContent = "Passwords do not match."; return; }
 
-    const pwdErr = validatePassword(pass1);   // same helper used in sign-up
+  try {
+    const res  = await fetch(`http://${HOST}:3000/password/reset`, {
+      method : "POST",
+      headers: { "Content-Type": "application/json" },
+      body   : JSON.stringify({ email: resetEmail, code: resetCode, newPassword: pass1 })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || "Password change failed.");
 
-    if (pwdErr)               { newpassError.textContent = pwdErr; return; }
-    if (pass1 !== pass2)      { newpassError.textContent = "Passwords do not match."; return; }
-
-    // here you should implement the backend password change logic
-
-    alert("Password changed without backend");
+    alert("Password changed! Please sign in.");
     newpassOverlay.classList.add("hidden");
-    overlay.classList.remove("hidden");       // back to normal sign-in
+    overlay.classList.remove("hidden");
+  } catch (err: any) {
+    newpassError.textContent = err.message || "Network error — try again.";
+  }
 });
+
+
 
 
 
@@ -276,11 +308,14 @@ function validateEmail(email: string): string | null {
     return ok ? null : "Please enter a valid email address.";
 }
 function validatePassword(pw: string): string | null {
-    if (pw.length < 8) return "Password must be at least 8 characters.";
-    if (!/[A-Z]/.test(pw)) return "Password needs at least one capital letter.";
-    if (!/\d/.test(pw)) return "Password needs at least one number.";
+    if (pw.length < 8)                return "Password must be at least 8 characters.";
+    if (!/[A-Z]/.test(pw))            return "Password needs at least one capital letter.";
+    if (!/[a-z]/.test(pw))            return "Password needs at least one lowercase letter.";
+    if (!/\d/.test(pw))               return "Password needs at least one number.";
+    if (!/[^\w\s]/.test(pw))          return "Password needs at least one symbol.";
     return null;
 }
+
 
 isAuthed() ? hideLogin() : showLogin();
 

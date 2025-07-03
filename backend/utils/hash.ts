@@ -1,13 +1,23 @@
-// utils/hash.ts
 import crypto from 'crypto';
 
-export function hashPassword(password: string, salt = crypto.randomBytes(16).toString('hex')): string {
-  const hash = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex');
+const ROUNDS = 100_000;
+const DKLEN  = 64;
+const DIGEST = 'sha512';
+
+/* ─── hashPassword ───────────────────────────────────────────────────────── */
+export function hashPassword(
+  plain: string,
+  salt  = crypto.randomBytes(16).toString('hex'),
+): string {
+  const hash = crypto.pbkdf2Sync(plain, salt, ROUNDS, DKLEN, DIGEST).toString('hex');
   return `${salt}:${hash}`;
 }
 
-export function verifyPassword(password: string, stored: string): boolean {
-  const [salt, originalHash] = stored.split(':');
-  const hash = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex');
-  return hash === originalHash;
+/* ─── verifyPassword ─────────────────────────────────────────────────────── */
+export function verifyPassword(plain: string, stored: string): boolean {
+  const [salt, original] = stored.split(':');
+  if (!salt || !original) return false;                          // malformed DB row
+
+  const fresh = crypto.pbkdf2Sync(plain, salt, ROUNDS, DKLEN, DIGEST);
+  return crypto.timingSafeEqual(fresh, Buffer.from(original, 'hex'));  // constant-time
 }

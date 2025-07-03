@@ -111,4 +111,19 @@ db.exec(`
 	);
 `);
 
+/* ───────────── Password-reset codes ───────────── */
+/* ───────────── Password-reset codes ───────────── */
+db.exec(`
+CREATE TABLE IF NOT EXISTS password_resets (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER  NOT NULL,
+  code_hash  TEXT     NOT NULL,
+  expires_at INTEGER  NOT NULL,        -- seconds since epoch
+  used       INTEGER  NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+`);
+
+
+
 export default db;
