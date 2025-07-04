@@ -672,25 +672,51 @@ const auth = (): HeadersInit => {
     return t ? { Authorization: `Bearer ${t}` } : {};
 };
 
-function waitForBothPlayers() {
+function waitForBothPlayers(): void {
     const waitingOverlay = document.createElement("div");
     waitingOverlay.id = "waiting-overlay";
-    Object.assign(waitingOverlay.style, {
-        position: "fixed",
-        inset: "0",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: "4rem",
-        fontWeight: "800",
-        color: "#fff",
-        backdropFilter: "blur(3px)",
-        zIndex: "100",
-        pointerEvents: "none",
-    } as Partial<CSSStyleDeclaration>);
-    waitingOverlay.textContent = "Waiting for the other player to join :P";
+
+    Object.assign(
+        waitingOverlay.style,
+        {
+            position: "fixed",
+            inset: "0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "4rem",
+            fontWeight: "800",
+            color: "#fff",
+            backdropFilter: "blur(3px)",
+            zIndex: "100",
+            pointerEvents: "all",     // block every click underneath
+        } as Partial<CSSStyleDeclaration>
+    );
+
+    waitingOverlay.textContent =
+        "Waiting for the other player to join :P";
+
     document.body.appendChild(waitingOverlay);
 }
+
+function hideRemotePlayModal(): void {
+    /*  
+     *  The remote-play panel is injected with an id of either
+     *  "remotePlayModal" or "remote-play-modal" depending on the
+     *  builder function – cover both to be safe.
+     */
+    const modal =
+        document.getElementById("remote-modal");
+
+    if (modal) modal.remove();
+}
+
+function removeWaitingOverlay(): void {
+    const ov = document.getElementById("waiting-overlay");
+    if (ov) ov.remove();
+}
+(window as any).removeWaitingOverlay = removeWaitingOverlay;
+
 
 function startGameRemote() {
     const game = document.getElementById("game-container") as HTMLElement;
@@ -1007,50 +1033,45 @@ challengeModal.addEventListener("click", (e) => {
 });
 
 document.addEventListener("click", async (e) => {
-  const btn = (e.target as HTMLElement).closest(
-    ".challenge-send-btn"
-  ) as HTMLButtonElement;
-  if (!btn) return;
+    const btn = (e.target as HTMLElement).closest(
+        ".challenge-send-btn"
+    ) as HTMLButtonElement;
+    if (!btn) return;
 
-  const targetId = Number(btn.dataset.id);
-  if (!targetId) return;
+    const targetId = Number(btn.dataset.id);
+    if (!targetId) return;
 
-  /* ----------------------------------------------------------------
-   * Ensure the challenger already owns a game room.
-   * If the user opened the Remote-Play modal and hit “Create” then
-   * `gameId` is already set.  If they jumped straight to “Challenge”
-   * we create the room here on-the-fly.
-   * ----------------------------------------------------------------*/
-  if (!gameId) {
-    const resGame = await fetch(`http://${HOST}:3000/api/game`, {
-      method: "POST",
-      headers: auth(),
+    /* ❶ Instantly get rid of all pop-ups/dialogs */
+    closeChallengeModal();   // the user list
+    hideRemotePlayModal();   // the Remote Play panel
+    waitForBothPlayers();    // show the waiting overlay right now
+
+    /* ❷ Make sure we own (or create) a game room */
+    if (!gameId) {
+        const res = await fetch(`http://${HOST}:3000/api/game`, {
+            method: "POST",
+            headers: auth(),
+        });
+        const data = (await res.json()) as { gameId: string };
+        gameId     = data.gameId;
+        remoteMode = true;
+        ownGameId  = gameId;
+        connectWebSocket();          // join as player-1
+    }
+
+    /* ❸ Send the actual challenge */
+    const token = localStorage.getItem("token");
+    await fetch(`http://${HOST}:3000/api/challenge`, {
+        method : "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization : `Bearer ${token}`,
+        },
+        body: JSON.stringify({ toUserId: targetId, gameId }),
     });
-    const data = (await resGame.json()) as { gameId: string };
-    gameId = data.gameId;
-    remoteMode = true;
-    ownGameId = gameId;      // we are the room owner
-    connectWebSocket();      // open WS and JOIN as player-1
-    waitForBothPlayers();    // show overlay “Waiting for the other player…”
-  }
-
-  /* ----------------------------------------------------------------
-   * Send the challenge **together with the room’s gameId** so the
-   * recipient can join this same room instead of spinning up a new one
-   * ----------------------------------------------------------------*/
-  const token = localStorage.getItem("token");
-  await fetch(`http://${HOST}:3000/api/challenge`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ toUserId: targetId, gameId }),
-  });
-
-//   alert("Challenge sent!");
-  closeChallengeModal();
 });
+
+
 
 export function initRemoteModal(): void {
     const ov = document.getElementById("remote-modal")!; // overlay

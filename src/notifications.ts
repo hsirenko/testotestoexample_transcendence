@@ -329,47 +329,51 @@ updateBadge();
 //MHEISENBERG
 // 2. connect to WS so we get new ones in real time
 function startNotificationsSocket(): void {
-	const token = localStorage.getItem("token");
-	if (!token) {
-		console.log("[notif] no token, skipping WS connect");
-		return;
-	}
-
-	const wsUrl = `ws://${HOST}:3000/ws/notifications?token=${token}`;
-	const me = JSON.parse(localStorage.getItem("user") || "{}");
-	const myUserId = me.id;
-
-	console.log("[notif] connecting to WS at", wsUrl);
-	notifSocket = new WebSocket(wsUrl);
-
-	notifSocket.onopen  = () => console.log("[notif] WS open");
-	notifSocket.onerror = (err) => console.log("[notif] WS error", err);
-	notifSocket.onclose = (ev) =>
-		console.log("[notif] WS closed", ev.code, ev.reason);
-
-	notifSocket.onmessage = async (ev) => {
-  try {
-    const incoming = JSON.parse(ev.data);
-
-    /* ───  A. PRESENCE UPDATE  ─────────────────────────────────── */
-    if (incoming.type === 'presence') {
-      // refresh just the dots (cheap) – no UI flicker
-      loadFriendsSidebar();
-      return;
+    const token = localStorage.getItem("token");
+    if (!token) {
+        console.log("[notif] no token, skipping WS connect");
+        return;
     }
-
-    /* ───  B. NORMAL NOTIFICATION  ─────────────────────────────── */
-    const n = incoming as Notification;
-    notifications.unshift({ ...n, read: false });
-    updateBadge();
-    if (!panel?.classList.contains("hidden")) renderPanel();
-    if (n.type === "friend_accept") loadFriendsSidebar();
-  } catch (err) {
-    console.log("[notif] WS parse error", err);
-  }
-};
-
+    const wsUrl = `ws://${HOST}:3000/ws/notifications?token=${token}`;
+    const me = JSON.parse(localStorage.getItem("user") || "{}");
+    const myUserId = me.id;
+    console.log("[notif] connecting to WS at", wsUrl);
+    notifSocket = new WebSocket(wsUrl);
+    notifSocket.onopen  = () => console.log("[notif] WS open");
+    notifSocket.onerror = err => console.log("[notif] WS error", err);
+    notifSocket.onclose = ev  => console.log("[notif] WS closed", ev.code, ev.reason);
+    notifSocket.onmessage = async ev => {
+        try {
+            const incoming = JSON.parse(ev.data);
+            if (incoming.type === "challenge_declined") {
+                (window as any).removeWaitingOverlay?.();
+            }
+            if (incoming.type === "presence") {
+                loadFriendsSidebar();
+                return;
+            }
+            const n = incoming as Notification;
+            notifications.unshift({ ...n, read: false });
+            updateBadge();
+            if (!panel?.classList.contains("hidden")) renderPanel();
+            if (n.type === "friend_accept") loadFriendsSidebar();
+        } catch (err) {
+            console.log("[notif] WS parse error", err);
+        }
+    };
+    window.addEventListener("beforeunload", () => {
+        const t = localStorage.getItem("token");
+        if (!t) return;
+        notifications.filter(n => n.type === "challenge").forEach(n => {
+            fetch(`http://${HOST}:3000/api/notifications/${n.id}`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${t}` },
+                keepalive: true
+            });
+        });
+    });
 }
+
 
 
 export function initNotifications() {
