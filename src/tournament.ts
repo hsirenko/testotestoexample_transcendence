@@ -34,10 +34,18 @@ const bracketHint = document.getElementById('bracket-hint')!;
 const slotEls = Array.from(document.querySelectorAll<HTMLDivElement>('[data-slot]'));
 const YOU     = localStorage.getItem('username') ?? 'you';
 
+//tournament remote play background to hide bracket
+const backdrop = document.getElementById('game-backdrop')!;
+
+
 /* ───── runtime state ───── */
 let code       = '';
 let socket: WebSocket;
 
+
+
+function showGameBackdrop()  { backdrop.classList.remove('hidden', 'opacity-0'); }
+function hideGameBackdrop()  { backdrop.classList.add   ('hidden', 'opacity-0'); }
 
 
 /*──────────────────────────────────────────────────────────────*
@@ -186,6 +194,7 @@ function connectWs() {
         ov.style.background    = 'transparent';
 
 
+        showGameBackdrop();
 
         enableRemoteMode();
         setGameId(msg.gameId);
@@ -203,7 +212,7 @@ function connectWs() {
       ov.style.zIndex        = '40';
       ov.style.pointerEvents = 'auto';
       ov.style.background    = 'rgba(0,0,0,0.6)';
-
+      hideGameBackdrop();
       bracketHint.textContent = `🏆 Winner: ${msg.winnerId}`;
 
       localStorage.removeItem('tournamentCode');  // ← NEW: prevent stale restores
