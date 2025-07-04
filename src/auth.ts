@@ -170,16 +170,14 @@ document.getElementById("reset-show-login")?.addEventListener("click", (e) => {
 });
 
 /* 1️⃣  Ask server to e-mail the code --------------------------------------- */
-/* 1️⃣  Ask server to e-mail the code ------------------------------------ */
 resetForm?.addEventListener("submit", async (e) => {
   e.preventDefault();
   resetError.textContent = "";
 
-  const email = (document.getElementById("reset-email") as HTMLInputElement)
-                  .value.trim();
+  const email = (document.getElementById("reset-email") as HTMLInputElement).value.trim();
   const emErr = validateEmail(email);
-  if (!email)        { resetError.textContent = "Email is required."; return; }
-  if (emErr)         { resetError.textContent = emErr;               return; }
+  if (!email)          { resetError.textContent = "Email is required."; return; }
+  if (emErr)           { resetError.textContent = emErr;               return; }
 
   try {
     const res  = await fetch(`http://${HOST}:3000/password/forgot`, {
@@ -188,24 +186,17 @@ resetForm?.addEventListener("submit", async (e) => {
       body   : JSON.stringify({ email })
     });
     const json = await res.json();
+    if (!res.ok) throw new Error(json.error || "Failed to send code.");
 
-    /* NEW: surface server-side errors inline, no alerts */
-    if (!res.ok) {
-      resetError.textContent = json.error || "Failed to send code.";
-      return;                                 // <- don’t go to the next step
-    }
-
-    /* success – go straight to “enter the code” screen */
     resetEmail = email;
+    alert("If the address is registered, a reset code has been sent.");
     resetOverlay.classList.add("hidden");
     codeOverlay.classList.remove("hidden");
     (document.getElementById("reset-code") as HTMLInputElement).focus();
-
   } catch (err: any) {
     resetError.textContent = err.message || "Network error — try again.";
   }
 });
-
 
 /* 2️⃣  Verify the six-digit code ------------------------------------------ */
 codeForm?.addEventListener("submit", async (e) => {

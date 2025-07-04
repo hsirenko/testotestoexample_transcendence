@@ -69,40 +69,32 @@ async function sendResetEmail(to: string, code: string) {
 /* routes ─────────────────────────────────────────────────────────────── */
 export default async function passwordResetRoutes (fastify: FastifyInstance) {
 
-  /* 1️⃣  Ask for a reset code ───────────────────────────────────────────── */
-fastify.post('/password/forgot', async (req, reply) => {
-  const { email } = req.body as { email?: string };
-  if (!email) return reply.code(400).send({ error: 'Email required' });
+  /* 1️⃣  Request code --------------------------------------------------- */
+  fastify.post('/password/forgot', async (req, reply) => {
+    const { email } = req.body as { email?: string };
+    if (!email) return reply.code(400).send({ error: 'Email required' });
 
-  /* ── make sure the address really belongs to a user ── */
-  const user = db.prepare('SELECT id, email FROM users WHERE email = ?')
-                 .get(email);
+    const user = db.prepare('SELECT id,email FROM users WHERE email = ?')
+                   .get(email);
 
-  /* NEW: stop here if the address isn’t registered */
-  if (!user) {
-    return reply.code(404).send({ error: 'Email not found' });
-  }
+    /* Always answer 200 to avoid account enumeration leaks */
+    if (user) {
+      const code       = generateSixDigitCode();
+        const code_hash  = hashPassword(code);
+        const expires    = Math.floor(Date.now() / 1000) + 900;   // 15 min
+            
+        db.prepare('DELETE FROM password_resets WHERE user_id = ?').run(user.id);
+        db.prepare(`
+          INSERT INTO password_resets (user_id, code_hash, expires_at)
+          VALUES (?, ?, ?)
+        `).run(user.id, code_hash, expires);
+        
+        await sendResetEmail(user.email, code);
 
-  /* everything below is **unchanged** – it still            */
-  /*  ▸ creates a one-time code                              */
-  /*  ▸ stores the hash & expiry                             */
-  /*  ▸ wipes any older codes                                */
-  /*  ▸ e-mails (or logs) the code                           */
-  /*─────────────────────────────────────────────────────────*/
-  const code       = generateSixDigitCode();
-  const code_hash  = hashPassword(code);
-  const expires    = Math.floor(Date.now() / 1000) + 900;   // 15 min
-
-  db.prepare('DELETE FROM password_resets WHERE user_id = ?').run(user.id);
-  db.prepare(`
-      INSERT INTO password_resets (user_id, code_hash, expires_at)
-      VALUES            (?,        ?,         ?)
-  `).run(user.id, code_hash, expires);
-
-  await sendResetEmail(email, code);   // same helper as before
-  return reply.send({ ok: true });
-});
-
+    }
+    return reply.send({ message:
+      'If the address is registered, a reset code has been sent.' });
+  });
 
   /* 2️⃣  Verify code ---------------------------------------------------- */
   fastify.post('/password/verify', async (req, reply) => {

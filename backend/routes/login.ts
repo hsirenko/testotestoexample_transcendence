@@ -16,7 +16,7 @@ export default async function loginRoutes(fastify: FastifyInstance) {
     }
 
     const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-
+    
     if (!user) {
       return reply.status(400).send({ error: 'Invalid email or password' });
     }
