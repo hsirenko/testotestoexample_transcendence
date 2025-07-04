@@ -139,43 +139,17 @@ function renderPanel(): void {
 		 * ==========================================================*/
 		if (n.gameId) {
 			const box = document.createElement("div");
-			box.className = "ml-auto flex gap-2";
+			box.className = "relative left-[-20px] ml-auto flex gap-2";
 
-			/* Accept */
 			const accept = document.createElement("button");
 			accept.textContent = "Accept";
 			accept.className =
-				"px-3 py-1 rounded-full bg-emerald-500 hover:bg-emerald-600 " +
+				"px-2 py-1 rounded-full bg-emerald-500 hover:bg-emerald-600 " +
 				"text-sm font-semibold transition";
 
 			accept.onclick = async (e) => {
 				e.stopPropagation();
 
-				/* 🔸 (optional tidying) mark as read on the server */
-				// const t = localStorage.getItem("token")!;
-				// await fetch(`http://${HOST}:3000/api/notifications/${n.id}/read`, {
-				// 	method: "POST",
-				// 	headers: { Authorization: `Bearer ${t}` },
-				// });
-
-				/* 🔸 start the match – useful for stats/history tables        */
-				// const me   = JSON.parse(localStorage.getItem("user") || "{}");
-				// if (n.reference_id) {
-				// 	await fetch(`http://${HOST}:3000/api/match/start`, {
-				// 		method: "POST",
-				// 		headers: {
-				// 			"Content-Type": "application/json",
-				// 			Authorization: `Bearer ${t}`,
-				// 		},
-				// 		body: JSON.stringify({
-				// 			player1_id: n.reference_id, // challenger
-				// 			player2_id: me.id,          // us
-				// 			tournament_id: null,
-				// 		}),
-				// 	});
-				// }
-
-				/* 🔸 jump into the challenger’s room */
 				setGameId(n.gameId!);
 				enableRemoteMode();
 				connectWebSocket();
@@ -191,7 +165,7 @@ function renderPanel(): void {
 			const decline = document.createElement("button");
 			decline.textContent = "Decline";
 			decline.className =
-				"px-3 py-1 rounded-full bg-rose-500 hover:bg-rose-600 " +
+				"px-2 py-1 rounded-full bg-rose-500 hover:bg-rose-600 " +
 				"text-sm font-semibold transition";
 
 			decline.onclick = async (e) => {
@@ -262,7 +236,7 @@ function renderPanel(): void {
 			const decline = document.createElement("button");
 			decline.textContent = "Decline";
 			decline.className =
-				"px-3 py-1 rounded-full bg-rose-500 hover:bg-rose-600 " +
+				"left-20 px-3 py-1 rounded-full bg-rose-500 hover:bg-rose-600 " +
 				"text-sm font-semibold transition";
 			decline.onclick = (e) => respond(e, "decline", decline);
 
