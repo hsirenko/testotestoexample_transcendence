@@ -43,7 +43,18 @@ const backdrop = document.getElementById('game-backdrop')!;
 let code       = '';
 let socket: WebSocket;
 
+const idToName  = new Map<number, string>();   // id  ➜ username
+let   round1    : number[] = [];               // initial four players (slot 0-3)
+const semiMap   : Record<string, 4 | 5> = {};  // gameId ➜ 4 or 5
+let   finalGameId: string | null = null;
 
+/* ★ helper: write winner names into slots 4, 5, 6 */
+function setSlot(idx: 4 | 5 | 6, playerId: number) {
+  const name = idToName.get(playerId) ?? String(playerId);
+  slotEls.forEach(el => {
+    if (Number(el.dataset.slot) === idx) el.textContent = name;
+  });
+}
 
 function showGameBackdrop()  { backdrop.classList.remove('hidden', 'opacity-0'); }
 function hideGameBackdrop()  { backdrop.classList.add   ('hidden', 'opacity-0'); }
@@ -204,6 +215,14 @@ function connectWs() {
       const raw    = stored ? JSON.parse(stored) : null;
       const me     = raw ? Number(raw.id ?? raw.userId) : NaN;
 
+      if (msg.type === 'gameAssigned') {
+        const [pA]   = msg.players as number[];
+        const first  = round1.slice(0, 2).includes(pA); // belongs to semi-1?
+        semiMap[msg.gameId] = first ? 4 : 5;
+      } else {
+        finalGameId = msg.gameId;                       // keep final ID
+      }
+
       if (msg.players.includes(me)) {
         
         //hideOverlay(ov, box);
@@ -226,14 +245,24 @@ function connectWs() {
       bracketHint.textContent = 'A match is running…';
     }
 
+
+    if (msg.type === 'matchFinished') {
+      if (msg.gameId === finalGameId) {
+        setSlot(6, msg.winnerId);                      // champion
+      } else if (semiMap[msg.gameId]) {
+        setSlot(semiMap[msg.gameId], msg.winnerId);    // semi winner
+      }
+      bracketHint.textContent = 'Waiting for next match…';
+    }
+
     /* tournament over – tidy up & forget the code -------------------------*/
     if (msg.type === 'tournamentFinished') {
-
       const ov = document.getElementById('tournament-overlay')!;
       ov.style.zIndex        = '40';
       ov.style.pointerEvents = 'auto';
       ov.style.background    = 'rgba(0,0,0,0.6)';
       hideGameBackdrop();
+      setSlot(6, msg.winnerId);
       bracketHint.textContent = `🏆 Winner: ${msg.winnerId}`;
 
       localStorage.removeItem('tournamentCode');  // ← NEW: prevent stale restores
@@ -256,6 +285,7 @@ function connectWs() {
  *──────────────────────────────────────────────────────────────*/
 /* unified slot updater */
 /* ── fill the four bracket slots ──────────────────────────── */
+/* ── fill the four first-round slots ─────────────────────────── */
 function updateSlots(
   players: Array<number | { id: number; username: string }>
 ) {
@@ -263,9 +293,15 @@ function updateSlots(
   const raw    = stored ? JSON.parse(stored) : null;
   const me     = raw ? Number(raw.id ?? raw.userId) : NaN;
 
-  slotEls.forEach((el, i) => {
-    const player = players[i];
+  /* remember the original order (once) */
+  if (players.length === 4 && round1.length === 0) {
+    round1 = players.map(p => (typeof p === 'number' ? p : p.id));
+  }
 
+  slotEls.forEach((el, i) => {
+    if (i > 3) return;                         // only slots 0-3 here
+
+    const player = players[i];
     if (!player) {
       el.textContent = '—';
       return;
@@ -274,9 +310,11 @@ function updateSlots(
     const id   = typeof player === 'number' ? player         : player.id;
     const name = typeof player === 'number' ? String(player) : player.username;
 
+    idToName.set(id, name);                    // cache for later rounds
     el.textContent = id === me ? YOU : name;
   });
 }
+
 
 
 
