@@ -342,25 +342,42 @@ function startNotificationsSocket(): void {
     notifSocket.onopen  = () => console.log("[notif] WS open");
     notifSocket.onerror = err => console.log("[notif] WS error", err);
     notifSocket.onclose = ev  => console.log("[notif] WS closed", ev.code, ev.reason);
-    notifSocket.onmessage = async ev => {
-        try {
-            const incoming = JSON.parse(ev.data);
-            if (incoming.type === "challenge_declined") {
-                (window as any).removeWaitingOverlay?.();
-            }
-            if (incoming.type === "presence") {
-                loadFriendsSidebar();
-                return;
-            }
-            const n = incoming as Notification;
-            notifications.unshift({ ...n, read: false });
-            updateBadge();
-            if (!panel?.classList.contains("hidden")) renderPanel();
-            if (n.type === "friend_accept") loadFriendsSidebar();
-        } catch (err) {
-            console.log("[notif] WS parse error", err);
+        notifSocket.onmessage = async ev => {
+      try {
+        const incoming = JSON.parse(ev.data);
+
+        /* 1️⃣  Challenger refreshed → drop the invite */
+        if (incoming.type === "challenge_cancelled") {
+          notifications = notifications.filter(
+            n => !(n.type === "challenge" && n.reference_id === incoming.from)
+          );
+          updateBadge();
+          if (!panel?.classList.contains("hidden")) renderPanel();
+          return;
         }
+
+        /* 2️⃣  Opponent declined while we were waiting */
+        if (incoming.type === "challenge_declined") {
+          (window as any).removeWaitingOverlay?.();
+        }
+
+        /* 3️⃣  Live presence update */
+        if (incoming.type === "presence") {
+          loadFriendsSidebar();
+          return;
+        }
+
+        /* 4️⃣  Normal notification payload */
+        const n = incoming as Notification;
+        notifications.unshift({ ...n, read: false });
+        updateBadge();
+        if (!panel?.classList.contains("hidden")) renderPanel();
+        if (n.type === "friend_accept") loadFriendsSidebar();
+      } catch (err) {
+        console.log("[notif] WS parse error", err);
+      }
     };
+
     window.addEventListener("beforeunload", () => {
         const t = localStorage.getItem("token");
         if (!t) return;

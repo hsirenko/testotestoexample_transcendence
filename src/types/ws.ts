@@ -14,5 +14,7 @@ export interface StateMsg {
 	scores: { left: number; right: number };
 }
 
+
+
 export type ServerMsg = StateMsg    | GameOverMsg | ReadyMsg | ErrorMsg
 export type ClientMsg = ClientMsgJoin | ClientMsgMove | ClientMsgStart

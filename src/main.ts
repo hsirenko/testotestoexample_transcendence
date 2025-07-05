@@ -102,18 +102,17 @@ async function showPlayerBadges(selfId: number, oppId: number) {
     const [me, opp] = await Promise.all([fetchUser(selfId), fetchUser(oppId)]);
 
     /* side-assignment block you already added — unchanged */
-    const selfOnLeft = !!ownGameId;
-
+    const selfOnLeft = mySide === "left";
     if (selfOnLeft) {
-      avatarLeft .src       = resolveAvatar(me.avatar_url);
-      avatarRight.src       = resolveAvatar(opp.avatar_url);
-      nameLeft .textContent = me .username;
-      nameRight.textContent = opp.username;
+              avatarLeft .src       = resolveAvatar(me .avatar_url);
+        avatarRight.src       = resolveAvatar(opp.avatar_url);
+        nameLeft .textContent = me .username;
+        nameRight.textContent = opp.username;
     } else {
-      avatarLeft .src       = resolveAvatar(opp.avatar_url);
-      avatarRight.src       = resolveAvatar(me .avatar_url);
-      nameLeft .textContent = opp.username;
-      nameRight.textContent = me .username;
+              avatarLeft .src       = resolveAvatar(me .avatar_url);
+        avatarRight.src       = resolveAvatar(opp.avatar_url);
+        nameLeft .textContent = me .username;
+        nameRight.textContent = opp.username;
     }
 
     [badgeLeft, badgeRight].forEach(b => (b.style.opacity = "1"));
@@ -660,9 +659,13 @@ function beginPlay(): void {
 let opponentId: number | null = null;
 let currentMatchId: number | null = null;
 let yourUserId: number | null = null;
-
+let mySide: "left" | "right" | null = null;
 // let isCreator   = false;
 // let isJoiner   = false;
+
+export function set_side(side: "left" | "right") {   //  ← NEW (lower-case name)
+  mySide = side;
+}
 
 const user = JSON.parse(localStorage.getItem("user") ?? "{}");
 yourUserId = user.id;
@@ -700,15 +703,11 @@ function waitForBothPlayers(): void {
 }
 
 function hideRemotePlayModal(): void {
-    /*  
-     *  The remote-play panel is injected with an id of either
-     *  "remotePlayModal" or "remote-play-modal" depending on the
-     *  builder function – cover both to be safe.
-     */
-    const modal =
-        document.getElementById("remote-modal");
+    const ov    = document.getElementById("remote-modal");
+    const inner = document.getElementById("remote-container");
 
-    if (modal) modal.remove();
+    if (inner) inner.classList.add("scale-95", "opacity-0");
+    if (ov)    ov.classList.add("hidden", "opacity-0");
 }
 
 function removeWaitingOverlay(): void {
@@ -768,6 +767,7 @@ function cleanupRemote() {
     document.body.classList.remove("game-playing");
     remoteMode = false;
 	hasJoined   = false;
+    mySide     = null;
     // isCreator   = false;
     // isJoiner = false;
     // remove any waiting/countdown overlays left behind
@@ -818,45 +818,39 @@ export function connectWebSocket() {
         if (msg.type === "error") {
             alert("WTF MAN :D");
         }
-        if (msg.type === "ready") {
+                if (msg.type === "ready") {
+
+                    if (mySide === null) {
+                        set_side(ownGameId && gameId === ownGameId ? "left" : "right");
+                    }
+                    
+            /* 1️⃣  both players are connected – clear the waiting banner */
+            removeWaitingOverlay();
+
+            /* 2️⃣  identify the opponent and show avatars */
             opponentId = msg.opponentId;
             showPlayerBadges(yourUserId!, opponentId);
-            // const token = localStorage.getItem("token");
-            // if (token && opponentId) {
-            //     const res = await fetch(`http://${HOST}:3000/api/match/start`, {
-            //         method: "POST",
-            //         headers: {
-            //             "Content-Type": "application/json",
-            //             Authorization: `Bearer ${token}`,
-            //         },
-            //         body: JSON.stringify({
-            //             player2_id: isJoiner ?  opponentId : yourUserId,
-            //             player1_id: isJoiner ? yourUserId : opponentId,
-            //         }),
-            //     });
-            //     if (res.ok) {
-            //         const { match_id } = await res.json();
-            //         currentMatchId    = match_id;
-            //         console.log("📝 match started →", currentMatchId);
-            //     }
-            // }
-            const waitingOverlay = document.getElementById("waiting-overlay");
-            const modal = document.getElementById("remote-modal")!;
+
+            /* 3️⃣  hide the “remote-play” modal if it happens to be open */
+            const modal = document.getElementById("remote-modal");
+            if (modal) modal.classList.add("hidden");
+
+            /* 4️⃣  reset UI & state, then reveal the board */
             document.getElementById("win-message")?.remove();
-            startGameRemote();
+            startGameRemote();     // un-hide the game container
             resetObjects();
             resizeCanvas();
             updateScore();
-            modal.classList.add("hidden");
-            waitingOverlay?.remove();
+
+            /* 5️⃣  three-second countdown, then start local loop and
+                     tell the server to run its physics */
             startCountdown(3, () => {
-                // 2) after the countdown, kick off local loop…
-                beginPlay();
-                // 3) …and tell the server to actually start its physics
+                beginPlay();       // starts the render/update loop
                 socket!.send(
                     JSON.stringify({ type: "start" } as ClientMsgStart)
                 );
             });
+
             return;
         }
         if (msg.type === "state") {
@@ -877,14 +871,13 @@ export function connectWebSocket() {
                 v: { x: B.v.x * sx, y: B.v.y * sy },
                 r: B.r * sx,
             };
-
+            
             if (msg.scores.left !== LScore || msg.scores.right !== RScore) {
                 const dir: 1 | -1 = msg.scores.left > LScore ? 1 : -1; // ← decide who scored first
 
                 LScore = msg.scores.left; // then update our local copies
                 RScore = msg.scores.right;
                 updateScore();
-                // pauseAndReset(dir); // one-second inter-round pause
             }
         } else if (msg.type === "gameOver") {
             // stop listening & close
@@ -895,38 +888,14 @@ export function connectWebSocket() {
                 "remote-join-btn"
             )! as HTMLButtonElement;
             const dir: 1 | -1 = msg.scores.left > LScore ? 1 : -1; // ← decide who scored first
-            LScore = msg.scores.left; // then update our local copies
+            LScore = msg.scores.left;
             RScore = msg.scores.right;
             updateScore();
             socket!.close();
-            // if (currentMatchId != null && opponentId != null) {
-            //     const token = localStorage.getItem("token");
-            //     console.log("XX =:" + yourUserId);
-            //     if (token) {
-            //         fetch(`http://${HOST}:3000/api/match/submit`, {
-            //             method: "POST",
-            //             headers: {
-            //                 "Content-Type": "application/json",
-            //                 Authorization: `Bearer ${token}`,
-            //             },
-            //             body: JSON.stringify({
-            //                 match_id: currentMatchId,
-            //                 winner_id:
-            //                     msg.winner === "left"
-            //                         ? /* left’s userId */ yourUserId
-            //                         : opponentId,
-            //                 score_p1: LScore,
-            //                 score_p2: RScore,
-            //             }),
-            //         }).catch(console.error);
-            //     }
-            //     currentMatchId = null;
-            // }
             handleWin(true);
             btnCreate.disabled = false;
             btnJoin.disabled = false;
-            // isMatchCreator = false;
-            // isCreator      = false;
+
             hasJoined = false;
             gameId = "";
         }
@@ -1056,6 +1025,9 @@ document.addEventListener("click", async (e) => {
         gameId     = data.gameId;
         remoteMode = true;
         ownGameId  = gameId;
+        set_side("left");
+        // const waitingLayer = document.getElementById("waiting-overlay");
+        // waitingLayer?.remove();
         connectWebSocket();          // join as player-1
     }
 
@@ -1119,6 +1091,8 @@ export function initRemoteModal(): void {
         remoteMode = true;
         // isCreator = true;
         // modal.classList.add('hidden');
+        ownGameId  = gameId;
+        
         connectWebSocket();
         inputId.value = data.gameId;
         sectCreate.classList.remove("hidden");
@@ -1154,16 +1128,8 @@ export function initRemoteModal(): void {
         // if (!id) return alert("Please enter a Game ID");
         gameId = id;
         remoteMode = true;
-        ownGameId = null;function showHome(): void {
-  // unhide the main dashboard / landing section
-  document.getElementById('home-screen')?.classList.remove('hidden');
-
-  // make sure other major sections are hidden
-  document.getElementById('game-screen')?.classList.add('hidden');
-
-  // extra clean-up if you have side panels etc.
-  document.body.classList.remove('game-playing');
-}
+        ownGameId  = null;
+        set_side("right");
 
         // hideOverlay(ov, inner);
         connectWebSocket();

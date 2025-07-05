@@ -50,7 +50,30 @@ export default fp(async function notifSocketRoutes (fastify: FastifyInstance) {
       fastify.notifConns.delete(uid);
       fastify.log.debug(`notif-ws: user ${uid} disconnected`);
 
-      /* no more sockets for this user → truly offline */
+      /* 1️⃣  cancel any still-pending challenges this user started */
+      const rows = db.prepare(`
+        SELECT id, user_id
+        FROM notifications
+        WHERE type = 'challenge' AND reference_id = ?
+      `).all(uid);
+
+      rows.forEach((row: { id: number; user_id: number }) => {
+        /* remove the invite from the DB */
+        db.prepare(`DELETE FROM notifications WHERE id = ?`).run(row.id);
+
+        /* tell the challenged player to drop the card */
+        const targ = fastify.notifConns.get(row.user_id);
+        if (targ && targ.readyState === targ.OPEN) {
+          targ.send(
+            JSON.stringify({
+              type: 'challenge_cancelled',
+              from: uid
+            })
+          );
+        }
+      });
+
+      /* 2️⃣  presence bookkeeping (unchanged) */
       if (![...fastify.notifConns.keys()].includes(uid)) {
         fastify.presence.delete(uid);
         broadcastPresence(uid, false, friends);
