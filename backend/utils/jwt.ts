@@ -11,7 +11,7 @@ if (!JWT_SECRET) {
 // Assert JWT_SECRET as string since we've checked it's not undefined
 const secret: string = JWT_SECRET;
 
-const TOKEN_EXPIRY = '24h';
+const TOKEN_EXPIRY = '1h';
 
 export interface JWTPayload {
   userId: number;
