@@ -213,14 +213,21 @@ document.addEventListener('keydown', e => {
  *  GENERIC OVERLAY HELPERS
  * =======================================================================*/
 function show(ov: HTMLElement, inner?: HTMLElement) {
-  ov.classList.remove("hidden","opacity-0","animate__fadeOut","animate__animated");
+  // Remove any hiding styles or Animate.css classes
+  ov.classList.remove("hidden", "opacity-0", "animate__fadeOut", "animate__animated", "animate__fadeIn");
+
+  // Instantly reset scale if needed
   if (inner) inner.classList.remove("scale-90");
-  ov.classList.add("opacity-0");
-  requestAnimationFrame(() => {
-    ov.classList.add("animate__animated","animate__fadeIn");
-    ov.classList.remove("opacity-0");
-  });
+
+  // Directly show it without any delay or animation
+  ov.style.transition = "none";         // disables any CSS transition
+  ov.classList.add("opacity-100");      // assume your visible state uses opacity-100
+
+  // (Optional) Force visibility immediately for safety
+  ov.offsetHeight; // trigger reflow
+  ov.style.removeProperty("transition");
 }
+
 function hide(ov: HTMLElement, inner?: HTMLElement) {
   if (ov.classList.contains("hidden")) return;
   ov.classList.remove("animate__fadeIn");
