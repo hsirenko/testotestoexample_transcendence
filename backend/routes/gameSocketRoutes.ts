@@ -46,7 +46,6 @@ export default async function gameSocketRoutes(fastify: FastifyInstance) {
           if (currentGame.players.size === 2) {
             const leftInfo  = currentGame.players.get('left')!;
             const rightInfo = currentGame.players.get('right')!;
-
             // 1) notify clients to start
             leftInfo.ws.send(JSON.stringify({
               type:       'ready',

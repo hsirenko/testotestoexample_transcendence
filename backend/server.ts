@@ -10,6 +10,10 @@ import dotenv from 'dotenv';
 import gameSocketRoutes from './routes/gameSocketRoutes';
 import notifSocketRoutes from './routes/notificationSocketRoutes';
 import tournamentSocketRoutes from './routes/tournamentSocketRoutes';
+import fastifyMultipart from "@fastify/multipart";
+import fastifyStatic from '@fastify/static';
+import path from 'path';
+import passwordResetRoutes from './routes/passwordReset';
 
 //Backend game
 import websocketPlugin from '@fastify/websocket';
@@ -25,6 +29,17 @@ fastify.register(websocketPlugin);
 fastify.register(tournamentSocketRoutes);
 
 dotenv.config();
+
+fastify.register(fastifyMultipart);
+
+/* ───────────────────────────────  static /uploads  ─────────────────────────── */
+fastify.register(fastifyStatic, {
+  root: path.join(process.cwd(), 'uploads'),  // <root>/uploads/…
+  prefix: '/uploads/',                        // files reachable at /uploads/…
+  decorateReply: false                        // we don’t need reply.send() sugar
+});
+/* --------------------------------------------------------------------------- */
+
 
 export const HOST = process.env.IP_ADDR;
 
@@ -69,6 +84,8 @@ const start = async () => {
 	await fastify.register(googleAuthRoutes);
 	await fastify.register(gameSocketRoutes);
 	await fastify.register(notifSocketRoutes);
+await fastify.register(passwordResetRoutes);   //  ⬅️ add this line
+
 	
 
     // Protected routes

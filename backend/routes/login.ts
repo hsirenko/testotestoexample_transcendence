@@ -16,7 +16,7 @@ export default async function loginRoutes(fastify: FastifyInstance) {
     }
 
     const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-
+    
     if (!user) {
       return reply.status(400).send({ error: 'Invalid email or password' });
     }
@@ -58,7 +58,8 @@ export default async function loginRoutes(fastify: FastifyInstance) {
         username: user.username,
         email: user.email,
         xp_level: user.xp_level,
-        trophies: user.trophies
+        trophies: user.trophies,
+        avatar_url: user.avatar_url 
       }
     });
   });

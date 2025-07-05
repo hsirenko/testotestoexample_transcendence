@@ -57,6 +57,48 @@ function renderPanel(): void {
 	if (!panel) return;
 	panel.innerHTML = "";
 
+	/* top spacer so items don’t “stick” to the rounded border */
+	const header = document.createElement("div");
+	header.className = "relative h-6 mb-2";   // 1.5 rem tall spacer
+
+	/* red trash-can to clear the list */
+	const clearBtn = document.createElement("button");
+	clearBtn.setAttribute("aria-label", "Clear notifications");
+	clearBtn.className =
+		"absolute right-0 top-0 text-white-500 hover:text-red-600 " +
+		"transition-transform duration-200 hover:scale-110";
+
+	/* heroicons/solid trash 20 px  – drop in any SVG you like */
+	clearBtn.innerHTML = `
+		<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+		  <path fill-rule="evenodd"
+		    d="M6 2a1 1 0 011-1h6a1 1 0 011 1v1h4a1 1 0 010 2h-1v11a3 3 0
+		       01-3 3H5a3 3 0 01-3-3V5H1a1 1 0 010-2h4V2zm2 4a1 1 0
+		       10-2 0v9a1 1 0 102 0V6zm4 0a1 1 0
+		       10-2 0v9a1 1 0 102 0V6z"
+		    clip-rule="evenodd"/>
+		</svg>`;
+
+	/* optional behaviour – wipe client list & refresh badge */
+	clearBtn.onclick = async (e) => {
+		notifications = [];
+		const me = JSON.parse(localStorage.getItem("user") || "{}");
+		e.stopPropagation();
+		const t = localStorage.getItem("token")!;
+	await fetch(`http://${HOST}:3000/api/notifications`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${t}` },
+  });
+	notifications = notifications.filter(x => x.id !== me.id);
+		renderPanel();      // re-render empty state
+		updateBadge();      // badge already exists lower in the file
+
+		//here you will apply the logic to remove the notf from the db
+	};
+
+	header.appendChild(clearBtn);
+	panel.appendChild(header);
+
 	if (notifications.length === 0) {
 		const empty = document.createElement("p");
 		empty.className = "text-center text-sm text-white/70";
@@ -97,43 +139,17 @@ function renderPanel(): void {
 		 * ==========================================================*/
 		if (n.gameId) {
 			const box = document.createElement("div");
-			box.className = "ml-auto flex gap-2";
+			box.className = "relative left-[-20px] ml-auto flex gap-2";
 
-			/* Accept */
 			const accept = document.createElement("button");
 			accept.textContent = "Accept";
 			accept.className =
-				"px-3 py-1 rounded-full bg-emerald-500 hover:bg-emerald-600 " +
+				"px-2 py-1 rounded-full bg-emerald-500 hover:bg-emerald-600 " +
 				"text-sm font-semibold transition";
 
 			accept.onclick = async (e) => {
 				e.stopPropagation();
 
-				/* 🔸 (optional tidying) mark as read on the server */
-				// const t = localStorage.getItem("token")!;
-				// await fetch(`http://${HOST}:3000/api/notifications/${n.id}/read`, {
-				// 	method: "POST",
-				// 	headers: { Authorization: `Bearer ${t}` },
-				// });
-
-				/* 🔸 start the match – useful for stats/history tables        */
-				// const me   = JSON.parse(localStorage.getItem("user") || "{}");
-				// if (n.reference_id) {
-				// 	await fetch(`http://${HOST}:3000/api/match/start`, {
-				// 		method: "POST",
-				// 		headers: {
-				// 			"Content-Type": "application/json",
-				// 			Authorization: `Bearer ${t}`,
-				// 		},
-				// 		body: JSON.stringify({
-				// 			player1_id: n.reference_id, // challenger
-				// 			player2_id: me.id,          // us
-				// 			tournament_id: null,
-				// 		}),
-				// 	});
-				// }
-
-				/* 🔸 jump into the challenger’s room */
 				setGameId(n.gameId!);
 				enableRemoteMode();
 				connectWebSocket();
@@ -149,7 +165,7 @@ function renderPanel(): void {
 			const decline = document.createElement("button");
 			decline.textContent = "Decline";
 			decline.className =
-				"px-3 py-1 rounded-full bg-rose-500 hover:bg-rose-600 " +
+				"px-2 py-1 rounded-full bg-rose-500 hover:bg-rose-600 " +
 				"text-sm font-semibold transition";
 
 			decline.onclick = async (e) => {
@@ -220,7 +236,7 @@ function renderPanel(): void {
 			const decline = document.createElement("button");
 			decline.textContent = "Decline";
 			decline.className =
-				"px-3 py-1 rounded-full bg-rose-500 hover:bg-rose-600 " +
+				"left-20 px-3 py-1 rounded-full bg-rose-500 hover:bg-rose-600 " +
 				"text-sm font-semibold transition";
 			decline.onclick = (e) => respond(e, "decline", decline);
 
@@ -313,78 +329,68 @@ updateBadge();
 //MHEISENBERG
 // 2. connect to WS so we get new ones in real time
 function startNotificationsSocket(): void {
-	const token = localStorage.getItem("token");
-	if (!token) {
-		console.log("[notif] no token, skipping WS connect");
-		return;
-	}
+    const token = localStorage.getItem("token");
+    if (!token) {
+        console.log("[notif] no token, skipping WS connect");
+        return;
+    }
+    const wsUrl = `ws://${HOST}:3000/ws/notifications?token=${token}`;
+    const me = JSON.parse(localStorage.getItem("user") || "{}");
+    const myUserId = me.id;
+    console.log("[notif] connecting to WS at", wsUrl);
+    notifSocket = new WebSocket(wsUrl);
+    notifSocket.onopen  = () => console.log("[notif] WS open");
+    notifSocket.onerror = err => console.log("[notif] WS error", err);
+    notifSocket.onclose = ev  => console.log("[notif] WS closed", ev.code, ev.reason);
+        notifSocket.onmessage = async ev => {
+      try {
+        const incoming = JSON.parse(ev.data);
 
-	const wsUrl = `ws://${HOST}:3000/ws/notifications?token=${token}`;
-	const me = JSON.parse(localStorage.getItem("user") || "{}");
-	const myUserId = me.id;
+        /* 1️⃣  Challenger refreshed → drop the invite */
+        if (incoming.type === "challenge_cancelled") {
+          notifications = notifications.filter(
+            n => !(n.type === "challenge" && n.reference_id === incoming.from)
+          );
+          updateBadge();
+          if (!panel?.classList.contains("hidden")) renderPanel();
+          return;
+        }
 
-	console.log("[notif] connecting to WS at", wsUrl);
-	notifSocket = new WebSocket(wsUrl);
+        /* 2️⃣  Opponent declined while we were waiting */
+        if (incoming.type === "challenge_declined") {
+          (window as any).removeWaitingOverlay?.();
+        }
 
-	notifSocket.onopen  = () => console.log("[notif] WS open");
-	notifSocket.onerror = (err) => console.log("[notif] WS error", err);
-	notifSocket.onclose = (ev) =>
-		console.log("[notif] WS closed", ev.code, ev.reason);
+        /* 3️⃣  Live presence update */
+        if (incoming.type === "presence") {
+          loadFriendsSidebar();
+          return;
+        }
 
-	notifSocket.onmessage = async (ev) => {
-		try {
-			const incoming = JSON.parse(ev.data) as Notification;
-			notifications.unshift({ ...incoming, read: false });
-			updateBadge();
-			if (!panel?.classList.contains("hidden")) renderPanel();
-			if (incoming.type === "friend_accept") loadFriendsSidebar();
+        /* 4️⃣  Normal notification payload */
+        const n = incoming as Notification;
+        notifications.unshift({ ...n, read: false });
+        updateBadge();
+        if (!panel?.classList.contains("hidden")) renderPanel();
+        if (n.type === "friend_accept") loadFriendsSidebar();
+      } catch (err) {
+        console.log("[notif] WS parse error", err);
+      }
+    };
 
-			/* ------------------------------------------------------------
-			 * CHALLENGE – user clicks “Accept”
-			 * -----------------------------------------------------------*/
-			// if (incoming.type === "challenge") {
-			// 	const accepted = confirm(`${incoming.text}\nAccept?`);
-			// 	if (!accepted) {
-			// 		const t = localStorage.getItem("token")!;
-			// 		await fetch(
-			// 			`http://${HOST}:3000/api/notifications/${incoming.id}`,
-			// 			{ method: "DELETE", headers: { Authorization: `Bearer ${t}` } }
-			// 		);
-			// 		return;
-			// 	}
-
-			// 	if (!incoming.gameId) {
-			// 		alert("Challenge did not include a game ID. Please try again.");
-			// 		return;
-			// 	}
-
-			// 	/* Join the challenger’s existing room */
-			// 	setGameId(incoming.gameId);
-			// 	enableRemoteMode();
-			// 	connectWebSocket();
-
-			// 	// /* Announce the match so stats & history tables stay in sync */
-			// 	// const t = localStorage.getItem("token");
-			// 	// if (t) {
-			// 	// 	await fetch(`http://${HOST}:3000/api/match/start`, {
-			// 	// 		method: "POST",
-			// 	// 		headers: {
-			// 	// 			"Content-Type": "application/json",
-			// 	// 			Authorization: `Bearer ${t}`,
-			// 	// 		},
-			// 	// 		body: JSON.stringify({
-			// 	// 			player1_id: incoming.reference_id, // challenger
-			// 	// 			player2_id: myUserId,              // us
-			// 	// 			tournament_id: null,
-			// 	// 		}),
-			// 	// 	});
-			// 	// }
-			// }
-		} catch (err) {
-			console.log("[notif] WS parse error", err);
-		}
-	};
+    window.addEventListener("beforeunload", () => {
+        const t = localStorage.getItem("token");
+        if (!t) return;
+        notifications.filter(n => n.type === "challenge").forEach(n => {
+            fetch(`http://${HOST}:3000/api/notifications/${n.id}`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${t}` },
+                keepalive: true
+            });
+        });
+    });
 }
+
 
 
 export function initNotifications() {

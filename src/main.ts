@@ -11,7 +11,7 @@ import {
     ServerMsg,
 } from "./types/ws.js";
 
-import { fetchFriends } from "./friends.js";
+import { fetchFriends, resolveAvatar } from "./friends.js";
 
 import { HOST } from "./config.js";
 import { showOverlay, hideOverlay } from "./tournament.js";
@@ -68,6 +68,59 @@ const CanvasHtml = document.getElementById("pong-canvas") as HTMLCanvasElement;
 const ctx = CanvasHtml.getContext("2d")!;
 const sLeft = document.getElementById("score-left")!;
 const sRight = document.getElementById("score-right")!;
+/* ------------------------------------------------------------------
+ * Badge handles
+ * ----------------------------------------------------------------*/
+/* chips already exist in index.html – just cache handles */
+const badgeLeft   = document.querySelector<HTMLDivElement> ('#badge-left')!;
+const badgeRight  = document.querySelector<HTMLDivElement> ('#badge-right')!;
+const avatarLeft  = document.querySelector<HTMLImageElement>('#avatar-left')!;
+const avatarRight = document.querySelector<HTMLImageElement>('#avatar-right')!;
+const nameLeft    = document.querySelector<HTMLSpanElement> ('#name-left')!;
+const nameRight   = document.querySelector<HTMLSpanElement> ('#name-right')!;
+
+function hidePlayerBadges() {
+  [badgeLeft, badgeRight].forEach(b => (b.style.opacity = "0"));
+}
+
+/* auth header for plain fetches ---------------------------------- */
+const authHdr = (): HeadersInit => {
+  const t = localStorage.getItem('token');
+  return t ? { Authorization: `Bearer ${t}` } : {};
+};
+
+
+async function showPlayerBadges(selfId: number, oppId: number) {
+  try {
+    const fetchUser = (id: number) =>
+      fetch(`http://${HOST}:3000/api/users/${id}`, { headers: authHdr() })
+        .then(r => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.json();
+        });
+
+    const [me, opp] = await Promise.all([fetchUser(selfId), fetchUser(oppId)]);
+
+    /* side-assignment block you already added — unchanged */
+    const selfOnLeft = mySide === "left";
+    if (selfOnLeft) {
+              avatarLeft .src       = resolveAvatar(me .avatar_url);
+        avatarRight.src       = resolveAvatar(opp.avatar_url);
+        nameLeft .textContent = me .username;
+        nameRight.textContent = opp.username;
+    } else {
+              avatarLeft .src       = resolveAvatar(me .avatar_url);
+        avatarRight.src       = resolveAvatar(opp.avatar_url);
+        nameLeft .textContent = me .username;
+        nameRight.textContent = opp.username;
+    }
+
+    [badgeLeft, badgeRight].forEach(b => (b.style.opacity = "1"));
+  } catch (err) {
+    console.error("⚠️  Could not load player badges", err);
+  }
+}
+
 
 /* ------------------------------------------------------------------
  * Game-state variables
@@ -400,6 +453,7 @@ function startCountdown(sec: number, callback: () => void): void {
     let remaining = sec;
     const overlay = document.createElement("div");
     overlay.id = "countdown-overlay";
+    document.body.classList.add("game-playing");
     Object.assign(overlay.style, {
         position: "fixed",
         inset: "0",
@@ -431,6 +485,12 @@ function startCountdown(sec: number, callback: () => void): void {
 /* ═════════════ WIN MESSAGE ═════════════ */
 function handleWin(remote: boolean): void {
 
+    const ov = document.getElementById('tournament-overlay')!;
+      ov.style.zIndex        = '40';
+      ov.style.pointerEvents = 'auto';
+      ov.style.background    = 'rgba(0,0,0,0.6)';
+
+      
     playing = false;
     //reshow that shit
     document.body.classList.remove("game-playing");
@@ -584,6 +644,7 @@ function handleWin(remote: boolean): void {
 }
 
 function beginPlay(): void {
+    if (!remoteMode) hidePlayerBadges();
     playing = true;
     document.body.classList.add("game-playing");
     lastTime = performance.now();
@@ -598,9 +659,13 @@ function beginPlay(): void {
 let opponentId: number | null = null;
 let currentMatchId: number | null = null;
 let yourUserId: number | null = null;
-
+let mySide: "left" | "right" | null = null;
 // let isCreator   = false;
 // let isJoiner   = false;
+
+export function set_side(side: "left" | "right") {   //  ← NEW (lower-case name)
+  mySide = side;
+}
 
 const user = JSON.parse(localStorage.getItem("user") ?? "{}");
 yourUserId = user.id;
@@ -610,25 +675,47 @@ const auth = (): HeadersInit => {
     return t ? { Authorization: `Bearer ${t}` } : {};
 };
 
-function waitForBothPlayers() {
+function waitForBothPlayers(): void {
     const waitingOverlay = document.createElement("div");
     waitingOverlay.id = "waiting-overlay";
-    Object.assign(waitingOverlay.style, {
-        position: "fixed",
-        inset: "0",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: "4rem",
-        fontWeight: "800",
-        color: "#fff",
-        backdropFilter: "blur(3px)",
-        zIndex: "100",
-        pointerEvents: "none",
-    } as Partial<CSSStyleDeclaration>);
-    waitingOverlay.textContent = "Waiting for the other player to join :P";
+
+    Object.assign(
+        waitingOverlay.style,
+        {
+            position: "fixed",
+            inset: "0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "4rem",
+            fontWeight: "800",
+            color: "#fff",
+            backdropFilter: "blur(3px)",
+            zIndex: "100",
+            pointerEvents: "all",     // block every click underneath
+        } as Partial<CSSStyleDeclaration>
+    );
+
+    waitingOverlay.textContent =
+        "Waiting for the other player to join :P";
+
     document.body.appendChild(waitingOverlay);
 }
+
+function hideRemotePlayModal(): void {
+    const ov    = document.getElementById("remote-modal");
+    const inner = document.getElementById("remote-container");
+
+    if (inner) inner.classList.add("scale-95", "opacity-0");
+    if (ov)    ov.classList.add("hidden", "opacity-0");
+}
+
+function removeWaitingOverlay(): void {
+    const ov = document.getElementById("waiting-overlay");
+    if (ov) ov.remove();
+}
+(window as any).removeWaitingOverlay = removeWaitingOverlay;
+
 
 function startGameRemote() {
     const game = document.getElementById("game-container") as HTMLElement;
@@ -680,6 +767,7 @@ function cleanupRemote() {
     document.body.classList.remove("game-playing");
     remoteMode = false;
 	hasJoined   = false;
+    mySide     = null;
     // isCreator   = false;
     // isJoiner = false;
     // remove any waiting/countdown overlays left behind
@@ -687,6 +775,7 @@ function cleanupRemote() {
     document.getElementById("countdown-overlay")?.remove();
     // hide remote modal if it’s still up
     document.getElementById("remote-modal")?.classList.add("hidden");
+    hidePlayerBadges();
 }
 
 export function setGameId(id: string) {
@@ -729,44 +818,39 @@ export function connectWebSocket() {
         if (msg.type === "error") {
             alert("WTF MAN :D");
         }
-        if (msg.type === "ready") {
+                if (msg.type === "ready") {
+
+                    if (mySide === null) {
+                        set_side(ownGameId && gameId === ownGameId ? "left" : "right");
+                    }
+                    
+            /* 1️⃣  both players are connected – clear the waiting banner */
+            removeWaitingOverlay();
+
+            /* 2️⃣  identify the opponent and show avatars */
             opponentId = msg.opponentId;
-            // const token = localStorage.getItem("token");
-            // if (token && opponentId) {
-            //     const res = await fetch(`http://${HOST}:3000/api/match/start`, {
-            //         method: "POST",
-            //         headers: {
-            //             "Content-Type": "application/json",
-            //             Authorization: `Bearer ${token}`,
-            //         },
-            //         body: JSON.stringify({
-            //             player2_id: isJoiner ?  opponentId : yourUserId,
-            //             player1_id: isJoiner ? yourUserId : opponentId,
-            //         }),
-            //     });
-            //     if (res.ok) {
-            //         const { match_id } = await res.json();
-            //         currentMatchId    = match_id;
-            //         console.log("📝 match started →", currentMatchId);
-            //     }
-            // }
-            const waitingOverlay = document.getElementById("waiting-overlay");
-            const modal = document.getElementById("remote-modal")!;
+            showPlayerBadges(yourUserId!, opponentId);
+
+            /* 3️⃣  hide the “remote-play” modal if it happens to be open */
+            const modal = document.getElementById("remote-modal");
+            if (modal) modal.classList.add("hidden");
+
+            /* 4️⃣  reset UI & state, then reveal the board */
             document.getElementById("win-message")?.remove();
-            startGameRemote();
+            startGameRemote();     // un-hide the game container
             resetObjects();
             resizeCanvas();
             updateScore();
-            modal.classList.add("hidden");
-            waitingOverlay?.remove();
+
+            /* 5️⃣  three-second countdown, then start local loop and
+                     tell the server to run its physics */
             startCountdown(3, () => {
-                // 2) after the countdown, kick off local loop…
-                beginPlay();
-                // 3) …and tell the server to actually start its physics
+                beginPlay();       // starts the render/update loop
                 socket!.send(
                     JSON.stringify({ type: "start" } as ClientMsgStart)
                 );
             });
+
             return;
         }
         if (msg.type === "state") {
@@ -787,14 +871,13 @@ export function connectWebSocket() {
                 v: { x: B.v.x * sx, y: B.v.y * sy },
                 r: B.r * sx,
             };
-
+            
             if (msg.scores.left !== LScore || msg.scores.right !== RScore) {
                 const dir: 1 | -1 = msg.scores.left > LScore ? 1 : -1; // ← decide who scored first
 
                 LScore = msg.scores.left; // then update our local copies
                 RScore = msg.scores.right;
                 updateScore();
-                // pauseAndReset(dir); // one-second inter-round pause
             }
         } else if (msg.type === "gameOver") {
             // stop listening & close
@@ -805,38 +888,14 @@ export function connectWebSocket() {
                 "remote-join-btn"
             )! as HTMLButtonElement;
             const dir: 1 | -1 = msg.scores.left > LScore ? 1 : -1; // ← decide who scored first
-            LScore = msg.scores.left; // then update our local copies
+            LScore = msg.scores.left;
             RScore = msg.scores.right;
             updateScore();
             socket!.close();
-            // if (currentMatchId != null && opponentId != null) {
-            //     const token = localStorage.getItem("token");
-            //     console.log("XX =:" + yourUserId);
-            //     if (token) {
-            //         fetch(`http://${HOST}:3000/api/match/submit`, {
-            //             method: "POST",
-            //             headers: {
-            //                 "Content-Type": "application/json",
-            //                 Authorization: `Bearer ${token}`,
-            //             },
-            //             body: JSON.stringify({
-            //                 match_id: currentMatchId,
-            //                 winner_id:
-            //                     msg.winner === "left"
-            //                         ? /* left’s userId */ yourUserId
-            //                         : opponentId,
-            //                 score_p1: LScore,
-            //                 score_p2: RScore,
-            //             }),
-            //         }).catch(console.error);
-            //     }
-            //     currentMatchId = null;
-            // }
             handleWin(true);
             btnCreate.disabled = false;
             btnJoin.disabled = false;
-            // isMatchCreator = false;
-            // isCreator      = false;
+
             hasJoined = false;
             gameId = "";
         }
@@ -875,9 +934,13 @@ const ASTRONAUT =
   "illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
 
 function getAvatarUrl(f: Friend): string {
-  const url = (f.avatar_url ?? "").trim();
-  return url.length ? url : ASTRONAUT;
+  const val = f.avatar_url?.trim() ?? "";
+  if (!val) return ASTRONAUT;
+  if (/^https?:\/\//i.test(val)) return val;
+  return `http://${HOST}:3000/uploads/${val}`;
 }
+
+
 //open and close functionality for the challenge pop up
 function openChallengeModal(): void {
     challengeModal.classList.remove("hidden");
@@ -939,50 +1002,48 @@ challengeModal.addEventListener("click", (e) => {
 });
 
 document.addEventListener("click", async (e) => {
-  const btn = (e.target as HTMLElement).closest(
-    ".challenge-send-btn"
-  ) as HTMLButtonElement;
-  if (!btn) return;
+    const btn = (e.target as HTMLElement).closest(
+        ".challenge-send-btn"
+    ) as HTMLButtonElement;
+    if (!btn) return;
 
-  const targetId = Number(btn.dataset.id);
-  if (!targetId) return;
+    const targetId = Number(btn.dataset.id);
+    if (!targetId) return;
 
-  /* ----------------------------------------------------------------
-   * Ensure the challenger already owns a game room.
-   * If the user opened the Remote-Play modal and hit “Create” then
-   * `gameId` is already set.  If they jumped straight to “Challenge”
-   * we create the room here on-the-fly.
-   * ----------------------------------------------------------------*/
-  if (!gameId) {
-    const resGame = await fetch(`http://${HOST}:3000/api/game`, {
-      method: "POST",
-      headers: auth(),
+    /* ❶ Instantly get rid of all pop-ups/dialogs */
+    closeChallengeModal();   // the user list
+    hideRemotePlayModal();   // the Remote Play panel
+    waitForBothPlayers();    // show the waiting overlay right now
+
+    /* ❷ Make sure we own (or create) a game room */
+    if (!gameId) {
+        const res = await fetch(`http://${HOST}:3000/api/game`, {
+            method: "POST",
+            headers: auth(),
+        });
+        const data = (await res.json()) as { gameId: string };
+        gameId     = data.gameId;
+        remoteMode = true;
+        ownGameId  = gameId;
+        set_side("left");
+        // const waitingLayer = document.getElementById("waiting-overlay");
+        // waitingLayer?.remove();
+        connectWebSocket();          // join as player-1
+    }
+
+    /* ❸ Send the actual challenge */
+    const token = localStorage.getItem("token");
+    await fetch(`http://${HOST}:3000/api/challenge`, {
+        method : "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization : `Bearer ${token}`,
+        },
+        body: JSON.stringify({ toUserId: targetId, gameId }),
     });
-    const data = (await resGame.json()) as { gameId: string };
-    gameId = data.gameId;
-    remoteMode = true;
-    ownGameId = gameId;      // we are the room owner
-    connectWebSocket();      // open WS and JOIN as player-1
-    waitForBothPlayers();    // show overlay “Waiting for the other player…”
-  }
-
-  /* ----------------------------------------------------------------
-   * Send the challenge **together with the room’s gameId** so the
-   * recipient can join this same room instead of spinning up a new one
-   * ----------------------------------------------------------------*/
-  const token = localStorage.getItem("token");
-  await fetch(`http://${HOST}:3000/api/challenge`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ toUserId: targetId, gameId }),
-  });
-
-//   alert("Challenge sent!");
-  closeChallengeModal();
 });
+
+
 
 export function initRemoteModal(): void {
     const ov = document.getElementById("remote-modal")!; // overlay
@@ -1030,6 +1091,8 @@ export function initRemoteModal(): void {
         remoteMode = true;
         // isCreator = true;
         // modal.classList.add('hidden');
+        ownGameId  = gameId;
+        
         connectWebSocket();
         inputId.value = data.gameId;
         sectCreate.classList.remove("hidden");
@@ -1065,16 +1128,8 @@ export function initRemoteModal(): void {
         // if (!id) return alert("Please enter a Game ID");
         gameId = id;
         remoteMode = true;
-        ownGameId = null;function showHome(): void {
-  // unhide the main dashboard / landing section
-  document.getElementById('home-screen')?.classList.remove('hidden');
-
-  // make sure other major sections are hidden
-  document.getElementById('game-screen')?.classList.add('hidden');
-
-  // extra clean-up if you have side panels etc.
-  document.body.classList.remove('game-playing');
-}
+        ownGameId  = null;
+        set_side("right");
 
         // hideOverlay(ov, inner);
         connectWebSocket();

@@ -6,10 +6,15 @@ import { HOST }                             from './config.js';
 import {
   enableRemoteMode,
   setGameId,
-  connectWebSocket
+  connectWebSocket,
+  set_side
 } from './main.js';
 
 export { showOverlay, hideOverlay };
+
+/* cache DOM -----------------------------------------------------------*/
+const sharePanel   = document.getElementById('tour-share-panel')  as HTMLDivElement;
+
 
 /* ───── html refs (same IDs as before) ───── */
 const ov          = document.getElementById('tournament-overlay')   as HTMLElement;
@@ -21,7 +26,8 @@ const stepCreated = document.getElementById('tour-step-created')!;
 const stepJoin    = document.getElementById('tour-step-join')!;
 const stepBracket = document.getElementById('tour-step-bracket')!;
 
-const createdCode = document.getElementById('tour-created-code')!;
+/* grab the <div> that will hold the tournament code */
+const createdCode = document.getElementById('tour-created-code') as HTMLDivElement;
 const codeInput   = document.getElementById('tour-code-input')  as HTMLInputElement;
 const errorEl     = document.getElementById('tour-error')!;
 const bracketHint = document.getElementById('bracket-hint')!;
@@ -29,9 +35,63 @@ const bracketHint = document.getElementById('bracket-hint')!;
 const slotEls = Array.from(document.querySelectorAll<HTMLDivElement>('[data-slot]'));
 const YOU     = localStorage.getItem('username') ?? 'you';
 
+//tournament remote play background to hide bracket
+const backdrop = document.getElementById('game-backdrop')!;
+
+
 /* ───── runtime state ───── */
 let code       = '';
 let socket: WebSocket;
+
+
+
+function showGameBackdrop()  { backdrop.classList.remove('hidden', 'opacity-0'); }
+function hideGameBackdrop()  { backdrop.classList.add   ('hidden', 'opacity-0'); }
+
+
+/*──────────────────────────────────────────────────────────────*
+ *  CREATE  (owner)
+ *──────────────────────────────────────────────────────────────*/
+document.getElementById('tour-create-btn')?.addEventListener('click', async () => {
+  try {
+    const { code: c } = await createTournament(
+      localStorage.getItem('token')!,
+      'Bracket'
+    );
+
+    code = c;
+    localStorage.setItem('tournamentCode', c);   // ★ persist for reloads
+    createdCode.textContent = c;
+
+    sharePanel.classList.remove('hidden');       // show “share” strip
+    connectWs();                                 // open socket with valid code
+    goto(stepBracket);                           // jump to lobby
+  } catch (err: any) {
+    alert(err.message || err);
+  }
+});
+
+
+/*──────────────────────────────────────────────────────────────*
+ *  JOIN  (other players)
+ *──────────────────────────────────────────────────────────────*/
+document.getElementById('tour-join-btn')?.addEventListener('click', async () => {
+  try {
+    const input = document.getElementById('tour-code-input') as HTMLInputElement;
+    code = input.value.trim().toUpperCase();
+    await joinTournament(localStorage.getItem('token')!, code);
+
+    localStorage.setItem('tournamentCode', code); // ★ persist for reloads
+    sharePanel.classList.add('hidden');           // hide for joiners
+    connectWs();                                  // open socket with valid code
+    goto(stepBracket);                            // jump to lobby
+  } catch (err: any) {
+    alert(err.message || err);
+  }
+});
+
+
+
 
 /*──────────────────────────────────────────────────────────────*
  *  CREATE / JOIN handlers
@@ -41,13 +101,48 @@ document.getElementById('tour-create-btn')?.addEventListener('click', async () =
     const { code: c } = await createTournament(localStorage.getItem('token')!, 'Bracket');
     code = c;
     createdCode.textContent = c;
-    goto(stepCreated);
 
     connectWs();                      // connect early
+    goto(stepBracket);                // 👈 show bracket immediately
   } catch (err:any) {
     alert(err.message);
   }
 });
+
+/*──────────────────────────────────────────────────────────────*
+ *  SHARE-CODE copy helper  (NEW)
+ *──────────────────────────────────────────────────────────────*/
+const copyBtn = document.getElementById('tour-copy-code') as HTMLButtonElement | null;
+
+function flashCopied(btn: HTMLButtonElement) {
+  const saved = btn.textContent;
+  btn.textContent = 'Copied!';
+  setTimeout(() => (btn.textContent = saved), 1500);
+}
+
+copyBtn?.addEventListener('click', () => {
+  if (!code) return;                                  // nothing to copy
+
+  // Modern Clipboard API – works only on secure origins (HTTPS or localhost)
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard
+      .writeText(code)
+      .then(() => copyBtn && flashCopied(copyBtn))
+      .catch(err => alert(`Clipboard error: ${err.message}`));
+    return;
+  }
+
+  // Fallback for plain HTTP or very old browsers
+  const tmp = document.createElement('input');
+  tmp.value = code;
+  document.body.appendChild(tmp);
+  tmp.select();
+  document.execCommand('copy');
+  document.body.removeChild(tmp);
+  if (copyBtn) flashCopied(copyBtn);
+});
+
+
 
 document.getElementById('tour-confirm-join-btn')?.addEventListener('click', async () => {
   try {
@@ -60,77 +155,137 @@ document.getElementById('tour-confirm-join-btn')?.addEventListener('click', asyn
   }
 });
 
+
 /*──────────────────────────────────────────────────────────────*
- *  Web-socket helper
+ *  Web-socket helper  – now clears stale data when finished
  *──────────────────────────────────────────────────────────────*/
 function connectWs() {
-  socket = new WebSocket(`ws://${HOST}:3000/ws/tournament?token=${localStorage.getItem('token')}&code=${code}`);
+  /* after a hard-refresh, resurrect the stored code (if any) */
+  if (!code) {
+    const stored = localStorage.getItem('tournamentCode');
+    if (stored) code = stored;
+  }
+  if (!code) return;            // nothing to connect to → abort
 
-	socket.addEventListener('message', ev => {
-	const msg = JSON.parse(ev.data);
+  socket = new WebSocket(
+    `ws://${HOST}:3000/ws/tournament?token=${localStorage.getItem('token')}&code=${code}`
+  );
 
-	if (msg.type === 'tournamentStart') {
-		updateSlots(msg.players);
-	}
+  socket.addEventListener('message', ev => {
+    const msg = JSON.parse(ev.data);
 
-	/*───────────────────────────────────────────────*
-	*  When a semi-final or the final is assigned
-	*───────────────────────────────────────────────*/
-	if (msg.type === 'gameAssigned' || msg.type === 'finalAssigned') {
-		// ▲ this part was already there ▼ everything below is new / tweaked
-		const stored = localStorage.getItem('user');
-    const raw = stored ? JSON.parse(stored) : null;
-		const me = raw ? Number(raw.id ?? raw.userId) : NaN;
+    if (msg.type === 'tournamentClosed'){
+      socket.close();
+      hideOverlay(ov, box);
+      alert('The creator cancelled the tournament.');
+      pushHome();
+    }
 
-		if (msg.players.includes(me)) {
-		/* I’m playing → close bracket modal & jump into the game */
-		hideOverlay(ov, box);
-    
+    /* live roster refresh --------------------------------------------------*/
+    if (msg.type === 'playersUpdate') {
+      updateSlots(msg.players);
 
-		enableRemoteMode();          // switch main UI to remote-play
-		setGameId(msg.gameId);       // store the id for /ws/game
-    pushGame(msg.gameId);
-		connectWebSocket();          // actually join the match
-		}
+      const missing = 4 - msg.players.length;
+      bracketHint.textContent =
+        missing > 0
+          ? `Waiting for ${missing} more player${missing > 1 ? 's' : ''}…`
+          : 'Bracket ready – pairing players…';
+    }
 
-		bracketHint.textContent = 'A match is running…';
-	}
+    /* server confirms the bracket begins ----------------------------------*/
+    if (msg.type === 'tournamentStart') {
+      updateSlots(msg.players);
+      bracketHint.textContent = 'Pairing players…';
+    }
 
-	if (msg.type === 'tournamentFinished') {
-		bracketHint.textContent = `🏆  Winner: ${msg.winnerId}`;
-    pushHome();
-	}
-	});
+    /* semi-final or final assignment --------------------------------------*/
+    if (msg.type === 'gameAssigned' || msg.type === 'finalAssigned') {
+      const stored = localStorage.getItem('user');
+      const raw    = stored ? JSON.parse(stored) : null;
+      const me     = raw ? Number(raw.id ?? raw.userId) : NaN;
+
+      if (msg.players.includes(me)) {
+        
+        //hideOverlay(ov, box);
+
+        const ov = document.getElementById('tournament-overlay')!;
+        ov.style.zIndex        = '0';
+        ov.style.pointerEvents = 'none';         
+        ov.style.background    = 'transparent';
+        set_side(msg.players[0] === me ? "left" : "right");
+
+
+        showGameBackdrop();
+
+        enableRemoteMode();
+        setGameId(msg.gameId);
+        pushGame(msg.gameId);
+        connectWebSocket();          // hook into /ws/game
+      }
+
+      bracketHint.textContent = 'A match is running…';
+    }
+
+    /* tournament over – tidy up & forget the code -------------------------*/
+    if (msg.type === 'tournamentFinished') {
+
+      const ov = document.getElementById('tournament-overlay')!;
+      ov.style.zIndex        = '40';
+      ov.style.pointerEvents = 'auto';
+      ov.style.background    = 'rgba(0,0,0,0.6)';
+      hideGameBackdrop();
+      bracketHint.textContent = `🏆 Winner: ${msg.winnerId}`;
+
+      localStorage.removeItem('tournamentCode');  // ← NEW: prevent stale restores
+      code = '';                                  // ← NEW
+      pushHome();
+    }
+  });
+
+  /* if the socket ever drops, also remove the stored code */
+  socket.addEventListener('close', () => {
+    localStorage.removeItem('tournamentCode');    // ← NEW
+    code = '';                                    // ← NEW
+  });
 }
+
+
 
 /*──────────────────────────────────────────────────────────────*
  *  UI helpers – identical animation helpers from original file
  *──────────────────────────────────────────────────────────────*/
-function updateSlots(usrIds: number[]) {
-	const stored = localStorage.getItem('user');
-	const raw = stored ? JSON.parse(stored) : null;
-	const me = raw ? Number(raw.id ?? raw.userId) : NaN;
+/* unified slot updater */
+/* ── fill the four bracket slots ──────────────────────────── */
+function updateSlots(
+  players: Array<number | { id: number; username: string }>
+) {
+  const stored = localStorage.getItem('user');
+  const raw    = stored ? JSON.parse(stored) : null;
+  const me     = raw ? Number(raw.id ?? raw.userId) : NaN;
 
   slotEls.forEach((el, i) => {
-    const id = usrIds[i];
+    const player = players[i];
 
-    let label: string;               // always a string for textContent
-    if (id === undefined || id === null) {
-      label = '—';                   // empty slot
-    } else if (id === me) {
-      label = YOU;                   // your own seat
-    } else {
-      label = String(id);            // any other player → cast to string
+    if (!player) {
+      el.textContent = '—';
+      return;
     }
 
-    el.textContent = label;
+    const id   = typeof player === 'number' ? player         : player.id;
+    const name = typeof player === 'number' ? String(player) : player.username;
+
+    el.textContent = id === me ? YOU : name;
   });
 }
 
-function goto(el:HTMLElement) {
-  [stepMain, stepCreated, stepJoin, stepBracket].forEach(s => s.classList.add('hidden'));
+
+
+function goto(el: HTMLElement) {
+  [stepMain, stepJoin, /* stepCreated, */ stepBracket]  // ← removed stepCreated
+    .forEach(s => s.classList.add('hidden'));
   el.classList.remove('hidden');
 }
+
 
 /*──── exported overlay helpers (unchanged) ────*/
 function showOverlay(overlay: HTMLElement, inner?: HTMLElement) {
@@ -167,14 +322,22 @@ document.getElementById('tour-back-btn')?.addEventListener('click', () => {
 });
 
 /* CLOSE via × or Esc */
+/* CLOSE via × button */
 closeBtn.addEventListener('click', () => {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.close(1000, 'left');          // tell server we’re gone
+  }
   hideOverlay(ov, box);
-  pushHome();                                            // NEW
+  pushHome();
 });
 
+/* CLOSE via Esc key */
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && !ov.classList.contains('hidden')) {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.close(1000, 'left');
+    }
     hideOverlay(ov, box);
-    pushHome();                                          // NEW
+    pushHome();
   }
 });
