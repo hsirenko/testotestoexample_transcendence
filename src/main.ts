@@ -148,6 +148,8 @@ let remoteMode = false;
 let ownGameId: string | null = null;
 let hasJoined = false;
 
+let remoteErrorEl: HTMLElement | null = null;
+
 const pauseAndReset = (dir: 1 | -1): void => {
     if (remoteMode) {
         playing = false;
@@ -816,10 +818,13 @@ export function connectWebSocket() {
 
         // 1) got the “ready” signal from the server?
         if (msg.type === "error") {
-            alert("WTF MAN :D");
-        }
+			alert(msg.type || "Invalid Game ID");
+			hasJoined = false;            // allow another attempt
+			socket!.close();
+			return;
+		}
                 if (msg.type === "ready") {
-
+                    hasJoined = true; 
                     if (mySide === null) {
                         set_side(ownGameId && gameId === ownGameId ? "left" : "right");
                     }
@@ -1124,16 +1129,22 @@ export function initRemoteModal(): void {
 
     // Confirm join
     joinConf.onclick = () => {
-        const id = joinInp.value.trim();
-        // if (!id) return alert("Please enter a Game ID");
-        gameId = id;
-        remoteMode = true;
-        ownGameId  = null;
-        set_side("right");
+	const id = joinInp.value.trim();
+	if (!id) {
+		alert("Please enter a Game ID");
+		return;
+	}
 
-        // hideOverlay(ov, inner);
-        connectWebSocket();
-    };
+	/* reset any stale state from a previous failed attempt */
+	if (socket && socket.readyState === WebSocket.OPEN) socket.close();
+	hasJoined  = false;
+	gameId     = id;
+	remoteMode = true;
+	ownGameId  = null;
+	set_side("right");
+
+	connectWebSocket();
+};
 
     // Close modal
     closeBtn.onclick = () => hideOverlay(ov, inner);
