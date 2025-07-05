@@ -15,6 +15,8 @@ export { showOverlay, hideOverlay };
 /* cache DOM -----------------------------------------------------------*/
 const sharePanel   = document.getElementById('tour-share-panel')  as HTMLDivElement;
 
+const tourErr = document.getElementById('tour-error') as HTMLParagraphElement | null;
+
 
 /* ───── html refs (same IDs as before) ───── */
 const ov          = document.getElementById('tournament-overlay')   as HTMLElement;
@@ -87,19 +89,26 @@ document.getElementById('tour-create-btn')?.addEventListener('click', async () =
  *  JOIN  (other players)
  *──────────────────────────────────────────────────────────────*/
 document.getElementById('tour-join-btn')?.addEventListener('click', async () => {
+  if (tourErr) tourErr.textContent = "";
+
   try {
     const input = document.getElementById('tour-code-input') as HTMLInputElement;
     code = input.value.trim().toUpperCase();
+
     await joinTournament(localStorage.getItem('token')!, code);
 
-    localStorage.setItem('tournamentCode', code); // ★ persist for reloads
-    sharePanel.classList.add('hidden');           // hide for joiners
-    connectWs();                                  // open socket with valid code
-    goto(stepBracket);                            // jump to lobby
+    localStorage.setItem('tournamentCode', code);   // persist only after success
+    sharePanel.classList.add('hidden');
+    connectWs();
+    goto(stepBracket);
   } catch (err: any) {
-    alert(err.message || err);
+    /* NEW – inline error, no alert */
+    if (tourErr)
+      tourErr.textContent = err.message || "Invalid or closed tournament code.";
+    code = "";                                      // reset so the next try works
   }
 });
+
 
 
 
