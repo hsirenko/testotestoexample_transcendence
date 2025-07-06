@@ -99,18 +99,19 @@ async function showPlayerBadges(selfId: number, oppId: number) {
 
     const [me, opp] = await Promise.all([fetchUser(selfId), fetchUser(oppId)]);
 
-    /* side-assignment block you already added — unchanged */
-    const selfOnLeft = mySide === "left";
+    /* SIDE-ASSIGNMENT — now driven by mySide, not by ownGameId */
+    const selfOnLeft = mySide === "left";      // ✨ CHANGED
+
     if (selfOnLeft) {
-              avatarLeft .src       = resolveAvatar(me .avatar_url);
+        avatarLeft .src       = resolveAvatar(me .avatar_url);
         avatarRight.src       = resolveAvatar(opp.avatar_url);
         nameLeft .textContent = me .username;
         nameRight.textContent = opp.username;
     } else {
-              avatarLeft .src       = resolveAvatar(me .avatar_url);
-        avatarRight.src       = resolveAvatar(opp.avatar_url);
-        nameLeft .textContent = me .username;
-        nameRight.textContent = opp.username;
+        avatarLeft .src       = resolveAvatar(opp.avatar_url);
+        avatarRight.src       = resolveAvatar(me .avatar_url);
+        nameLeft .textContent = opp.username;
+        nameRight.textContent = me .username;
     }
 
     [badgeLeft, badgeRight].forEach(b => (b.style.opacity = "1"));
@@ -660,8 +661,6 @@ let opponentId: number | null = null;
 let currentMatchId: number | null = null;
 let yourUserId: number | null = null;
 let mySide: "left" | "right" | null = null;
-// let isCreator   = false;
-// let isJoiner   = false;
 
 export function set_side(side: "left" | "right") {   //  ← NEW (lower-case name)
   mySide = side;
@@ -821,11 +820,11 @@ export function connectWebSocket() {
 			socket!.close();
 			return;
 		}
-                if (msg.type === "ready") {
-                    hasJoined = true; 
-                    if (mySide === null) {
-                        set_side(ownGameId && gameId === ownGameId ? "left" : "right");
-                    }
+        if (msg.type === "ready") {
+            hasJoined = true; 
+            if (mySide === null) {
+                set_side(ownGameId && gameId === ownGameId ? "left" : "right");
+            }
                     
             /* 1️⃣  both players are connected – clear the waiting banner */
             removeWaitingOverlay();
@@ -1095,7 +1094,7 @@ export function initRemoteModal(): void {
         // isCreator = true;
         // modal.classList.add('hidden');
         ownGameId  = gameId;
-        
+        set_side("left");
         connectWebSocket();
         inputId.value = data.gameId;
         sectCreate.classList.remove("hidden");

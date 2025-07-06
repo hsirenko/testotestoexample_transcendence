@@ -239,11 +239,8 @@ function connectWs() {
         ov.style.zIndex        = '0';
         ov.style.pointerEvents = 'none';         
         ov.style.background    = 'transparent';
-        set_side(msg.players[0] === me ? "left" : "right");
-
-
         showGameBackdrop();
-
+        set_side(msg.players[0] === me ? "left" : "right");
         enableRemoteMode();
         setGameId(msg.gameId);
         pushGame(msg.gameId);
