@@ -11,6 +11,7 @@ services:
       - "3000:3000"
     volumes:
       - data:/app/data # persist SQLite DB
+      - ./uploads:/app/uploads
     networks:
       - transcendence_net
 
@@ -22,8 +23,9 @@ services:
       - "5500:5500"
     depends_on:
       - backend
-    environment:
-      - API_URL=http://backend:3000
+    environment:          # used at build-time by Vite / Rollup
+      - VITE_API_URL=/api
+      - VITE_WS_URL=/ws
     networks:
       - transcendence_net
 
@@ -34,6 +36,8 @@ services:
     ports:
       - "8090:80"
       - "8443:443"
+    volumes:
+      - ./uploads:/app/uploads        # ⬅️ must match backend path
     depends_on:
       - frontend
       - backend
@@ -42,6 +46,7 @@ services:
 
 volumes:
   data:
+  uploads:  
 
 networks:
   transcendence_net:

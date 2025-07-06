@@ -8,6 +8,7 @@ import {
   set_side,
   setGameId
 } from './main.js';
+import { WS_BASE } from './config.js';
 
 export { hideOverlay, showOverlay };
 
@@ -187,9 +188,8 @@ function connectWs() {
   if (!code) return;            // nothing to connect to → abort
 
   socket = new WebSocket(
-    `ws://localhost:3000/ws/tournament?token=${localStorage.getItem('token')}&code=${code}`
+    `${WS_BASE}/tournament?token=${localStorage.getItem('token')}&code=${code}`
   );
-
   socket.addEventListener('message', ev => {
     const msg = JSON.parse(ev.data);
 

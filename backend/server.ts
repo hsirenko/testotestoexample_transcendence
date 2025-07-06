@@ -69,7 +69,9 @@ const start = async () => {
 	const CLIENT_ORIGINS = [
 		'http://localhost:5500',
 		'http://127.0.0.1:5500',
-		`http://${process.env.IP_ADDR}:5500`
+		`http://${process.env.IP_ADDR}:5500`,
+    'https://localhost:8443',   // ⬅️ NEW – nginx TLS endpoint
+    'http://localhost:8090'     // (optional) nginx plain-HTTP
 	];
     await fastify.register(cors, {
       origin: CLIENT_ORIGINS,

@@ -1,7 +1,6 @@
 // src/api/tournament.ts
-import { HOST } from '../config.js';
 
-const API = `http://${HOST}:3000/api`;
+const API = `/api`;
 
 export async function createTournament(token: string, name = '4-Player bracket') {
   const res = await fetch(`${API}/tournaments`, {

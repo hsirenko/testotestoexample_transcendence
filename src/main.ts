@@ -1,4 +1,4 @@
-import { installPopHandler, pushHome, pushGame, pushOverlay, showHome} from './nav_history.js';
+import { installPopHandler, pushGame, pushHome, pushOverlay, showHome } from './nav_history.js';
 
 
 //frontend/src/main.ts
@@ -6,15 +6,13 @@ import {
     ClientMsgJoin,
     ClientMsgMove,
     ClientMsgStart,
-    StateMsg,
-    GameOverMsg,
-    ServerMsg,
+    ServerMsg
 } from "./types/ws.js";
+import { WS_BASE } from './config.js';
 
 import { fetchFriends, resolveAvatar } from "./friends.js";
 
-import { HOST } from "./config.js";
-import { showOverlay, hideOverlay } from "./tournament.js";
+import { hideOverlay, showOverlay } from "./tournament.js";
 
 /* ---------- NEW AI IMPORTS -------------------------------------- */
 import { nextAIPaddleY, setAIRefresh as setAIRefreshAI } from "./ai.js";
@@ -799,9 +797,9 @@ export function connectWebSocket() {
     // }
 	if (socket && socket.readyState === WebSocket.OPEN) return;
 	if (hasJoined) return;
-    console.log(`[client] 🎾 connecting to ws://localhost:3000/ws/game`);
+    console.log(`[client] 🎾 connecting to ${WS_BASE}/game`);
     socket = new WebSocket(
-        `ws://localhost:3000/ws/game?token=${localStorage.getItem("token")}`
+        `${WS_BASE}/game?token=${localStorage.getItem("token")}`
     );
     socket.onopen = () => {
 		/* Always send exactly one JOIN on the first successful open */

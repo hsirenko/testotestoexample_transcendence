@@ -5,7 +5,6 @@
 // It will wire up the bell button (#nav-notif), render the dropdown panel
 // (#notif-panel) and keep the unread badge (#notif-badge) in sync.
 
-import { HOST } from "./config.js";
 import { loadFriendsSidebar } from "./friends.js";
 import {
 	ClientMsgJoin,
@@ -334,7 +333,7 @@ function startNotificationsSocket(): void {
         console.log("[notif] no token, skipping WS connect");
         return;
     }
-    const wsUrl = `ws://${HOST}:3000/ws/notifications?token=${token}`;
+    const wsUrl = `ws://localhost:3000/ws/notifications?token=${token}`;
     const me = JSON.parse(localStorage.getItem("user") || "{}");
     const myUserId = me.id;
     console.log("[notif] connecting to WS at", wsUrl);

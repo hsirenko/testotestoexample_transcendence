@@ -4,6 +4,7 @@
  */
 import { initHistoryTab } from "./history.js";
 import { initRemoteModal } from './main.js';
+import { WS_BASE } from './config.js';
 import { pushHome } from "./nav_history.js";
 import {
   populateProfileViews,
