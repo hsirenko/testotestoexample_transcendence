@@ -1,10 +1,9 @@
 //frontend/src/auth.ts
-//CHANGE THIS TO YOUR IP ADDRESS
 import { HOST } from "./config.js";
 import { resetObjects, resizeCanvas, render, updateScore } from "./main.js";
 import { loadFriendsSidebar } from "./friends.js";
-import "./friends.js"; // this file already auto-fetches & renders the sidebar
-import "./stats.js"; // likewise for stats tab if you want to warm it up
+import "./friends.js";
+import "./stats.js";
 import "./history.js";
 import { initNotifications } from "./notifications.js";
 import { stopNotifications } from "./notifications.js";
@@ -32,26 +31,6 @@ const originalSubmit = form.querySelector(
     "button[type='submit'],input[type='submit']"
 ) as HTMLElement | null;
 
-// const sendCodeBtn = document.createElement("button");
-// sendCodeBtn.id = "send-code-btn";
-// sendCodeBtn.type = "button";
-// sendCodeBtn.textContent = "Send code";
-// sendCodeBtn.className =
-//     (originalSubmit ? originalSubmit.className : "btn") + " hidden";
-// if (originalSubmit) {
-//     originalSubmit.insertAdjacentElement("afterend", sendCodeBtn);
-// } else {
-//     form.appendChild(sendCodeBtn);
-// }
-
-// const backToLoginLink = document.createElement("a");
-// backToLoginLink.id = "back-to-login";
-// backToLoginLink.href = "#";
-// backToLoginLink.textContent = "Already have an account? Sign in";
-// backToLoginLink.className = "hidden";
-// sendCodeBtn.insertAdjacentElement("afterend", backToLoginLink);
-
-// On page load, check for ?token=… in the URL
 (async () => {
     const params = new URLSearchParams(window.location.search);
     const googleToken = params.get("token");
@@ -67,7 +46,6 @@ const originalSubmit = form.querySelector(
         twofaInput.focus();
         loginError.textContent = "Enter your 2FA code and press Login.";
 
-        // 🚫 Hide email and password fields
         const emailEl = document.getElementById("email") as HTMLInputElement;
         const passwordEl = document.getElementById(
             "password"
@@ -78,15 +56,12 @@ const originalSubmit = form.querySelector(
         emailEl.removeAttribute("required");
         passwordEl.removeAttribute("required");
 
-        // 💾 Save Google token
         localStorage.setItem("pending_google_token", googleToken);
 
-        // Clean up URL
         window.history.replaceState({}, "", window.location.pathname);
         return;
     }
 
-    // No 2FA required
     localStorage.setItem("token", googleToken);
     try {
         const res = await fetch(`http://${HOST}:3000/api/users/me`, {
@@ -109,39 +84,6 @@ const originalSubmit = form.querySelector(
 	initNotifications();
 })();
 
-// function show2FALoginModal(): Promise<string | null> {
-//   return new Promise((resolve) => {
-//     const modal = document.getElementById("2fa-login-modal")!;
-//     const input = document.getElementById("2fa-login-token-input") as HTMLInputElement;
-//     const confirm = document.getElementById("2fa-login-confirm-btn")!;
-//     const cancel = document.getElementById("2fa-login-cancel-btn")!;
-//     const errorEl = document.getElementById("2fa-login-error")!;
-//     modal.classList.remove("hidden");
-//     modal.style.display = "flex";     // ← force it to flex
-//     modal.style.zIndex = "9999";      // just in case
-//     modal.style.opacity = "1";        // in case Tailwind transitions affect it
-//     modal.style.visibility = "visible";
-//     modal.classList.remove("hidden");
-//     input.value = "";
-//     errorEl.textContent = "";
-
-//     confirm.onclick = () => {
-//       const code = input.value.trim();
-//       if (!code) {
-//         errorEl.textContent = "2FA code is required.";
-//         return;
-//       }
-//       modal.classList.add("hidden");
-//       resolve(code);
-//     };
-
-//     cancel.onclick = () => {
-//       modal.classList.add("hidden");
-//       resolve(null);
-//     };
-//   });
-// }
-
 
 //new part related to the reset password form, code validation and password change
 const resetOverlay = document.getElementById("reset-overlay") as HTMLElement;
@@ -156,42 +98,63 @@ const newpassOverlay  = document.getElementById("newpass-overlay")   as HTMLElem
 const newpassForm     = document.getElementById("newpass-form")      as HTMLFormElement;
 const newpassError    = document.getElementById("newpass-error")     as HTMLElement;
 
-
+//on clicking the forget password button remove the old layer and show the new one
 document.getElementById("forgot-btn")?.addEventListener("click", (e) => {
     e.preventDefault();
     overlay.classList.add("hidden");
     resetOverlay.classList.remove("hidden");
 });
 
+//hide the reset overlay and show the login again
 document.getElementById("reset-show-login")?.addEventListener("click", (e) => {
     e.preventDefault();
     resetOverlay.classList.add("hidden");
     overlay.classList.remove("hidden");
 });
 
-/* 1️⃣  Ask server to e-mail the code --------------------------------------- */
+//forget password functionality, validate the email that's already registered, if true sned
+//the code and continue
 resetForm?.addEventListener("submit", async (e) => {
   e.preventDefault();
   resetError.textContent = "";
 
   const email = (document.getElementById("reset-email") as HTMLInputElement).value.trim();
   const emErr = validateEmail(email);
+  //validate that the email is already registered to prevent sending emails to unregistered emails
+  try {
+    const checkRes = await fetch(`http://${HOST}:3000/auth/email-exists`, {
+      method : "POST",
+      headers: { "Content-Type": "application/json" },
+      body   : JSON.stringify({ email })
+    });
+
+    const { exists } = await checkRes.json();
+    if (!exists) {            //  404 or { exists:false }
+      resetError.textContent = "This e-mail is not registered.";
+      return;                                   //  stop right here
+    }
+  } catch (_) {
+    resetError.textContent = "Network error — try again.";
+    return;
+  }
+
+
   if (!email)          { resetError.textContent = "Email is required."; return; }
   if (emErr)           { resetError.textContent = emErr;               return; }
 
+      resetOverlay.classList.add("hidden");
+    codeOverlay.classList.remove("hidden");
   try {
     const res  = await fetch(`http://${HOST}:3000/password/forgot`, {
       method : "POST",
       headers: { "Content-Type": "application/json" },
       body   : JSON.stringify({ email })
     });
+    //send the code and decode it from json to get the value
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || "Failed to send code.");
 
     resetEmail = email;
-    alert("If the address is registered, a reset code has been sent.");
-    resetOverlay.classList.add("hidden");
-    codeOverlay.classList.remove("hidden");
     (document.getElementById("reset-code") as HTMLInputElement).focus();
   } catch (err: any) {
     resetError.textContent = err.message || "Network error — try again.";
