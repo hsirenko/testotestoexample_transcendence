@@ -1,16 +1,15 @@
 /* src/tournament.ts  – remote 4-player bracket */
-import { pushOverlay, pushGame , pushHome} from './nav_history.js';
+import { pushGame, pushHome, pushOverlay } from './nav_history.js';
 
 import { createTournament, joinTournament } from './api/tournament.js';
-import { HOST }                             from './config.js';
 import {
-  enableRemoteMode,
-  setGameId,
   connectWebSocket,
-  set_side
+  enableRemoteMode,
+  set_side,
+  setGameId
 } from './main.js';
 
-export { showOverlay, hideOverlay };
+export { hideOverlay, showOverlay };
 
 /* cache DOM -----------------------------------------------------------*/
 const sharePanel   = document.getElementById('tour-share-panel')  as HTMLDivElement;
@@ -188,7 +187,7 @@ function connectWs() {
   if (!code) return;            // nothing to connect to → abort
 
   socket = new WebSocket(
-    `ws://${HOST}:3000/ws/tournament?token=${localStorage.getItem('token')}&code=${code}`
+    `ws://localhost:3000/ws/tournament?token=${localStorage.getItem('token')}&code=${code}`
   );
 
   socket.addEventListener('message', ev => {

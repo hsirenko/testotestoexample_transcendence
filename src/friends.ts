@@ -1,13 +1,7 @@
-/* friends.ts – sidebar with two-click “Remove friend” confirmation  */
-/* =================================================================*/
-
-import { HOST } from "./config.js";
+// friends.ts – sidebar with two-click “Remove friend” confirmation
 import { openFriendStats } from "./friendstats.js";
-
-/* map friendId → <span.status-dot> for live updates */
 const statusDots = new Map<number, HTMLSpanElement>();
 
-/* 2 ░ helpers ------------------------------------------------------*/
 function getAuthHeader(): HeadersInit {
     const t = localStorage.getItem("token");
     return t ? { Authorization: `Bearer ${t}` } : {};
@@ -27,9 +21,8 @@ function showToast(msg: string, isError = false): void {
 }
 
 
-/* ░ API ──────────────────────────────────────────────────────────── */
 export async function fetchFriends(): Promise<any[]> {
-  const res = await fetch(`http://${HOST}:3000/api/users/me/friends`, {
+  const res = await fetch(`/api/users/me/friends`, {
     headers: getAuthHeader(),
   });
 
@@ -50,9 +43,9 @@ export async function fetchFriends(): Promise<any[]> {
 
     export function resolveAvatar(raw?: string | null): string {
     const val = raw?.trim() ?? "";
-    if (!val) return ASTRONAUT;                   // empty  → robot
-    if (/^https?:\/\//i.test(val)) return val;   // full URL → use as-is
-    return `http://${HOST}:3000/uploads/${val}`; // relative → prepend
+    if (!val) return ASTRONAUT;
+    if (/^https?:\/\//i.test(val)) return val;
+    return `/uploads/${val}`;
     }
 
 function updateDot(el: HTMLSpanElement, online: boolean): void {
@@ -61,12 +54,11 @@ function updateDot(el: HTMLSpanElement, online: boolean): void {
     el.classList.add("bg-emerald-400", "animate-pulse");
   } else {
     el.classList.remove("bg-emerald-400", "animate-pulse");
-    el.classList.add("bg-red-500");           // ← red when offline
+    el.classList.add("bg-red-500");
   }
 }
 
 
-/* 3 ░ render list --------------------------------------------------*/
 function render(friends: any[]): void {
     const list = document.getElementById("friends-list")!;
     const tpl = document.getElementById(
@@ -80,29 +72,20 @@ function render(friends: any[]): void {
     }
 
     friends.forEach((f) => {
-        /* ─ clone row template */
         const frag = tpl.content.cloneNode(true) as DocumentFragment;
         const row = frag.firstElementChild as HTMLDivElement;
-
-        /* numeric id expected by backend */
         const friendId = Number(f.userId ?? f.id ?? f.friend_id ?? NaN);
-        if (Number.isNaN(friendId)) return; // skip bad rows
-
-        /* fill visuals */
+        if (Number.isNaN(friendId)) return;
         (row.querySelector(".avatar") as HTMLImageElement).src = resolveAvatar(f.avatar_url);
-
         (row.querySelector(".username") as HTMLElement).textContent =
             f.username;
         (row.querySelector(".email") as HTMLElement).textContent = f.email;
-        /* ─ ONLINE DOT ─────────────────────────────────────────────── */
         const dot = row.querySelector(".status-dot") as HTMLSpanElement;
-        statusDots.set(friendId, dot);                    // remember it
+        statusDots.set(friendId, dot);
 
-        const online = Boolean(f.online ?? f.isOnline);   // back-end flag
+        const online = Boolean(f.online ?? f.isOnline);
         updateDot(dot, online);
 
-
-        /* ─ DOM refs */
         const moreBtn = row.querySelector<HTMLButtonElement>(".more-btn")!;
         const submenu = row.querySelector<HTMLDivElement>(".submenu")!;
         const confirm = row.querySelector<HTMLDivElement>(".confirm-box")!;
@@ -111,7 +94,7 @@ function render(friends: any[]): void {
         const yesBtn = row.querySelector<HTMLButtonElement>(".yes-btn")!;
         const noBtn = row.querySelector<HTMLButtonElement>(".no-btn")!;
 
-        /* submenu toggle */
+        //submenu toggle
         let open = false;
         moreBtn.addEventListener("click", () => {
             open = !open;
@@ -123,41 +106,41 @@ function render(friends: any[]): void {
             moreBtn.textContent = open ? "less ▲" : "more ▾";
         });
 
-        /* step-1  Remove → show confirm bar */
+        //step-1  Remove → show confirm bar
         stats.addEventListener("click", () => {
             openFriendStats(friendId, f);
         });
 
         
 
-        /* step-1  Remove → show confirm bar */
+        //step-1  Remove → show confirm bar
         removeBtn.addEventListener("click", () => {
             submenu.classList.add("hidden");
             confirm.classList.remove("hidden");
             row.style.maxHeight = confirm.scrollHeight + 56 + "px";
         });
 
-        /* step-2a User cancels */
+        //step-2a User cancels
         noBtn.addEventListener("click", () => {
             confirm.classList.add("hidden");
             submenu.classList.remove("hidden");
             row.style.maxHeight = submenu.scrollHeight + 56 + "px";
         });
 
-        /* step-2b User confirms */
+        //step-2b User confirms
         yesBtn.addEventListener("click", async () => {
             row.style.opacity = "0.6";
             yesBtn.disabled = noBtn.disabled = true;
 
             try {
                 const r = await fetch(
-                    `http://${HOST}:3000/api/users/remove-friend/${friendId}`,
+                    `/api/users/remove-friend/${friendId}`,
                     { method: "DELETE", headers: getAuthHeader() }
                 );
                 const body = await r.json().catch(() => ({}));
                 if (!r.ok) throw new Error(body.error || r.statusText);
 
-                /* success – slide up & toast */
+                //success – slide up & toast
                 row.style.maxHeight = "0";
                 row.style.opacity = "0";
                 setTimeout(() => {
@@ -178,7 +161,6 @@ function render(friends: any[]): void {
     
 }
 
-/* 4 ░ public loader + auto-init ----------------------------------*/
 export async function loadFriendsSidebar(): Promise<void> {
     const list = document.getElementById("friends-list")!;
     list.innerHTML = `<p class="text-white/70">Loading…</p>`;
@@ -194,22 +176,18 @@ export async function loadFriendsSidebar(): Promise<void> {
 (async () => {
   if (!localStorage.getItem("token")) return;
 
-  await loadFriendsSidebar();   // list ready – statusDots filled
+  await loadFriendsSidebar();
 })();
 
-/* ------------------------------------------------------------------
- * Refresh-button handler
- * ----------------------------------------------------------------*/
 const refreshBtn = document.getElementById('friends-refresh') as HTMLButtonElement | null;
 
 if (refreshBtn) {
   refreshBtn.addEventListener('click', async () => {
-    /* quick visual feedback – spin while we’re loading */
     refreshBtn.classList.add('animate-spin');
     refreshBtn.disabled = true;
 
     try {
-      await loadFriendsSidebar();      // already shows “Loading…” etc.
+      await loadFriendsSidebar();
     } finally {
       refreshBtn.disabled = false;
       refreshBtn.classList.remove('animate-spin');
@@ -231,10 +209,8 @@ export function initFriendsSidebarToggle(): void {
         btn.innerHTML = open ? "❯" : "❮";
     };
 
-    /* click-toggle */
+    //click-toggle
     btn.addEventListener("click", () => { open = !open; apply(); });
-
-    /* NEW: Esc key closes the sidebar if it’s open */
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && open) {
         open = false;

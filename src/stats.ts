@@ -6,15 +6,14 @@
 declare const Chart: any; // Chart.js from CDN
 
 import {
-  WinsTotalDTO,
   GoalsTotalDTO,
   MonthlyGoalsRowDTO,
   MonthlyWinRateDTO,
+  WinsTotalDTO,
 } from "./types.js";
-import { HOST } from './config.js';
 
 /* base URL */
-const API_BASE = `http://${HOST}:3000`;
+const API_BASE = ``;
 
 /* REST endpoints */
 const ENDPOINT = {

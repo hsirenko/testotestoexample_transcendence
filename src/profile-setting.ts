@@ -6,8 +6,7 @@
 *  – toast + error helpers
 */
 
-import { HOST } from './config.js';
-import {resolveAvatar} from "./friends.js"
+import { resolveAvatar } from "./friends.js";
 
 export function $(sel: string): HTMLElement | null {
 return document.querySelector(sel);
@@ -36,7 +35,7 @@ return t ? { Authorization: `Bearer ${t}` } : {};
 /* ─── always-fresh /api/users/me fetch ─── */
 async function fetchMe(): Promise<any | null> {
   try {
-    const r = await fetch(`http://${HOST}:3000/api/users/me`, {
+    const r = await fetch(`/api/users/me`, {
       headers: getAuthHeader(),
     });
     if (!r.ok) return null;
@@ -58,7 +57,7 @@ async function fetchMe(): Promise<any | null> {
 // if (cachedCreatedAt !== undefined) return cachedCreatedAt;
 
 // try {
-// 	const r = await fetch(`http://${HOST}:3000/api/users/created-at`, {
+// 	const r = await fetch(`/api/users/created-at`, {
 // 	headers: getAuthHeader(),                // unchanged helper
 // 	});
 // 	if (!r.ok) { cachedCreatedAt = null; return null; }
@@ -101,7 +100,7 @@ enable2FABtn.addEventListener('click', async (e) => {
 	try {
 		e.preventDefault();
 		e.stopPropagation();
-		const res = await fetch(`http://${HOST}:3000/api/2fa/setup`, {
+		const res = await fetch(`/api/2fa/setup`, {
 		headers: { ...authHeader(), 'Content-Type': 'application/json' },
 		});
 		const { qrDataUrl, manualKey } = await res.json();
@@ -131,7 +130,7 @@ verifyBtn.addEventListener('click', async (e) => {
 		return;
 	}
 	try {
-		const res = await fetch(`http://${HOST}:3000/api/2fa/verify`, {
+		const res = await fetch(`/api/2fa/verify`, {
 		method: 'POST',
 		headers: { ...authHeader(), 'Content-Type': 'application/json' },
 		body: JSON.stringify({ token, secretFromReq }),
@@ -357,7 +356,7 @@ try {
 	if (newP)                                    {payload.newPassword = newP;payload.oldPassword = oldP;}
 
 	if (Object.keys(payload).length) {
-	const res  = await fetch(`http://${HOST}:3000/api/users/edit-profile`, {
+	const res  = await fetch(`/api/users/edit-profile`, {
 		method: "PUT",
 		headers: {
 		"Content-Type": "application/json",

@@ -1,4 +1,3 @@
-import { HOST } from "./config.js";
 import { loadFriendsSidebar } from "./friends.js";
 
 // Returns auth headers with bearer token if available
@@ -37,7 +36,7 @@ const resetUI = () => {
 // Sends a friend request to the server
 async function addFriend(username: string) {
   try {
-    const res = await fetch(`http://${HOST}:3000/api/users/add-friend`, {
+    const res = await fetch(`/api/users/add-friend`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...auth() },
       body: JSON.stringify({ username }),

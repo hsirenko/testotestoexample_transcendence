@@ -1,0 +1,26 @@
+# nginx/Dockerfile
+
+# 1) Use the Debian-based image (lets us apt-get without SSL errors)
+FROM nginx:stable
+
+# 2) Install openssl, then clean up
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends openssl \
+ && rm -rf /var/lib/apt/lists/*
+
+# 3) Generate a self-signed cert (valid 1 year)
+RUN mkdir -p /etc/nginx/certs \
+ && openssl req -x509 -nodes -days 365 \
+      -subj "/C=US/ST=State/L=City/O=Transcendence/CN=localhost" \
+      -newkey rsa:2048 \
+      -keyout /etc/nginx/certs/key.pem \
+      -out /etc/nginx/certs/cert.pem
+
+# 4) Copy in your custom nginx.conf
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# 5) Expose HTTP and HTTPS
+EXPOSE 80 443
+
+# 6) Run nginx in foreground
+CMD ["nginx", "-g", "daemon off;"]

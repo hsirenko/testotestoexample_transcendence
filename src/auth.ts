@@ -1,12 +1,10 @@
 //frontend/src/auth.ts
-import { HOST } from "./config.js";
-import { resetObjects, resizeCanvas, render, updateScore } from "./main.js";
-import { loadFriendsSidebar } from "./friends.js";
 import "./friends.js";
-import "./stats.js";
+import { loadFriendsSidebar } from "./friends.js";
 import "./history.js";
-import { initNotifications } from "./notifications.js";
-import { stopNotifications } from "./notifications.js";
+import { render, resetObjects, resizeCanvas, updateScore } from "./main.js";
+import { initNotifications, stopNotifications } from "./notifications.js";
+import "./stats.js";
 
 const overlay = document.getElementById("login-overlay") as HTMLElement;
 const appShell = document.getElementById("app") as HTMLElement;
@@ -25,7 +23,7 @@ let resetCode  = "";
 const $ = <T extends HTMLElement = HTMLElement>(sel: string) =>
     document.querySelector<T>(sel);
 
-const GOOGLE_LOGIN_URL = `http://${HOST}:3000/auth/google`;
+const GOOGLE_LOGIN_URL = `/auth/google`;
 
 const originalSubmit = form.querySelector(
     "button[type='submit'],input[type='submit']"
@@ -64,7 +62,7 @@ const originalSubmit = form.querySelector(
 
     localStorage.setItem("token", googleToken);
     try {
-        const res = await fetch(`http://${HOST}:3000/api/users/me`, {
+        const res = await fetch(`/api/users/me`, {
             headers: { Authorization: `Bearer ${googleToken}` },
         });
         const user = await res.json();
@@ -122,7 +120,7 @@ resetForm?.addEventListener("submit", async (e) => {
   const emErr = validateEmail(email);
   //validate that the email is already registered to prevent sending emails to unregistered emails
   try {
-    const checkRes = await fetch(`http://${HOST}:3000/auth/email-exists`, {
+    const checkRes = await fetch(`/auth/email-exists`, {
       method : "POST",
       headers: { "Content-Type": "application/json" },
       body   : JSON.stringify({ email })
@@ -145,7 +143,7 @@ resetForm?.addEventListener("submit", async (e) => {
       resetOverlay.classList.add("hidden");
     codeOverlay.classList.remove("hidden");
   try {
-    const res  = await fetch(`http://${HOST}:3000/password/forgot`, {
+    const res  = await fetch(`/password/forgot`, {
       method : "POST",
       headers: { "Content-Type": "application/json" },
       body   : JSON.stringify({ email })
@@ -170,7 +168,7 @@ codeForm?.addEventListener("submit", async (e) => {
   if (!/^\d{6}$/.test(code)) { codeError.textContent = "Code must be 6 digits."; return; }
 
   try {
-    const res  = await fetch(`http://${HOST}:3000/password/verify`, {
+    const res  = await fetch(`/password/verify`, {
       method : "POST",
       headers: { "Content-Type": "application/json" },
       body   : JSON.stringify({ email: resetEmail, code })
@@ -200,7 +198,7 @@ newpassForm?.addEventListener("submit", async (e) => {
   if (pass1 !== pass2) { newpassError.textContent = "Passwords do not match."; return; }
 
   try {
-    const res  = await fetch(`http://${HOST}:3000/password/reset`, {
+    const res  = await fetch(`/password/reset`, {
       method : "POST",
       headers: { "Content-Type": "application/json" },
       body   : JSON.stringify({ email: resetEmail, code: resetCode, newPassword: pass1 })
@@ -217,15 +215,12 @@ newpassForm?.addEventListener("submit", async (e) => {
 });
 
 
-
-
-
 //here it ends
 
 document.getElementById("reset-show-signup")?.addEventListener("click", (e) => {
     e.preventDefault();
     resetOverlay.classList.add("hidden");
-    showSignup();                           // existing helper
+    showSignup();
 });
 
 document.getElementById("reset-google-btn")?.addEventListener("click", () => {
@@ -304,16 +299,14 @@ form.addEventListener("submit", async (e) => {
     const twofaToken = twofaInput.value.trim();
     const pendingGoogleToken = localStorage.getItem("pending_google_token");
 
-    // ✅ HANDLE GOOGLE 2FA CASE FIRST
     if (pendingGoogleToken) {
         if (!twofaToken) {
             loginError.textContent = "2FA code is required.";
             return;
         }
 
-        // Send token only to /api/2fa/verify
         try {
-            const res = await fetch(`http://${HOST}:3000/api/2fa/verify`, {
+            const res = await fetch(`/api/2fa/verify`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -330,8 +323,7 @@ form.addEventListener("submit", async (e) => {
                 return;
             }
 
-            // ✅ Verified: fetch user and continue
-            const userRes = await fetch(`http://${HOST}:3000/api/users/me`, {
+            const userRes = await fetch(`/api/users/me`, {
                 headers: { Authorization: `Bearer ${pendingGoogleToken}` },
             });
             const user = await userRes.json();
@@ -369,7 +361,6 @@ form.addEventListener("submit", async (e) => {
         }
     }
 
-    // ✅ NORMAL EMAIL/PASSWORD FLOW
     const pwErr = validatePassword(password);
     if (!email) {
         loginError.textContent = "Email is required.";
@@ -379,7 +370,7 @@ form.addEventListener("submit", async (e) => {
         return;
     }
 
-    const res = await fetch(`http://${HOST}:3000/login`, {
+    const res = await fetch(`/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -389,7 +380,6 @@ form.addEventListener("submit", async (e) => {
 
     if (data.twofaRequired) {
         if (twofaWrapper.classList.contains("hidden")) {
-            // ← CHANGE
             twofaWrapper.classList.remove("hidden");
             twofaInput.focus();
             loginError.textContent = "Enter your 2FA code and press Login.";
@@ -401,7 +391,7 @@ form.addEventListener("submit", async (e) => {
             return;
         }
 
-        const retry = await fetch(`http://${HOST}:3000/login`, {
+        const retry = await fetch(`/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, password, twofaToken }),
@@ -423,16 +413,16 @@ form.addEventListener("submit", async (e) => {
     }
 
     localStorage.setItem("token", data.token);
-    let fullUser = data.user;        // what /login just returned
+    let fullUser = data.user;
     try {
-    const resMe = await fetch(`http://${HOST}:3000/api/users/me`, {
+    const resMe = await fetch(`/api/users/me`, {
         headers: { Authorization: `Bearer ${data.token}` },
     });
     if (resMe.ok) {
-        const me = await resMe.json();            // has avatar_url
+        const me = await resMe.json();
         fullUser = { ...fullUser, avatar_url: me.avatar_url };
     }
-    } catch { /* ignore network failure */ }
+    } catch {}
     localStorage.setItem("user", JSON.stringify(data.user));
     twofaInput.classList.add("hidden");
     twofaWrapper.classList.add("hidden");
@@ -446,60 +436,6 @@ form.addEventListener("submit", async (e) => {
     loadFriendsSidebar();
 	initNotifications();
 });
-
-// function enterResetMode() {
-//     resetMode = true;
-//     loginError.textContent = "";
-//     (document.getElementById("password") as HTMLElement)?.classList.add(
-//         "hidden"
-//     );
-//     originalSubmit?.classList.add("hidden");
-//     (document.getElementById("forgot-btn") as HTMLElement)?.classList.add(
-//         "hidden"
-//     );
-//     document.getElementById("show-signup")?.classList.add("hidden");
-//     sendCodeBtn.classList.remove("hidden");
-//     backToLoginLink.classList.remove("hidden");
-// }
-// function exitResetMode() {
-//     resetMode = false;
-//     (document.getElementById("password") as HTMLElement)?.classList.remove(
-//         "hidden"
-//     );
-//     originalSubmit?.classList.remove("hidden");
-//     (document.getElementById("forgot-btn") as HTMLElement)?.classList.remove(
-//         "hidden"
-//     );
-//     document.getElementById("show-signup")?.classList.remove("hidden");
-//     sendCodeBtn.classList.add("hidden");
-//     backToLoginLink.classList.add("hidden");
-// }
-
-// document.getElementById("forgot-btn")?.addEventListener("click", (e) => {
-//     e.preventDefault();
-//     enterResetMode();
-// });
-
-// backToLoginLink.addEventListener("click", (e) => {
-//     e.preventDefault();
-//     exitResetMode();
-// });
-
-// sendCodeBtn.addEventListener("click", () => {
-//     loginError.textContent = "";
-//     const email = (
-//         document.getElementById("email") as HTMLInputElement
-//     ).value.trim();
-//     const emErr = validateEmail(email);
-
-//     if (!email) loginError.textContent = "Email is required.";
-//     else if (emErr) loginError.textContent = emErr;
-//     else {
-//         loginError.textContent =
-//             "If the address is registered, a reset code has been sent.";
-//         exitResetMode();
-//     }
-// });
 
 document.getElementById("show-signup")?.addEventListener("click", (e) => {
     e.preventDefault();
@@ -541,7 +477,7 @@ signupForm?.addEventListener("submit", (e) => {
     else if (pwErr) signupError.textContent = pwErr;
     else if (pw !== pw2) signupError.textContent = "Passwords don’t match.";
     else {
-        fetch(`http://${HOST}:3000/signup`, {
+        fetch(`/signup`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username: un, email: em, password: pw }),
