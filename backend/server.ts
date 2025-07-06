@@ -14,6 +14,8 @@ import fastifyMultipart from "@fastify/multipart";
 import fastifyStatic from '@fastify/static';
 import path from 'path';
 import passwordResetRoutes from './routes/passwordReset';
+import emailExistsRoutes    from './routes/emailExists';
+
 
 //Backend game
 import websocketPlugin from '@fastify/websocket';
@@ -82,6 +84,7 @@ const start = async () => {
     await fastify.register(signupRoutes);
     await fastify.register(loginRoutes);
 	await fastify.register(googleAuthRoutes);
+  await fastify.register(emailExistsRoutes);
 	await fastify.register(gameSocketRoutes);
 	await fastify.register(notifSocketRoutes);
 await fastify.register(passwordResetRoutes);   //  ⬅️ add this line
