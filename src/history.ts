@@ -1,19 +1,6 @@
-/**
- * history.ts – Recent Games tab (API-only version)
- * ------------------------------------------------
- * Expects the backend to return an array of objects:
- * [
- *   { id:"034", date:"2025-06-04", opponent:"mhaisen",
- *     score:"4 – 11", result:"Win" },
- *   ...
- * ]
- */
-
-import { HOST } from './config.js';
 import { MatchRow } from "./types.js";
 
-/* Endpoint */
-const API_BASE = `http://${HOST}:3000`;
+const API_BASE = ``;
 const ENDPOINT = `${API_BASE}/api/matches/history`;
 
 function getAuthHeader(): HeadersInit {

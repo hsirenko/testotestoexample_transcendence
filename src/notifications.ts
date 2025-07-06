@@ -85,7 +85,7 @@ function renderPanel(): void {
 		const me = JSON.parse(localStorage.getItem("user") || "{}");
 		e.stopPropagation();
 		const t = localStorage.getItem("token")!;
-	await fetch(`http://${HOST}:3000/api/notifications`, {
+	await fetch(`/api/notifications`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${t}` },
   });
@@ -171,7 +171,7 @@ function renderPanel(): void {
 			decline.onclick = async (e) => {
 				e.stopPropagation();
 				const t = localStorage.getItem("token")!;
-				await fetch(`http://${HOST}:3000/api/notifications/${n.id}`, {
+				await fetch(`/api/notifications/${n.id}`, {
 					method: "DELETE",
 					headers: { Authorization: `Bearer ${t}` },
 				});
@@ -198,7 +198,7 @@ function renderPanel(): void {
 				btn.disabled = true;  // prevent double-clicks
 
 				const token = localStorage.getItem("token")!;
-				await fetch(`http://${HOST}:3000/api/users/respond-friend`, {
+				await fetch(`/api/users/respond-friend`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
@@ -209,7 +209,7 @@ function renderPanel(): void {
 						action,
 					}),
 				});
-				await fetch(`http://${HOST}:3000/api/notifications/${n.id}`, {
+				await fetch(`/api/notifications/${n.id}`, {
 					method: "DELETE",
 					headers: { Authorization: `Bearer ${token}` },
 				});
@@ -284,7 +284,7 @@ export async function fetchNotifications(): Promise<void> {
 	try {
 		const token = localStorage.getItem("token");
 		if (!token) return;
-		const res = await fetch(`http://${HOST}:3000/api/notifications`, {
+		const res = await fetch(`/api/notifications`, {
 			headers: { "Authorization": `Bearer ${token}` },
 		});
 		if (!res.ok) return;
@@ -302,7 +302,7 @@ export async function fetchNotifications(): Promise<void> {
 bell?.addEventListener("click", async ev => {
 	ev.stopPropagation();
 	const t = localStorage.getItem("token")!;
-	await fetch(`http://${HOST}:3000/api/notifications/read`, {
+	await fetch(`/api/notifications/read`, {
 		method: "POST",
 		headers: { Authorization: `Bearer ${t}` },
 	});
@@ -382,7 +382,7 @@ function startNotificationsSocket(): void {
         const t = localStorage.getItem("token");
         if (!t) return;
         notifications.filter(n => n.type === "challenge").forEach(n => {
-            fetch(`http://${HOST}:3000/api/notifications/${n.id}`, {
+            fetch(`/api/notifications/${n.id}`, {
                 method: "DELETE",
                 headers: { Authorization: `Bearer ${t}` },
                 keepalive: true

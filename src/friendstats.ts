@@ -1,11 +1,7 @@
-	/* friendstats.ts – standalone overlay showing a friend’s stats           */
-	/* ===================================================================== */
-	import { HOST } from "./config.js";
-	import {resolveAvatar} from "./friends.js"
+	//friendstats.ts – standalone overlay showing a friend’s stats
+	import { resolveAvatar } from "./friends.js";
 	declare const Chart: any;
 
-	/* ------------------------------------------------------------------ */
-	/* utilities                                                          */
 	type WL            = { wins: number; losses: number };
 	type MonthlyWin    = { month: string; winRate: number };
 	type GoalsSum      = { scored: number; conceded: number };
@@ -24,7 +20,7 @@
 	}
 
 	const api = (fid: number) => {
-	const root = `http://${HOST}:3000/api/stats/friend/${fid}`;
+	const root = `/api/stats/friend/${fid}`;
 	return {
 		winsLifetime:  `${root}/wins`,
 		winsMonthly:   `${root}/monthly-wins`,
@@ -50,7 +46,7 @@
 	);
 	};
 
-	/* ─── overlay error helper ─── */
+	//overlay error helper
 	function showFsError(canvasId: string): void {
 	const el = document.getElementById(canvasId);
 	if (!el) return;
@@ -60,8 +56,6 @@
 	el.replaceWith(p);
 	}
 
-	/* ------------------------------------------------------------------ */
-	/* charts                                                             */
 	async function drawMonthlyWins(url: string) {
 	destroy("fs-monthly-chart");
 	const labels = last12();
@@ -158,13 +152,13 @@
 
 	async function drawTrophies(url: string): Promise<void> {
 	const container = document.getElementById("fs-trophies") as HTMLElement | null;
-	if (!container) return;           // nothing to update
+	if (!container) return;
 
 	try {
-		/* fetch real data */
+		//fetch real data
 		const { total } = await get<TrophySum>(url);
 
-		/* render card */
+		//render card
 		container.innerHTML = `
 		<div class="flex flex-col items-center justify-center gap-2 p-6
 					rounded-2xl bg-white/10 backdrop-blur border border-white/20">
@@ -174,32 +168,25 @@
 		</div>`;
 	} catch (err) {
 		console.error(err);
-		/* show user-friendly error */
+		//show user-friendly error
 		container.innerHTML =
 		`<p class="py-4 text-center text-red-400">Failed to load stats.</p>`;
 	}
 	}
 
-
-
-	/* ------------------------------------------------------------------ */
-/* CLOSE overlay + destroy charts                                     */
 function closeFriendStats(): void {
   const ov = document.getElementById("friendstats-overlay")!;
-  if (ov.classList.contains("hidden")) return;          // already closed
+  if (ov.classList.contains("hidden")) return;
 
-  /* fade-out animation */
+  //fade-out animation
   ov.classList.add("opacity-0");
   setTimeout(() => ov.classList.add("hidden"), 300);
 
-  /* free Chart.js instances so next open renders fresh data */
+  //free Chart.js instances so next open renders fresh data
   ["fs-monthly-chart", "fs-life-chart",
    "fs-goals-chart",   "fs-hits-chart"].forEach(destroy);
 }
 
-
-	/* ------------------------------------------------------------------ */
-	/* public API                                                         */
 	async function buildAll(fid: number) {
 	const { winsLifetime, winsMonthly, goalsLifetime, goalsMonthly, trophies} = api(fid);
 	await Promise.all([
@@ -227,21 +214,20 @@ function closeFriendStats(): void {
 	"cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-" +
 	"illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
 
-	/* ------------------------------------------------------------------ */
-	/* overlay controls                                                   */
+	//overlay control
 	export function openFriendStats(
 	friendId: number,
 	friend: { username: string; email?: string; avatar_url?: string }
 	) {
-	/* header visuals */
+	//header visuals
 	(document.getElementById("friendstats-avatar") as HTMLImageElement).src =
 	resolveAvatar(friend.avatar_url);
 
 	(document.getElementById("friendstats-name")  as HTMLElement).textContent = friend.username;
 	(document.getElementById("friendstats-email") as HTMLElement).textContent = friend.email ?? "";
 
-	/* level ring */
-	setFriendRing(null);           // start empty
+	//level ring
+	setFriendRing(null);
 	get<{ total: number }>(api(friendId).xp)
 	.then(({ total }) => setFriendRing(total))
 	.catch(err => {
@@ -249,23 +235,23 @@ function closeFriendStats(): void {
 	});
 
 
-	/* draw charts */
+	//draw charts
 	buildAll(friendId).catch(console.error);
 
-	/* show overlay */
+	//show overlay *
 	const ov = document.getElementById("friendstats-overlay")!;
 	ov.classList.remove("hidden","opacity-0");
 	}
 	
-	/* Esc key closes the friend-stats panel */
+	//Esc key closes the friend-stats panel
 	document.addEventListener("keydown", (e) => {
 	if (e.key === "Escape") closeFriendStats();
 	});
 
-	/* close button */
+	//close button
 	document.getElementById("friendstats-close")
         ?.addEventListener("click", closeFriendStats);
 
-	/* expose for friends.ts */
+	//expose for friends.ts
 	declare global { interface Window { openFriendStats?: typeof openFriendStats; } }
 	window.openFriendStats = openFriendStats;

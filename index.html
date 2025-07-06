@@ -578,10 +578,6 @@
 
             <!-- ░░ GAME AREA ░░ -->
             <main class="flex-grow flex items-center justify-center p-8">
-                <div id="game-backdrop"
-                    class="fixed inset-0 z-10 bg-gray-900/90
-                            backdrop-blur-sm hidden transition-opacity duration-300">
-                </div>
                 <div
                     id="game-container"
 					class="relative z-20 w-full max-w-4xl aspect-video bg-gray-900/70 rounded-3xl shadow-2xl overflow-visible"
@@ -729,7 +725,7 @@
 										fill="none"
 										stroke-dasharray="282.6"
 										stroke-dashoffset="282.6"
-										class="transition-[stroke-dashoffset] duration-200 ease-out" />
+										class="transition-[stroke-dashoffset] duration-700 ease-out" />
 								</svg>
 
 								<!-- level number -->
@@ -1118,7 +1114,7 @@
             <!-- ░░ PLAY POP-UP ░░ -->
             <div
                 id="play-overlay"
-                class="overlay fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden opacity-0 transition-opacity duration-100"
+                class="overlay fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden opacity-0 transition-opacity duration-300"
             >
                 <div
                     id="play-container"
@@ -1211,11 +1207,11 @@
                 </div>
             </div>
 
+            <!-- ░░ TOURNAMENT OVERLAY ░░ -->
             <section
                 id="tournament-overlay"
-                class="overlay fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden opacity-0 transition-opacity duration-100"
+                class="overlay fixed inset-0 z-0 flex items-center justify-center backdrop-blur-sm hidden opacity-0 front-of-all"
             >
-
                 <div
                     id="tournament-container"
                     class="modal-inner w-[90vw] max-w-3xl space-y-6 rounded-2xl bg-violet-800/95 p-8 shadow-2xl transition"
@@ -1878,7 +1874,7 @@
 									fill="none"
 									stroke-dasharray="282.6"
 									stroke-dashoffset="282.6"
-									class="transition-[stroke-dashoffset] duration-200 ease-out" />
+									class="transition-[stroke-dashoffset] duration-700 ease-out" />
 							</svg>
 							<span id="friend-level-text"
 								class="absolute inset-0 grid place-items-center

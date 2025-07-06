@@ -2,17 +2,17 @@
  * ------------------------------------------
  *  Inline-profile editor code was moved to profile-setting.ts
  */
-import { showOverlay, hideOverlay }   from './tournament.js'; 
-import { pushHome , pushOverlay} from "./nav_history.js";
-import { initStatsTab }          from "./stats.js";
-import { initHistoryTab }        from "./history.js";
-import { populateProfileViews,
-  setActiveTab, 
-  refreshProfileHeader }          from "./profile-setting.js";
-  import "./welcome.js";
-  import { initRemoteModal } from './main.js';
-  import { HOST } from './config.js';
-  import { initTournamentModal } from "./tournament.js";
+import { initHistoryTab } from "./history.js";
+import { initRemoteModal } from './main.js';
+import { pushHome } from "./nav_history.js";
+import {
+  populateProfileViews,
+  refreshProfileHeader,
+  setActiveTab
+} from "./profile-setting.js";
+import { initStatsTab } from "./stats.js";
+import { hideOverlay, initTournamentModal, showOverlay } from './tournament.js';
+import "./welcome.js";
 
 
   /* cache the two DOM nodes once */
@@ -98,7 +98,7 @@ if (removeBtn) {
 
     /* 2) API call */
     const token = localStorage.getItem('token');
-    const res = await fetch(`http://${HOST}:3000/api/users/avatar`, {
+    const res = await fetch(`/api/users/avatar`, {
       method: 'DELETE',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
@@ -129,7 +129,7 @@ if (avatarInput) {
     fd.append('avatar', file);
 
     const token = localStorage.getItem('token');
-    const res = await fetch(`http://${HOST}:3000/api/users/avatar`, {
+    const res = await fetch(`/api/users/avatar`, {
       method: 'PUT',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: fd,
@@ -141,7 +141,7 @@ if (avatarInput) {
     }
 
     const { avatar_url } = await res.json();             // avatars/xyz.png
-    const fullUrl = `http://${HOST}:3000/uploads/${avatar_url}`;
+    const fullUrl = `/uploads/${avatar_url}`;
 
     /* —— 3. update all cached places —— */
     if (avatarImg) avatarImg.src = fullUrl;
@@ -311,7 +311,7 @@ document.getElementById('remove-2fa-confirm-btn')?.addEventListener('click', asy
   const tokenStorage = localStorage.getItem('token');
 
   try {
-    const res = await fetch(`http://${HOST}:3000/api/2fa/remove`, {
+    const res = await fetch(`/api/2fa/remove`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

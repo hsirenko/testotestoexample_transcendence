@@ -93,7 +93,7 @@ const authHdr = (): HeadersInit => {
 async function showPlayerBadges(selfId: number, oppId: number) {
   try {
     const fetchUser = (id: number) =>
-      fetch(`http://${HOST}:3000/api/users/${id}`, { headers: authHdr() })
+      fetch(`/api/users/${id}`, { headers: authHdr() })
         .then(r => {
           if (!r.ok) throw new Error(`HTTP ${r.status}`);
           return r.json();
@@ -799,9 +799,9 @@ export function connectWebSocket() {
     // }
 	if (socket && socket.readyState === WebSocket.OPEN) return;
 	if (hasJoined) return;
-    console.log(`[client] 🎾 connecting to ws://${HOST}:3000/ws/game`);
+    console.log(`[client] 🎾 connecting to ws://localhost:3000/ws/game`);
     socket = new WebSocket(
-        `ws://${HOST}:3000/ws/game?token=${localStorage.getItem("token")}`
+        `ws://localhost:3000/ws/game?token=${localStorage.getItem("token")}`
     );
     socket.onopen = () => {
 		/* Always send exactly one JOIN on the first successful open */
@@ -942,7 +942,7 @@ function getAvatarUrl(f: Friend): string {
   const val = f.avatar_url?.trim() ?? "";
   if (!val) return ASTRONAUT;
   if (/^https?:\/\//i.test(val)) return val;
-  return `http://${HOST}:3000/uploads/${val}`;
+  return `/uploads/${val}`;
 }
 
 
@@ -1022,7 +1022,7 @@ document.addEventListener("click", async (e) => {
 
     /* ❷ Make sure we own (or create) a game room */
     if (!gameId) {
-        const res = await fetch(`http://${HOST}:3000/api/game`, {
+        const res = await fetch(`/api/game`, {
             method: "POST",
             headers: auth(),
         });
@@ -1038,7 +1038,7 @@ document.addEventListener("click", async (e) => {
 
     /* ❸ Send the actual challenge */
     const token = localStorage.getItem("token");
-    await fetch(`http://${HOST}:3000/api/challenge`, {
+    await fetch(`/api/challenge`, {
         method : "POST",
         headers: {
             "Content-Type": "application/json",
@@ -1087,7 +1087,7 @@ export function initRemoteModal(): void {
     btnCreate.onclick = async () => {
         btnCreate.disabled = true;
         btnJoin.disabled = true;
-        const res = await fetch(`http://${HOST}:3000/api/game`, {
+        const res = await fetch(`/api/game`, {
             method: "POST",
             headers: auth(),
         });
