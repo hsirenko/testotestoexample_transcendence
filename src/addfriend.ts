@@ -22,6 +22,7 @@ function toast(msg: string, isError = false) {
 
 const input = document.getElementById("addfriend-input") as HTMLInputElement;
 const btn = document.getElementById("addfriend-btn") as HTMLButtonElement;
+const cancel = document.getElementById("addfriend-cancel") as HTMLButtonElement;
 
 let editMode = false;
 
@@ -30,7 +31,8 @@ const resetUI = () => {
   editMode = false;
   input.value = "";
   input.classList.add("hidden");
-  btn.textContent = "Add +";
+  cancel.classList.add("hidden");
+  btn.textContent = "Add ";
 };
 
 // Sends a friend request to the server
@@ -53,11 +55,12 @@ async function addFriend(username: string) {
   }
 }
 
-// Handles button click for toggling input and sending request
+// Handles "Add" or "Send" button click
 btn.addEventListener("click", () => {
   if (!editMode) {
     editMode = true;
     input.classList.remove("hidden");
+    cancel.classList.remove("hidden");
     input.focus();
     btn.textContent = "Send";
     return;
@@ -71,7 +74,7 @@ btn.addEventListener("click", () => {
   addFriend(uname);
 });
 
-// Handles keypresses inside the input field
+// Handles key events in input field
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     const uname = input.value.trim();
@@ -79,4 +82,9 @@ input.addEventListener("keydown", (e) => {
   } else if (e.key === "Escape") {
     resetUI();
   }
+});
+
+// Handles X (cancel) button click
+cancel.addEventListener("click", () => {
+  resetUI();
 });

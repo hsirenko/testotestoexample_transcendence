@@ -6,10 +6,9 @@
 // (#notif-panel) and keep the unread badge (#notif-badge) in sync.
 
 import { loadFriendsSidebar } from "./friends.js";
-import {
-	ClientMsgJoin,
-} from "./types/ws.js";
+import { ClientMsgJoin } from "./types/ws.js";
 import { connectWebSocket, setGameId, enableRemoteMode } from "./main.js";
+import { WS_BASE } from "./config.js"; 
 
 /* ------------------------------------------------------------------
  * Types & state
@@ -333,7 +332,7 @@ function startNotificationsSocket(): void {
         console.log("[notif] no token, skipping WS connect");
         return;
     }
-    const wsUrl = `ws://localhost:3000/ws/notifications?token=${token}`;
+    const wsUrl = `${WS_BASE}/notifications?token=${token}`;
     const me = JSON.parse(localStorage.getItem("user") || "{}");
     const myUserId = me.id;
     console.log("[notif] connecting to WS at", wsUrl);

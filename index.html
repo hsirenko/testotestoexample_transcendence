@@ -1737,22 +1737,32 @@
             </button>
             </h2>
                 <!-- add-friend bar -->
-                <div
-                    class="flex items-center gap-2 px-4 pb-3 pt-2 border-b border-white/20"
+                <div class="flex items-center gap-2 px-4 pb-3 pt-2 border-b border-white/20">
+                <input
+                    id="addfriend-input"
+                    type="text"
+                    placeholder="Username…"
+                    class="flex-1 hidden bg-white/10 px-3 py-1 rounded-full text-sm text-white placeholder-white/60 focus:outline-none"
+                />
+
+                <!-- Cancel (X) Button – pretty version -->
+                <button
+                    id="addfriend-cancel"
+                    class="hidden px-3 py-1 rounded-full bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition"
+                    title="Cancel"
                 >
-                    <input
-                        id="addfriend-input"
-                        type="text"
-                        placeholder="Username…"
-                        class="flex-1 hidden bg-white/10 px-3 py-1 rounded-full text-sm placeholder-white/60 focus:outline-none"
-                    />
-                    <button
-                        id="addfriend-btn"
-                        class="px-3 py-1 rounded-full bg-amber-500 hover:bg-amber-600 text-sm font-semibold"
-                    >
-                        Add&nbsp;
-                    </button>
+                    ✕
+                </button>
+
+                <!-- Add/Send Button -->
+                <button
+                    id="addfriend-btn"
+                    class="px-3 py-1 rounded-full bg-amber-500 hover:bg-amber-600 text-sm font-semibold transition"
+                >
+                    Add&nbsp;
+                </button>
                 </div>
+
                 <div
                     id="friends-list"
                     class="flex-1 overflow-y-auto custom-scroll px-4 py-3 space-y-4"
