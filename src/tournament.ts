@@ -94,7 +94,11 @@ document.getElementById('tour-confirm-join-btn')?.addEventListener('click', asyn
 
 document.getElementById('tour-create-btn')?.addEventListener('click', async () => {
   try {
-    const { code: c } = await createTournament(localStorage.getItem('token')!, 'Bracket');
+    resetBracket();                              // clear winners from last tour
+    const { code: c } = await createTournament(
+      localStorage.getItem('token')!,
+      'Bracket'
+    );
     code = c;
     createdCode.textContent = c;
 
@@ -139,6 +143,7 @@ copyBtn?.addEventListener('click', () => {
 
 document.getElementById('tour-confirm-join-btn')?.addEventListener('click', async () => {
   try {
+    resetBracket(); 
     await joinTournament(localStorage.getItem('token')!, codeInput.value.trim().toUpperCase());
     code = codeInput.value.trim().toUpperCase();
     connectWs();
@@ -147,6 +152,35 @@ document.getElementById('tour-confirm-join-btn')?.addEventListener('click', asyn
     errorEl.textContent = 'Invalid or full code';
   }
 });
+
+function resetBracket() {
+  round1 = [];
+  for (const k in semiMap) delete semiMap[k];
+  finalGameId = null;
+
+  slotEls.forEach(el => {
+    switch (+el.dataset.slot!) {
+      case 0:
+      case 1:
+      case 2:
+      case 3:
+        el.textContent = '—';
+        break;
+      case 4:
+        el.textContent = 'Winner Game 1';
+        break;
+      case 5:
+        el.textContent = 'Winner Game 2';
+        break;
+      case 6:
+        el.textContent = 'champion';
+        break;
+    }
+  });
+
+  hideGameBackdrop();
+}
+
 
 function connectWs() {
   if (!code) {
