@@ -379,7 +379,6 @@ window.setGameMode = (mode: "pvp" | "ai"): void => {
 
     LScore = RScore = 0;
     updateScore();
-
     resetObjects();
     resizeCanvas();
     startCountdown(3, beginPlay);
@@ -747,6 +746,7 @@ export function connectWebSocket() {
             if (modal) modal.classList.add("hidden");
             document.getElementById("win-message")?.remove();
             startGameRemote();
+            LScore = RScore = 0;
             resetObjects();
             resizeCanvas();
             updateScore();
