@@ -112,34 +112,37 @@ import db from './utils/db';
 // console.log("✅ 10 dummy matches inserted.");
 
 
-const senderId = 38;
-const receiverId = 49;
+// const senderId = 38;
+// const receiverId = 49;
 
-let existing = db.prepare(`
-  SELECT * FROM friends
-`).all();
+// let existing = db.prepare(`
+//   SELECT * FROM friends
+// `).all();
 
-if (existing.length > 0) {
-  db.prepare(`
-    DELETE FROM friends
-  `).run();
-  console.log(`✅ All rows deleted from the friends table.`);
-} else {
-  console.log(`⚠️  No friends found in the table.`);
-}
+// if (existing.length > 0) {
+//   db.prepare(`
+//     DELETE FROM friends
+//   `).run();
+//   console.log(`✅ All rows deleted from the friends table.`);
+// } else {
+//   console.log(`⚠️  No friends found in the table.`);
+// }
 
-existing = db.prepare(`
-  SELECT * FROM notifications
-`).all();
+// existing = db.prepare(`
+//   SELECT * FROM notifications
+// `).all();
 
-if (existing.length > 0) {
-  db.prepare(`
-    DELETE FROM notifications
-  `).run();
-  console.log(`✅ All rows deleted from the notifications table.`);
-} else {
-  console.log(`⚠️  No notifications found in the table.`);
-}
+// if (existing.length > 0) {
+//   db.prepare(`
+//     DELETE FROM notifications
+//   `).run();
+//   console.log(`✅ All rows deleted from the notifications table.`);
+// } else {
+//   console.log(`⚠️  No notifications found in the table.`);
+// }
+
+db.exec(`ALTER TABLE matches ADD COLUMN winner_score INTEGER;`);
+db.exec(`ALTER TABLE users   ADD COLUMN wallet_address TEXT;`);
 
 // Check if they're already friends
 // const existing = db.prepare(`
