@@ -264,6 +264,8 @@ document.addEventListener("click", ev => {
 });
 
 updateBadge();
+let pingInterval: number | null = null;
+
 function startNotificationsSocket(): void {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -275,9 +277,34 @@ function startNotificationsSocket(): void {
     const myUserId = me.id;
     console.log("[notif] connecting to WS at", wsUrl);
     notifSocket = new WebSocket(wsUrl);
-    notifSocket.onopen  = () => console.log("[notif] WS open");
+    
+    notifSocket.onopen = () => {
+        console.log("[notif] WS open");
+        // Start keepalive ping every 30 seconds
+        pingInterval = window.setInterval(() => {
+            if (notifSocket && notifSocket.readyState === WebSocket.OPEN) {
+                notifSocket.send(JSON.stringify({ type: 'ping' }));
+            }
+        }, 30000);
+    };
+    
     notifSocket.onerror = err => console.log("[notif] WS error", err);
-    notifSocket.onclose = ev  => console.log("[notif] WS closed", ev.code, ev.reason);
+    
+    notifSocket.onclose = ev => {
+        console.log("[notif] WS closed", ev.code, ev.reason);
+        // Clear ping interval on close
+        if (pingInterval) {
+            clearInterval(pingInterval);
+            pingInterval = null;
+        }
+        // Auto-reconnect after 5 seconds if not intentionally closed
+        if (ev.code !== 1000 && localStorage.getItem("token")) {
+            setTimeout(() => {
+                console.log("[notif] Attempting to reconnect...");
+                startNotificationsSocket();
+            }, 5000);
+        }
+    };
         notifSocket.onmessage = async ev => {
       try {
         const incoming = JSON.parse(ev.data);
@@ -328,8 +355,12 @@ export function initNotifications() {
 }
 
 export function stopNotifications() {
+	if (pingInterval) {
+		clearInterval(pingInterval);
+		pingInterval = null;
+	}
 	if (notifSocket) {
-		notifSocket.close();
+		notifSocket.close(1000, "Manual disconnect");
 		notifSocket = null;
 	}
 	notifications = [];

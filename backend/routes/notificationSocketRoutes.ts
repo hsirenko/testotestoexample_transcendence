@@ -44,6 +44,19 @@ export default fp(async function notifSocketRoutes (fastify: FastifyInstance) {
       broadcastPresence(uid, true, friends);
     }
 
+    /* ── handle ping/pong keepalive ────────────────────────────── */
+    socket.on('message', (data) => {
+      try {
+        const message = JSON.parse(data.toString());
+        if (message.type === 'ping') {
+          // Respond with pong to keep connection alive
+          socket.send(JSON.stringify({ type: 'pong' }));
+        }
+      } catch (err) {
+        // Ignore non-JSON messages
+      }
+    });
+
     /* ── handle disconnect ─────────────────────────────────────── */
     socket.on('close', () => {
       fastify.notifConns.delete(uid);
