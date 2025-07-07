@@ -13,6 +13,7 @@ import gameRoutes from '../routes/gameRoutes';
 import notifRoutes from '../routes/notifications';
 import challengeRoutes from '../routes/challengeRoutes';
 import tournamentRoutes      from '../routes/tournamentRoutes';
+import scoreRoutes from '../routes/scoreRoutes';
 
 export default async function protectedRoutes(fastify: FastifyInstance) {
   // Add auth middleware to all routes in this plugin
@@ -31,4 +32,5 @@ export default async function protectedRoutes(fastify: FastifyInstance) {
   await fastify.register(notifRoutes);
   await fastify.register(challengeRoutes);
   await fastify.register(tournamentRoutes);
+  await fastify.register(scoreRoutes);
 } 
