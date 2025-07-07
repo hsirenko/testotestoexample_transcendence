@@ -1,4 +1,3 @@
-// backend/server.ts
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import signupRoutes from './routes/signup';
@@ -23,7 +22,6 @@ import websocketPlugin from '@fastify/websocket';
 export const fastify = Fastify({
 	logger: {
 		level: 'warn',
-		// prettyPrint: true   // optional, if you want human-readable
 	}
 });
 
@@ -70,8 +68,8 @@ const start = async () => {
 		'http://localhost:5500',
 		'http://127.0.0.1:5500',
 		`http://${process.env.IP_ADDR}:5500`,
-    'https://localhost:8443',   // ⬅️ NEW – nginx TLS endpoint
-    'http://localhost:8090'     // (optional) nginx plain-HTTP
+    'https://localhost:8443',
+    'http://localhost:8090'
 	];
     await fastify.register(cors, {
       origin: CLIENT_ORIGINS,
@@ -89,7 +87,7 @@ const start = async () => {
   await fastify.register(emailExistsRoutes);
 	await fastify.register(gameSocketRoutes);
 	await fastify.register(notifSocketRoutes);
-await fastify.register(passwordResetRoutes);   //  ⬅️ add this line
+await fastify.register(passwordResetRoutes);
 
 	
 
@@ -106,5 +104,3 @@ await fastify.register(passwordResetRoutes);   //  ⬅️ add this line
 };
 
 start();
-
-//npx ts-node server.ts

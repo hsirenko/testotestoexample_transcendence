@@ -1,4 +1,3 @@
-// backend/routes/notificationSocketRoutes.ts
 import fp from 'fastify-plugin';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import type { WebSocket } from 'ws';

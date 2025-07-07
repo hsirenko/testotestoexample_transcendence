@@ -1,4 +1,3 @@
-// backend/gameManager.ts
 import { Game } from './game';
 
 // Active games by their IDs

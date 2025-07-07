@@ -1,11 +1,9 @@
-// backend/routes/passwordReset.ts
 import { FastifyInstance } from 'fastify';
 import db                       from '../utils/db';
 import { hashPassword, verifyPassword } from '../utils/hash';
 import nodemailer               from 'nodemailer';
 
-/* helpers ────────────────────────────────────────────────────────────── */
-/* helpers ─────────────────────────────────────── */
+/* helpers*/
 function generateSixDigitCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
@@ -42,7 +40,7 @@ async function sendResetEmail(to: string, code: string) {
     });
 
 
-    /* optional – quick handshake to fail fast */
+    /*quick handshake to fail fast */
     await transporter.verify();
 
     await transporter.sendMail({
@@ -57,9 +55,9 @@ async function sendResetEmail(to: string, code: string) {
     });
 
   } catch (err: any) {
-    /* ───── fallback : any SMTP error ───── */
+    /* fallback */
     console.warn(
-      `⚠️  SMTP failed (${err.code || err.message}). Falling back to console log.`
+      `SMTP failed (${err.code || err.message}). Falling back to console log.`
     );
     console.log(`📧 [DEV] Password-reset code for <${to}> = ${code}`);
   }
@@ -69,7 +67,7 @@ async function sendResetEmail(to: string, code: string) {
 /* routes ─────────────────────────────────────────────────────────────── */
 export default async function passwordResetRoutes (fastify: FastifyInstance) {
 
-  /* 1️⃣  Request code --------------------------------------------------- */
+  /*Request code --------------------------------------------------- */
   fastify.post('/password/forgot', async (req, reply) => {
     const { email } = req.body as { email?: string };
     if (!email) return reply.code(400).send({ error: 'Email required' });
@@ -96,7 +94,7 @@ export default async function passwordResetRoutes (fastify: FastifyInstance) {
       'If the address is registered, a reset code has been sent.' });
   });
 
-  /* 2️⃣  Verify code ---------------------------------------------------- */
+  /*Verify code ---------------------------------------------------- */
   fastify.post('/password/verify', async (req, reply) => {
     const { email, code } = req.body as { email?: string; code?: string };
     if (!email || !code) return reply.code(400).send({ error: 'Email & code required' });
@@ -112,25 +110,22 @@ export default async function passwordResetRoutes (fastify: FastifyInstance) {
     `).get(user.id);
 
     /* unified error */
-    /* unified error */
 const deny = () => reply.code(400).send({ error: 'Invalid code or expired' });
 
-/*  ⬇️  NEW: reject immediately if the format is wrong  */
+/*reject immediately if the format is wrong  */
 if (!/^\d{6}$/.test(code)) return deny();
 
-/* keep the existing checks */
 if (!rec)                       return deny();
 if (isExpired(rec.expires_at))  return deny();
 if (!verifyPassword(code, rec.code_hash)) return deny();
 
 
 
-    /* The code is correct – mark as verified but keep for /reset step */
     db.prepare('UPDATE password_resets SET used = 1 WHERE id = ?').run(rec.id);
     return reply.send({ message: 'Code verified' });
   });
 
-  /* 3️⃣  Change password ------------------------------------------------ */
+  /* Change password ------------------------------------------------ */
   fastify.post('/password/reset', async (req, reply) => {
     const { email, code, newPassword } = req.body as
           { email?: string; code?: string; newPassword?: string };
@@ -159,7 +154,7 @@ if (!verifyPassword(code, rec.code_hash)) return deny();     //  ←­ add the !
 if (isExpired(rec.expires_at))  return deny('Code expired');
 
 
-    /* ✅  finally update the actual user password */
+    /*  finally update the actual user password */
     const pw_hash = hashPassword(newPassword);
     db.prepare('UPDATE users SET password_hash = ? WHERE id = ?')
       .run(pw_hash, user.id);

@@ -1,11 +1,10 @@
-//backend/routes/notifications.ts
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import db from '../utils/db';
 import { authMiddleware } from '../middleware/auth';
 import { JWTPayload } from '../utils/jwt';
 
 export default async function notifRoutes(fastify: FastifyInstance) {
-	// 1️⃣ Fetch all notifications for me
+	//Fetch all notifications for me
 	fastify.get('/api/notifications', { preHandler: authMiddleware }, async (req, reply) => {
 		const { userId } = (req as any).user as JWTPayload;
 		const rows = db.prepare(`
@@ -23,10 +22,9 @@ export default async function notifRoutes(fastify: FastifyInstance) {
 		return reply.send(rows);
 	});
 
-	// 2️⃣ Mark one as read
+	//Mark one as read
 	fastify.post('/api/notifications/read', { preHandler: authMiddleware }, async (req, reply) => {
 		const { userId } = (req as any).user as JWTPayload;
-		// const notifId = parseInt((req.params as any).id, 10);
 		db.prepare(`
 		UPDATE notifications SET is_read = 1
 		WHERE user_id = ?
@@ -34,7 +32,7 @@ export default async function notifRoutes(fastify: FastifyInstance) {
 		return reply.send({ success: true });
 	});
 
-	// 3️⃣ DELETE a notification
+	//DELETE a notification
 	fastify.delete('/api/notifications/:id', { preHandler: authMiddleware }, async (req, reply) => {
     const { userId } = (req as any).user as JWTPayload;
     const notifId = parseInt((req.params as any).id, 10);
@@ -53,19 +51,12 @@ export default async function notifRoutes(fastify: FastifyInstance) {
 
 
 
-	/* 4️⃣  DELETE all read (but keep pending ones) */
+	/* DELETE all read (but keep pending ones) */
 	fastify.delete(
 	"/api/notifications",
 	{ preHandler: authMiddleware },
 	async (req, reply) => {
 		const { userId } = (req as any).user as JWTPayload;
-
-		/* -----------------------------------------------------------------
-		* Rule: keep notifications that are still actionable.
-		* – challenge      → keep if challenges.status  = 'pending'
-		* – friend_request → keep if friends.status     = 'pending'
-		* Everything else can go if it’s marked read.
-		* ----------------------------------------------------------------*/
 		db.prepare(
 		`DELETE FROM notifications
 		WHERE user_id = :userId

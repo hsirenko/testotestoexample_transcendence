@@ -8,7 +8,6 @@ if (!JWT_SECRET) {
   throw new Error('JWT_SECRET is not defined in environment variables');
 }
 
-// Assert JWT_SECRET as string since we've checked it's not undefined
 const secret: string = JWT_SECRET;
 
 const TOKEN_EXPIRY = '1h';

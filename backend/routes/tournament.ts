@@ -1,4 +1,3 @@
-// routes/tournaments.ts
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import db from '../utils/db';
 import { authMiddleware } from '../middleware/auth';

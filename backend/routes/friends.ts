@@ -1,4 +1,3 @@
-//backend/routes/friends.ts
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import db from '../utils/db';
 import { authMiddleware } from '../middleware/auth';
@@ -11,7 +10,7 @@ export default async function friendsRoutes(fastify: FastifyInstance) {
   fastify.get('/api/users/me/friends',
     { preHandler: authMiddleware },
     async (req: FastifyRequest, reply: FastifyReply) => {
-  const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
+    const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
 
     const friends = db.prepare(`
       SELECT u.id, u.username, u.email, u.avatar_url, f.status
@@ -22,10 +21,9 @@ export default async function friendsRoutes(fastify: FastifyInstance) {
       WHERE (f.sender_id = ? OR f.receiver_id = ?) AND f.status = 'accepted'
     `).all(userId, userId, userId);
 
-    // inside fastify.get('/api/users/me/friends', …)
     const rowsWithOnline = friends.map((r: any) => ({
       ...r,
-      online: fastify.presence.has(r.id)     // <- NEW boolean
+      online: fastify.presence.has(r.id)
     }));
     return reply.send(rowsWithOnline);
 
@@ -35,7 +33,7 @@ export default async function friendsRoutes(fastify: FastifyInstance) {
   fastify.get('/api/users/me/friends/pending',
     { preHandler: authMiddleware },
     async (req: FastifyRequest, reply: FastifyReply) => {
-  const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
+    const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
 
     const rows = db.prepare(`
       SELECT f.id, u.username, f.sender_id, f.receiver_id, f.status
@@ -48,13 +46,11 @@ export default async function friendsRoutes(fastify: FastifyInstance) {
   });
 
   // 3. Send friend request
-  fastify.post('/api/users/add-friend', {
-  preHandler: authMiddleware
-  }, async (req: FastifyRequest, reply: FastifyReply) => {
-    // const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
-    // const { username } = req.body as { username: string };
-	const { userId, username: me } = (req as FastifyRequest & { user: JWTPayload }).user;
-	const { username } = req.body as { username: string };
+  fastify.post('/api/users/add-friend',
+    { preHandler: authMiddleware },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+  	const { userId, username: me } = (req as FastifyRequest & { user: JWTPayload }).user;
+	  const { username } = req.body as { username: string };
 
     if (!username || typeof username !== 'string') {
       return reply.status(400).send({ error: 'Invalid target username' });
@@ -87,7 +83,7 @@ export default async function friendsRoutes(fastify: FastifyInstance) {
       INSERT INTO friends (sender_id, receiver_id, status)
       VALUES (?, ?, 'pending')
     `).run(userId, targetId);
-	const friendReqId = insertInfo.lastInsertRowid as number;
+	  const friendReqId = insertInfo.lastInsertRowid as number;
 
     // 1) persist a notification pointing at that friend‑request
 	const notifText = `You have a new friend request from ${me}`;
@@ -101,7 +97,6 @@ export default async function friendsRoutes(fastify: FastifyInstance) {
     );
 
     // 2) push via WS if they’re currently connected
-    // const conns = fastify['notifConns'] as Map<number, WebSocket>;
 	const conns = fastify.notifConns;
 	if (conns) {
 		const sock  = conns.get(targetId);

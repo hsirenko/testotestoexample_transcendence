@@ -1,4 +1,3 @@
-// backend/tournamentManager.ts
 import { randomBytes } from "crypto";
 import db from "./utils/db";
 import { Game } from "./game";
@@ -34,7 +33,7 @@ export function leaveTournament(code: string, userId: number): void {
   const tour = tours.get(code);
   if (!tour) return;
 
-  /* creator leaves → cancel everything (only if not started) */
+  /* creator leaves then cancel everything (only if not started) */
   const isCreator = userId === tour.playerIds[0];
   if (isCreator && tour.semiGames.length === 0) {
     cancelTournament(code);
@@ -44,7 +43,7 @@ export function leaveTournament(code: string, userId: number): void {
   /* normal player leaves (and tour not started) */
   const idx = tour.playerIds.indexOf(userId);
   if (idx === -1) return;
-  if (tour.semiGames.length > 0) return; // already running
+  if (tour.semiGames.length > 0) return;
 
   tour.playerIds.splice(idx, 1);
 
@@ -64,7 +63,7 @@ export function leaveTournament(code: string, userId: number): void {
   broadcast(tour, { type: "playersUpdate", players: roster });
 }
 
-/*──────────── public helpers ─────────────────────────────────────*/
+//helpers
 export function createTournament(
   name: string,
   creatorId: number
@@ -100,7 +99,6 @@ export function cancelTournament(code: string): void {
     try {
       sock.close(1000, "tournament cancelled");
     } catch (_) {
-      /* ignore */
     }
   }
 
@@ -162,7 +160,6 @@ export function attachSocket(code: string, ws: WebSocket) {
   try {
     ws.send(JSON.stringify({ type: "playersUpdate", players: roster }));
   } catch {
-    /* ignore broken pipe */
   }
 }
 
@@ -195,8 +192,8 @@ export function handleGameResult(
 
   broadcast(tour, {
     type: "matchFinished",
-    winnerId, // numeric id
-    gameId, // so clients can ignore if it’s not their match
+    winnerId,
+    gameId,
   });
   /* If a semi just ended we may have to start the final */
   if (
@@ -221,7 +218,7 @@ export function handleGameResult(
   }
 }
 
-/*──────────── internal helpers ───────────────────────────────────*/
+//helpers
 function startTournament(tour: LiveTournament) {
   db.prepare(`UPDATE tournaments SET status = 'running' WHERE id = ?`).run(
     tour.id
@@ -263,7 +260,7 @@ function createGameRowAndInstance(
   p1: number,
   p2: number
 ) {
-  const gameId = genCode(); // reuse same alphabet/length
+  const gameId = genCode();
   const game = new Game(gameId);
   games.set(gameId, game);
   gameToTourCode.set(gameId, tour.code);
@@ -281,7 +278,6 @@ function broadcast(tour: LiveTournament, payload: unknown) {
     try {
       ws.send(JSON.stringify(payload));
     } catch {
-      /* ignore broken sockets */
     }
   });
 }

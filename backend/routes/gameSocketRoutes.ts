@@ -1,4 +1,3 @@
-// backend/routes/gameSocketRoutes.ts
 import type { FastifyRequest } from 'fastify';
 import type { WebSocket }       from 'ws';
 import { FastifyInstance }      from 'fastify';
@@ -62,7 +61,7 @@ export default async function gameSocketRoutes(fastify: FastifyInstance) {
 			.get(currentGame.id) as { id: number } | undefined;
 
 			if (!row) {
-			// stand-alone 1-vs-1 game → create a fresh row
+			// stand-alone 1-vs-1 game ,create a fresh row
 			const insert = db.prepare(`
 				INSERT INTO matches (game_id, tournament_id, player1_id, player2_id)
 				VALUES (?, NULL, ?, ?)
@@ -70,7 +69,7 @@ export default async function gameSocketRoutes(fastify: FastifyInstance) {
 
 			currentGame.dbMatchId = Number(insert.lastInsertRowid);
 			} else {
-			// tournament match → row already exists, just keep its id
+			// tournament match , row already exists, just keep its id
 			currentGame.dbMatchId = row.id;
 			}
           }
@@ -96,14 +95,14 @@ export default async function gameSocketRoutes(fastify: FastifyInstance) {
         // 1) if the other side is still connected, force-end the game
         const opponentSide = side === 'left' ? 'right' : 'left';
         if (currentGame.players.has(opponentSide)) {
-          // this triggers your in-memory physics to decide final scores
+          // this triggers the in-memory physics to decide final scores
           currentGame.end(opponentSide);
         }
 
         // 2) extract DB info
         if (currentGame.dbMatchId == null) {
-		  console.error("No dbMatchId on game:", currentGame.id);
-		  return;
+		    console.error("No dbMatchId on game:", currentGame.id);
+		    return;
 		}
 		const matchId = currentGame.dbMatchId;
         const leftScore  = currentGame.scores.left;

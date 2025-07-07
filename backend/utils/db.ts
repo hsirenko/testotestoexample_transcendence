@@ -112,7 +112,6 @@ db.exec(`
 `);
 
 /* ───────────── Password-reset codes ───────────── */
-/* ───────────── Password-reset codes ───────────── */
 db.exec(`
 CREATE TABLE IF NOT EXISTS password_resets (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,

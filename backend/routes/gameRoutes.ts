@@ -1,4 +1,3 @@
-//backend/routes/gameRoutes.ts
 import { randomUUID } from 'crypto';
 import { games } from '../gameManager';
 import { Game } from '../game';

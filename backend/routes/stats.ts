@@ -1,4 +1,3 @@
-// routes/stats.ts
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import db from '../utils/db';
 import { authMiddleware } from '../middleware/auth';

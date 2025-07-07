@@ -27,7 +27,7 @@ export default async function twoFactorVerifyRoutes(fastify: FastifyInstance) {
 				return reply.status(401).send({ error: 'Invalid 2FA token' });
 			}
 
-			// ✅ Save secret in DB
+			// Save secret in DB
 			db.prepare(`UPDATE users SET twofa_secret = ?, twofa_enabled = 1 WHERE id = ?`)
 				.run(secretFromReq, userId);
 

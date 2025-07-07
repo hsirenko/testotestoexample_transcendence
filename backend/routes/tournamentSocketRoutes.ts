@@ -1,4 +1,3 @@
-// backend/routes/tournamentSocketRoutes.ts
 import type { FastifyRequest }       from 'fastify';
 import type { FastifyInstance }      from 'fastify';
 import type { WebSocket }            from 'ws';
@@ -48,7 +47,7 @@ export default async function tournamentSocketRoutes (fastify: FastifyInstance) 
 
       socket.on('close', () => {
   detachSocket(code.toUpperCase(), socket);
-  leaveTournament(code.toUpperCase(), user.userId);   // ← remove the leaver
+  leaveTournament(code.toUpperCase(), user.userId);   // remove the leaver
 });
   });
 }

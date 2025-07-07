@@ -16,8 +16,8 @@ export function hashPassword(
 /* ─── verifyPassword ─────────────────────────────────────────────────────── */
 export function verifyPassword(plain: string, stored: string): boolean {
   const [salt, original] = stored.split(':');
-  if (!salt || !original) return false;                          // malformed DB row
+  if (!salt || !original) return false;
 
   const fresh = crypto.pbkdf2Sync(plain, salt, ROUNDS, DKLEN, DIGEST);
-  return crypto.timingSafeEqual(fresh, Buffer.from(original, 'hex'));  // constant-time
+  return crypto.timingSafeEqual(fresh, Buffer.from(original, 'hex'));
 }

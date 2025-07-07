@@ -5,7 +5,6 @@ import { JWTPayload } from "../utils/jwt";
 
 export default async function challengeRoutes(fastify: FastifyInstance) {
   // POST /api/challenge
-  // { toUserId: number }
   fastify.post(
     "/api/challenge",
     { preHandler: authMiddleware },
@@ -39,7 +38,7 @@ export default async function challengeRoutes(fastify: FastifyInstance) {
             id: notifId,
             type: "challenge",
             reference_id: fromUserId,
-            gameId,                        // key part: share the room ID
+            gameId,
             text: `Player ${fromUserId} has challenged you!`,
             date: new Date().toISOString(),
             read: false,

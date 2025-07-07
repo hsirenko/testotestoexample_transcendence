@@ -1,4 +1,3 @@
-// backend/game.ts
 import type { WebSocket } from 'ws';
 
 // Simple 800×600 coordinate system
@@ -56,14 +55,14 @@ export class Game {
   }
 
   start() {
-  console.log(`[server] ▶️ Game ${this.id} loop started`);
+  console.log(`[server] -> Game ${this.id} loop started`);
 
   /* create the 60 FPS timer only once */
   if (!this.interval) {
     this.interval = setInterval(() => this.step(1 / 60), 1000 / 60);
   }
 
-  /* fresh match ⇒ fresh timer & centred paddles ------------------ */
+  /* fresh match -> fresh timer & centred paddles ------------------ */
   this.spawnTime = Date.now();                // a1 reset rally-elapsed clock
   this.paddles.left.y  = HEIGHT / 2 - PADDLE_H / 2;
   this.paddles.right.y = HEIGHT / 2 - PADDLE_H / 2;
@@ -74,12 +73,9 @@ export class Game {
 
 
   /** Advance physics one frame and broadcast the new state. */
-  /** Advance physics one frame and broadcast the new state. */
   private step(dt: number): void {
 
-    /* -------------------------------------------------------------
-       Bail out if the game is currently frozen between rallies
-    -------------------------------------------------------------- */
+    /*Bail out if the game is currently frozen between rallies*/
     if (!this.running) return;
 
     /* -------------------------------------------------------------
@@ -98,15 +94,11 @@ export class Game {
       this.ball.v.y *= f;
     }
 
-    /* -------------------------------------------------------------
-       2) Move the ball
-    -------------------------------------------------------------- */
+    /*2) Move the ball*/
     this.ball.x += this.ball.v.x * dt;
     this.ball.y += this.ball.v.y * dt;
 
-    /* -------------------------------------------------------------
-       3) Bounce off top / bottom walls
-    -------------------------------------------------------------- */
+    /*3) Bounce off top / bottom walls*/
     if (this.ball.y - this.ball.r < 0) {
       this.ball.y  = this.ball.r;
       this.ball.v.y *= -1;
@@ -133,7 +125,7 @@ export class Game {
 
       /* --- compute new outgoing direction ----------------------- */
       const rel = (this.ball.y - (p.y + p.h / 2)) / (p.h / 2);  // –1 … +1
-      const ang = rel * (Math.PI / 3);                          // ±60°
+      const ang = rel * (Math.PI / 3);                          // ~60°
       const speed = Math.hypot(this.ball.v.x, this.ball.v.y);   // keep magnitude
       const dir   = side === 'left' ? 1 : -1;                   // +x or –x
 
@@ -147,9 +139,7 @@ export class Game {
         this.ball.x = p.x - this.ball.r;
     });
 
-    /* -------------------------------------------------------------
-       5) Scoring
-    -------------------------------------------------------------- */
+    /*5) Scoring*/
     if (this.ball.x + this.ball.r < 0) {          // right player scores
       this.scores.right++;
       this.spawnTime = Date.now();
@@ -165,9 +155,7 @@ export class Game {
       return;
     }
 
-    /* -------------------------------------------------------------
-       6) Broadcast the updated state to both clients
-    -------------------------------------------------------------- */
+    /*6) Broadcast the updated state to both clients*/
     this.broadcastState();
   }
 
@@ -216,7 +204,6 @@ export class Game {
       ball: this.ball,
       scores: this.scores
     };
-	// console.log('[server] ▶️ broadcastState', msg.scores, msg.ball);
     const j = JSON.stringify(msg);
     for (const clientInfo of this.players.values()) clientInfo.ws.send(j);
   }

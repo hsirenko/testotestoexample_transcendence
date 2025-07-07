@@ -13,7 +13,6 @@ type GoogleProfile = {
   name: string;
   picture: string;
 };
-
 export default async function googleAuthRoutes(fastify: FastifyInstance) {
   fastify.get('/auth/google/callback', async function (request, reply) {
     const token = await fastify.googleOAuth2.getAccessTokenFromAuthorizationCodeFlow(request);
@@ -77,10 +76,6 @@ export default async function googleAuthRoutes(fastify: FastifyInstance) {
 	} catch (err) {
 		return reply.status(401).send({ error: 'Invalid or expired token' });
 	}
-
-	// if (!payload.twofaPending || !payload.email) {
-	// 	return reply.status(400).send({ error: 'Invalid 2FA flow' });
-	// }
 
 	const user = db.prepare('SELECT * FROM users WHERE email = ?').get(payload.email);
 	if (!user || !user.twofa_enabled) {

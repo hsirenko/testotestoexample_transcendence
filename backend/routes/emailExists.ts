@@ -1,4 +1,3 @@
-// backend/routes/emailExists.ts
 import { FastifyInstance } from 'fastify';
 import db from '../utils/db';
 

@@ -1,4 +1,3 @@
-// routes/user.ts
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import db from '../utils/db';
 import { authMiddleware } from '../middleware/auth';
@@ -44,17 +43,17 @@ export default async function userRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: 'Nothing to update' });
     }
 
-    // ✅ Validate username
+    // Validate username
     if (username && username.length < 2) {
       return reply.status(400).send({ error: 'Username must be at least 2 characters long' });
     }
 
-    // ✅ Validate email
+    // Validate email
     if (email && !isValidEmail(email)) {
       return reply.status(400).send({ error: 'Invalid email format' });
     }
 
-    // ✅ Validate password change
+    // Validate password change
     if (newPassword) {
       if (!oldPassword) {
         return reply.status(400).send({ error: 'Old password is required to change your password' });
@@ -72,7 +71,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
       }
     }
 
-    // ✅ Check for duplicate username/email
+    // Check for duplicate username/email
     if (username || email) {
       const existing = db.prepare(`
         SELECT id FROM users WHERE (username = ? OR email = ?) AND id != ?
@@ -125,10 +124,8 @@ export default async function userRoutes(fastify: FastifyInstance) {
     '/api/users/me',
     { preHandler: authMiddleware },
     async (req: FastifyRequest, reply: FastifyReply) => {
-      // authMiddleware has put the payload on req.user
       const { userId } = (req as FastifyRequest & { user: JWTPayload }).user;
 
-      // Fetch all the fields you want to expose
       const user = db.prepare(`
         SELECT id, username, email, xp_level, trophies, avatar_url, created_at, twofa_enabled
         FROM users
@@ -147,14 +144,12 @@ export default async function userRoutes(fastify: FastifyInstance) {
     '/api/users/:id',                           
     async (req: FastifyRequest, reply: FastifyReply) => {
 
-      /* ── validate & coerce id param ─────────────────────────────── */
       const { id } = req.params as { id: string };
       const userId = Number(id);
       if (!Number.isInteger(userId) || userId <= 0) {
         return reply.status(400).send({ error: 'Invalid user id' });
       }
 
-      /* ── fetch public-safe fields ───────────────────────────────── */
       const user = db.prepare(`
         SELECT id,
               username,
@@ -174,9 +169,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
     }
   );
 
-// ────────────────────────────────────────────────────────────────────
 // REMOVE current avatar  +  delete the file from /uploads/avatars
-// ────────────────────────────────────────────────────────────────────
 fastify.delete(
   "/api/users/avatar",
   { preHandler: authMiddleware },
@@ -195,10 +188,10 @@ fastify.delete(
       const fullPath = path.join(process.cwd(), "uploads", rel);
       try {
         await fs.promises.unlink(fullPath);
-        console.log("🗑️  deleted avatar file", fullPath);
+        console.log("deleted avatar file", fullPath);
       } catch (err) {
         // file might already be gone – don’t fail the request
-        console.warn("⚠️  could not delete avatar file:", err);
+        console.warn("could not delete avatar file:", err);
       }
     }
 
@@ -241,7 +234,7 @@ fastify.put(
       db.prepare("UPDATE users SET avatar_url = ? WHERE id = ?")
         .run(relative, userId);
 
-      /** 🔑 only now – after a successful write – delete the previous file */
+      /** only now – after a successful write – delete the previous file */
       deleteAvatarFile(prev?.avatar_url);
 
       return reply.send({ avatar_url: relative });
@@ -274,7 +267,7 @@ fastify.put(
     db.prepare("UPDATE users SET avatar_url = ? WHERE id = ?")
       .run(relative, userId);
 
-    /** 🔑 safe to delete the old one now */
+    /** safe to delete the old one now */
     deleteAvatarFile(prev?.avatar_url);
 
     return reply.send({ avatar_url: relative });
