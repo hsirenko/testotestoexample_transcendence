@@ -803,8 +803,8 @@ export function connectWebSocket() {
             gameId = "";
         }
     };
-    socket.onerror = (err) => console.error("[client] ⚠️ ws error", err);
-    socket.onclose = (ev) => console.log("[client] ❌ ws closed", ev);
+    socket.onerror = (err) => console.error("[client] ws error", err);
+    socket.onclose = (ev) => console.log("[client] ws closed", ev);
 }
 
 //here is the new challenge pop up part
@@ -1006,6 +1006,7 @@ export function initRemoteModal(): void {
 
     // Show join section
     btnJoin.onclick = () => {
+        btnCreate.disabled = true;
         sectJoin.classList.remove("hidden");
         joinInp.value = "";
     };
@@ -1030,12 +1031,18 @@ export function initRemoteModal(): void {
 };
 
     // Close modal
-    closeBtn.onclick = () => hideOverlay(ov, inner);
+    closeBtn.onclick = () => {
+        hideOverlay(ov, inner);
+        btnCreate.disabled = false;
+        btnJoin.disabled = false;
+    }
     // Close modal by Esc
     document.addEventListener(
         "keydown",
         (e) => {
             if (e.key === "Escape" && !ov.classList.contains("hidden")) {
+                btnCreate.disabled = false;
+                btnJoin.disabled = false;
                 hideOverlay(ov, inner);
             }
         },
