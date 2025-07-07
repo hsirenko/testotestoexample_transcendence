@@ -212,12 +212,12 @@ function connectWs() {
       bracketHint.textContent = 'A match is running…';
     }
 
-
     if (msg.type === 'matchFinished') {
       if (msg.gameId === finalGameId) {
-        setSlot(6, msg.winnerId);                      // champion
+        setSlot(6, msg.winnerId);
       } else if (semiMap[msg.gameId]) {
-        setSlot(semiMap[msg.gameId], msg.winnerId);    // semi winner
+        const isTopHalf = round1.slice(0, 2).includes(msg.winnerId);
+        setSlot((isTopHalf ? 4 : 5) as 4 | 5, msg.winnerId);
       }
       bracketHint.textContent = 'Waiting for next match…';
     }
