@@ -38,19 +38,7 @@ const slotEls = Array.from(document.querySelectorAll<HTMLDivElement>('[data-slot
 const YOU     = localStorage.getItem('username') ?? 'you';
 
 //tournament remote play background to hide bracket
-// const backdrop = document.getElementById('game-backdrop')!;
-
-/* ensure #game-backdrop exists even in Docker build */
-let backdrop = document.getElementById('game-backdrop') as HTMLElement | null;
-
-if (!backdrop) {
-  backdrop = document.createElement('div');
-  backdrop.id = 'game-backdrop';
-  backdrop.className =
-    'fixed inset-0 bg-black/25 z-40 hidden opacity-0 transition-opacity';
-  document.body.appendChild(backdrop);
-}
-
+const backdrop = document.getElementById('game-backdrop')!;
 
 /* ───── runtime state ───── */
 let code       = '';
@@ -96,7 +84,7 @@ document.getElementById('tour-create-btn')?.addEventListener('click', async () =
 /*──────────────────────────────────────────────────────────────*
  *  JOIN  (other players)
  *──────────────────────────────────────────────────────────────*/
-document.getElementById('tour-join-btn')?.addEventListener('click', async () => {
+document.getElementById('tour-confirm-join-btn')?.addEventListener('click', async () => {
   if (tourErr) tourErr.textContent = "";
 
   try {
