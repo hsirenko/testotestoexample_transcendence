@@ -20,27 +20,29 @@
 				vx = ball.v.x, // ball horizantal velocity
 				vy = ball.v.y; // ball vertical velocity
 
-		while (true) {
+		while (true)
+		{
 			const dtX  = (paddleX - bx) / vx; // delta t (time) = distance to reach the AI paddle over the speed
 			const next = by + vy * dtX; // calculate where the ball could be if it does not bounce on a wall.. 
 
-			if (next >= r && next <= canvasH - r) { // checking if the calculation will be in the range of the playground
-			return next;
-			}
+			if (next >= r && next <= canvasH - r) return next; // checking if the calculation will be in the range of the playground
 
 			// Bounce off a wall and continue
-			if (vy > 0) { // If ball is travelling downward
-			const dtWall = (canvasH - r - by) / vy; // time untill the ball touch the down wall
-			bx += vx * dtWall;
-			by  = canvasH - r;
-			vy  = -vy;
-			} else { // If ball is travelling upward
-			const dtWall = (r - by) / vy; // time untill the ball touch the up wall
-			bx += vx * dtWall;
-			by  = r;
-			vy  = -vy;
+			if (vy > 0) // If ball is travelling downward
+			{
+				const dtWall = (canvasH - r - by) / vy; // time untill the ball touch the down wall
+				bx += vx * dtWall;
+				by  = canvasH - r;
+				vy  = -vy;
 			}
-	}
+			else // If ball is travelling upward
+			{ 
+				const dtWall = (r - by) / vy; // time untill the ball touch the up wall
+				bx += vx * dtWall;
+				by  = r;
+				vy  = -vy;
+			}
+		}
 	}
 
 	function computeMove( ball: Ball, paddle: Paddle, dt: number, canvasH: number): { up: boolean; down: boolean }
