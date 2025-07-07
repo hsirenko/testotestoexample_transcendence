@@ -495,7 +495,8 @@ function handleWin(remote: boolean): void {
     playing = false;
     //reshow that shit
     document.body.classList.remove("game-playing");
-    (window as any).refreshMobilePads?.(); // hide mobile arrows
+    (window as any).refreshMobilePads?.(); // hide mobile arrows.
+    (window as any).hideGameBackdrop?.();
 
     const winner = LScore > RScore ? "Left Player" : "Right Player";
 

@@ -38,7 +38,18 @@ const slotEls = Array.from(document.querySelectorAll<HTMLDivElement>('[data-slot
 const YOU     = localStorage.getItem('username') ?? 'you';
 
 //tournament remote play background to hide bracket
-const backdrop = document.getElementById('game-backdrop')!;
+// const backdrop = document.getElementById('game-backdrop')!;
+
+/* ensure #game-backdrop exists even in Docker build */
+let backdrop = document.getElementById('game-backdrop') as HTMLElement | null;
+
+if (!backdrop) {
+  backdrop = document.createElement('div');
+  backdrop.id = 'game-backdrop';
+  backdrop.className =
+    'fixed inset-0 bg-black/25 z-40 hidden opacity-0 transition-opacity';
+  document.body.appendChild(backdrop);
+}
 
 
 /* ───── runtime state ───── */
@@ -57,11 +68,8 @@ function setSlot(idx: 4 | 5 | 6, playerId: number) {
     if (Number(el.dataset.slot) === idx) el.textContent = name;
   });
 }
-
-function showGameBackdrop()  { backdrop.classList.remove('hidden', 'opacity-0'); }
-function hideGameBackdrop()  { backdrop.classList.add   ('hidden', 'opacity-0'); }
-
-
+function showGameBackdrop() { backdrop?.classList.remove('hidden','opacity-0'); }
+function hideGameBackdrop() { backdrop?.classList.add   ('hidden','opacity-0'); }
 /*──────────────────────────────────────────────────────────────*
  *  CREATE  (owner)
  *──────────────────────────────────────────────────────────────*/
@@ -108,10 +116,6 @@ document.getElementById('tour-join-btn')?.addEventListener('click', async () => 
     code = "";                                      // reset so the next try works
   }
 });
-
-
-
-
 
 /*──────────────────────────────────────────────────────────────*
  *  CREATE / JOIN handlers
@@ -174,7 +178,6 @@ document.getElementById('tour-confirm-join-btn')?.addEventListener('click', asyn
     errorEl.textContent = 'Invalid or full code';
   }
 });
-
 
 /*──────────────────────────────────────────────────────────────*
  *  Web-socket helper  – now clears stale data when finished
