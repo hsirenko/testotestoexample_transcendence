@@ -3,4 +3,3 @@ node_modules
 .env
 dist
 .vscode
-src/config.ts
