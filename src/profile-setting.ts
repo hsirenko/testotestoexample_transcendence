@@ -1,10 +1,5 @@
-/* profile-setting.ts – Info panel & inline-editor
-* ------------------------------------------------
-*  – validators
-*  – populateProfileViews / setActiveTab / refreshProfileHeader (exported)
-*  – edit / save / cancel logic with password rules
-*  – toast + error helpers
-*/
+// profile-setting.ts – Info panel & inline-editor
+
 
 import { resolveAvatar } from "./friends.js";
 
@@ -12,7 +7,7 @@ export function $(sel: string): HTMLElement | null {
 return document.querySelector(sel);
 }
 
-/* ───────── validators ───────── */
+//validators
 function validateEmail(email: string): string | null {
 return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 	? null
@@ -25,14 +20,13 @@ if (!/\d/.test(pw)) return "Password needs at least one number.";
 return null;
 }
 
-/* — auth header & joined-date fetch — */
+//athentication header
 function getAuthHeader(): HeadersInit {
 const t = localStorage.getItem("token");
 return t ? { Authorization: `Bearer ${t}` } : {};
 }
 
-/* ─── single memoised /api/users/me fetch ─── */
-/* ─── always-fresh /api/users/me fetch ─── */
+
 async function fetchMe(): Promise<any | null> {
   try {
     const r = await fetch(`/api/users/me`, {
@@ -44,34 +38,6 @@ async function fetchMe(): Promise<any | null> {
     return null;
   }
 }
-
-
-
-// /* profile-setting.ts  … */
-
-// /* ---------- fetchCreatedAt (lazy + memoised) ------------------- */
-// let cachedCreatedAt: string | null | undefined = undefined;   // ➊ NEW
-
-// async function fetchCreatedAt(): Promise<string | null> {
-// /* ➋ Return cached value if we already fetched once */
-// if (cachedCreatedAt !== undefined) return cachedCreatedAt;
-
-// try {
-// 	const r = await fetch(`/api/users/created-at`, {
-// 	headers: getAuthHeader(),                // unchanged helper
-// 	});
-// 	if (!r.ok) { cachedCreatedAt = null; return null; }
-
-// 	const { created_at } = (await r.json()) as { created_at?: string };
-// 	cachedCreatedAt = created_at ?? null;     // ➌ store for next time
-// 	return cachedCreatedAt;
-// } catch {
-// 	cachedCreatedAt = null;                   // ➍ remember failure, skip retry
-// 	return null;
-// }
-// }
-
-
 
 const enable2FABtn = document.getElementById('enable-2fa-btn')!;
 const status2FA    = document.getElementById('2fa-status')!;
@@ -94,8 +60,6 @@ modalContent.addEventListener('click', (e) => {
 e.stopPropagation();
 });
 
-// 2) open setup modal
-
 enable2FABtn.addEventListener('click', async (e) => {
 	try {
 		e.preventDefault();
@@ -114,13 +78,11 @@ enable2FABtn.addEventListener('click', async (e) => {
 	}
 });
 
-// 3) cancel
 cancelBtn2fa.addEventListener('click', (e) => {
 	e.preventDefault();
 	modal2FA.classList.add('hidden')
 });
 
-// 4) verify the TOTP
 verifyBtn.addEventListener('click', async (e) => {
 	e.preventDefault();
 	const token = tokenInput.value.trim();
@@ -143,10 +105,8 @@ verifyBtn.addEventListener('click', async (e) => {
 	}
 });
 
-/* basic DOM refs -------------------------------------------------- */
 const tabBtns = document.querySelectorAll<HTMLButtonElement>("#profile-tabs .tab-btn");
 
-/* EXPORT 1: refresh spans + inputs with the current user ---------- */
 export async function populateProfileViews(): Promise<void> {
 try {
 	const user = JSON.parse(localStorage.getItem("user") ?? "{}");
@@ -156,8 +116,6 @@ try {
 	const inUser= $("#edit-username") as HTMLInputElement | null;
 	const inMail= $("#edit-email")    as HTMLInputElement | null;
 	const vXP = $("#view-xp") as HTMLElement | null;
-	// const xp  = await fetchXP();
-	// if (vXP) vXP.textContent = xp !== null ? String(xp) : " ";
 
 	if (user.username) {
 	if (vUser) vUser.textContent = user.username;
@@ -167,33 +125,14 @@ try {
 	if (vMail) vMail.textContent = user.email;
 	if (inMail) inMail.value     = user.email;
 	}
-	/* pull everything from /me */
-	// const me = await fetchMe();
-
-	/* joined date */
-	// const joinText = me?.created_at
-	// ? `Player since — ${me.created_at.slice(0, 10)}`
-	// : "Player since —";
-	// if (vJoin) vJoin.textContent = joinText;
-	// const headerJoin = document.getElementById("profile-joined");
-	// if (headerJoin) headerJoin.textContent = joinText;
-
-	/* XP */
-	// const vXP = $("#view-xp") as HTMLElement | null;
-	// if (vXP) vXP.textContent =
-	// me?.xp_level != null ? String(me.xp_level) : "—";
-
-
-} catch { /* ignore */ }
+} catch {}
 }
 
-/* EXPORT 2: force-select a profile tab ---------------------------- */
 export function setActiveTab(key: string): void {
 const btn = Array.from(tabBtns).find(b => b.dataset.tab === key);
-btn?.click();   // triggers underline & panel logic in nav.ts
+btn?.click();
 }
 
-/* EXPORT 3: update big header (name + mail beside avatar) --------- */
 export async function refreshProfileHeader(): Promise<void> {
 try {
 	const user = JSON.parse(localStorage.getItem("user") ?? "{}");
@@ -207,10 +146,6 @@ try {
 	if (nameEl && user.username) nameEl.textContent = user.username;
 	if (mailEl && user.email   ) mailEl.textContent = user.email;
 	if (avatar) avatar.src = resolveAvatar(user.avatar_url);
-
-
-	// if (avatar && user.avatar_url) avatar.src = user.avatar_url;
-	// else if (avatar && !user.avatar_url) avatar.src = "https://img.freepik.com/free-vector/cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-illustration-science-technology_138676-13977.jpg?semt=ais_hybrid&w=740";
 	const me = await fetchMe();
 	if (user.twofa_enabled)
 	{
@@ -224,42 +159,37 @@ try {
 		enable2FABtn.innerHTML = "Enable Two-Factor Authentication";
 		remove2FABtn.classList.add('hidden');
 	}
-	/* joined-date */
 	const joinEl = document.getElementById("profile-joined");
 	if (joinEl) {
 	joinEl.textContent = me?.created_at
 		? `Player since — ${me.created_at.slice(0, 10)}`
 		: "Player since —";
 	}
-
-	/* animated level badge */
 	setRing("profile-level-bar", "profile-level-text",
 			me?.xp_level ?? null);
 
 
-} catch { /* ignore */ }
+} catch {}
 }
 
-/* ─── animated level-ring helper ─── */
-const CIRC = 2 * Math.PI * 45;        // 45 ⇒ r used in the SVG badge
+const CIRC = 2 * Math.PI * 45;
 
 export function setRing(
-barId:  string,                      // e.g. "profile-level-bar"
-textId: string,                      // e.g. "profile-level-text"
-lvl:    number | null,               // nullable level value
+barId:  string,
+textId: string,
+lvl:    number | null,
 ): void {
 const bar  = document.getElementById(barId)  as SVGCircleElement | null;
 const text = document.getElementById(textId) as HTMLElement      | null;
 if (!bar || !text || lvl === null) return;
 
-const int  = Math.floor(lvl);        // integer level shown inside
-const frac = lvl - int;              // 0-1 progress to the next level
+const int  = Math.floor(lvl);
+const frac = lvl - int;
 
 text.textContent           = String(int);
 bar.style.strokeDashoffset = String(CIRC * (1 - frac));
 }
 
-/* ========== INLINE-EDITOR LOGIC (unchanged from previous build) ========== */
 const editBtn   = $("#settings-edit")   as HTMLButtonElement | null;
 const saveBtn   = $("#settings-save")   as HTMLButtonElement | null;
 const cancelBtn = $("#settings-cancel") as HTMLButtonElement | null;
@@ -277,7 +207,6 @@ const inConfirmPass = $("#edit-confpass")   as HTMLInputElement | null;
 const DUMMY_OLD_PASS = "OldPass123";
 let   editing        = true;
 
-/* helpers --------------------------------------------------------- */
 function toggleEdit(on: boolean) {
 editing = on;
 document.querySelectorAll<HTMLElement>(".edit-input")
@@ -312,7 +241,6 @@ setTimeout(() => {
 }, 2500);
 }
 
-/* handlers -------------------------------------------------------- */
 editBtn?.addEventListener("click", () => toggleEdit(true));
 
 cancelBtn?.addEventListener("click", () => {
@@ -325,7 +253,6 @@ toggleEdit(false);
 saveBtn?.addEventListener("click", async () => {
 if (!inUsername || !inEmail) return;
 
-/* ─── 1. front-end validation ─── */
 const u = inUsername.value.trim();
 const e = inEmail.value.trim();
 if (!u) { showError("Username cannot be empty."); return; }
@@ -348,7 +275,6 @@ if (oldP || newP || conP) {
 	}
 }
 
-/* ─── 2. build payload & call backend ─── */
 try {
 	const payload: Record<string, string> = {};
 	if (u !== (viewUsername?.textContent ?? "")) payload.username = u;
@@ -360,17 +286,17 @@ try {
 		method: "PUT",
 		headers: {
 		"Content-Type": "application/json",
-		...getAuthHeader(),              // helper defined near top
+		...getAuthHeader(),
 		},
 		body: JSON.stringify(payload),
 	});
 	const data = await res.json();
-	if (!res.ok) {                       // backend validation failed
+	if (!res.ok) {
 		showError(data.error || "Update failed");
 		return;
 	}
 	} else {
-	showError("Nothing changed");        // user hit Save without edits
+	showError("Nothing changed");
 	return;
 	}
 } catch {
@@ -378,7 +304,6 @@ try {
 	return;
 }
 
-/* ─── 3. reflect success locally ─── */
 localStorage.setItem("user", JSON.stringify({
 	...(JSON.parse(localStorage.getItem("user") ?? "{}")),
 	username: u,
@@ -387,7 +312,7 @@ localStorage.setItem("user", JSON.stringify({
 if (viewUsername) viewUsername.textContent = u;
 if (viewEmail)    viewEmail.textContent    = e;
 
-[inOldPass, inNewPass, inConfirmPass]      // clear pwd boxes
+[inOldPass, inNewPass, inConfirmPass]
 	.forEach(i => i && (i.value = ""));
 
 toggleEdit(false);
@@ -396,7 +321,6 @@ refreshProfileHeader();
 });
 
 
-/* initial hydrate once ------------------------------------------- */
 if (localStorage.getItem("token")) {
 populateProfileViews();
 refreshProfileHeader();

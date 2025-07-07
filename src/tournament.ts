@@ -12,13 +12,11 @@ import { WS_BASE } from './config.js';
 
 export { hideOverlay, showOverlay };
 
-/* cache DOM -----------------------------------------------------------*/
 const sharePanel   = document.getElementById('tour-share-panel')  as HTMLDivElement;
 
 const tourErr = document.getElementById('tour-error') as HTMLParagraphElement | null;
 
 
-/* ───── html refs (same IDs as before) ───── */
 const ov          = document.getElementById('tournament-overlay')   as HTMLElement;
 const box         = document.getElementById('tournament-container') as HTMLElement;
 const closeBtn    = document.getElementById("tour-close")!;
@@ -28,7 +26,6 @@ const stepCreated = document.getElementById('tour-step-created')!;
 const stepJoin    = document.getElementById('tour-step-join')!;
 const stepBracket = document.getElementById('tour-step-bracket')!;
 
-/* grab the <div> that will hold the tournament code */
 const createdCode = document.getElementById('tour-created-code') as HTMLDivElement;
 const codeInput   = document.getElementById('tour-code-input')  as HTMLInputElement;
 const errorEl     = document.getElementById('tour-error')!;
@@ -40,7 +37,6 @@ const YOU     = localStorage.getItem('username') ?? 'you';
 //tournament remote play background to hide bracket
 const backdrop = document.getElementById('game-backdrop')!;
 
-/* ───── runtime state ───── */
 let code       = '';
 let socket: WebSocket;
 
@@ -49,7 +45,6 @@ let   round1    : number[] = [];               // initial four players (slot 0-3
 const semiMap   : Record<string, 4 | 5> = {};  // gameId ➜ 4 or 5
 let   finalGameId: string | null = null;
 
-/* ★ helper: write winner names into slots 4, 5, 6 */
 function setSlot(idx: 4 | 5 | 6, playerId: number) {
   const name = idToName.get(playerId) ?? String(playerId);
   slotEls.forEach(el => {
@@ -58,9 +53,6 @@ function setSlot(idx: 4 | 5 | 6, playerId: number) {
 }
 function showGameBackdrop() { backdrop?.classList.remove('hidden','opacity-0'); }
 function hideGameBackdrop() { backdrop?.classList.add   ('hidden','opacity-0'); }
-/*──────────────────────────────────────────────────────────────*
- *  CREATE  (owner)
- *──────────────────────────────────────────────────────────────*/
 document.getElementById('tour-create-btn')?.addEventListener('click', async () => {
   try {
     const { code: c } = await createTournament(
@@ -69,7 +61,7 @@ document.getElementById('tour-create-btn')?.addEventListener('click', async () =
     );
 
     code = c;
-    localStorage.setItem('tournamentCode', c);   // ★ persist for reloads
+    localStorage.setItem('tournamentCode', c);
     createdCode.textContent = c;
 
     sharePanel.classList.remove('hidden');       // show “share” strip
@@ -80,10 +72,6 @@ document.getElementById('tour-create-btn')?.addEventListener('click', async () =
   }
 });
 
-
-/*──────────────────────────────────────────────────────────────*
- *  JOIN  (other players)
- *──────────────────────────────────────────────────────────────*/
 document.getElementById('tour-confirm-join-btn')?.addEventListener('click', async () => {
   if (tourErr) tourErr.textContent = "";
 
@@ -93,37 +81,30 @@ document.getElementById('tour-confirm-join-btn')?.addEventListener('click', asyn
 
     await joinTournament(localStorage.getItem('token')!, code);
 
-    localStorage.setItem('tournamentCode', code);   // persist only after success
+    localStorage.setItem('tournamentCode', code);
     sharePanel.classList.add('hidden');
     connectWs();
     goto(stepBracket);
   } catch (err: any) {
-    /* NEW – inline error, no alert */
     if (tourErr)
       tourErr.textContent = err.message || "Invalid or closed tournament code.";
-    code = "";                                      // reset so the next try works
+    code = "";
   }
 });
 
-/*──────────────────────────────────────────────────────────────*
- *  CREATE / JOIN handlers
- *──────────────────────────────────────────────────────────────*/
 document.getElementById('tour-create-btn')?.addEventListener('click', async () => {
   try {
     const { code: c } = await createTournament(localStorage.getItem('token')!, 'Bracket');
     code = c;
     createdCode.textContent = c;
 
-    connectWs();                      // connect early
-    goto(stepBracket);                // 👈 show bracket immediately
+    connectWs();
+    goto(stepBracket);
   } catch (err:any) {
     alert(err.message);
   }
 });
 
-/*──────────────────────────────────────────────────────────────*
- *  SHARE-CODE copy helper  (NEW)
- *──────────────────────────────────────────────────────────────*/
 const copyBtn = document.getElementById('tour-copy-code') as HTMLButtonElement | null;
 
 function flashCopied(btn: HTMLButtonElement) {
@@ -133,7 +114,7 @@ function flashCopied(btn: HTMLButtonElement) {
 }
 
 copyBtn?.addEventListener('click', () => {
-  if (!code) return;                                  // nothing to copy
+  if (!code) return;
 
   // Modern Clipboard API – works only on secure origins (HTTPS or localhost)
   if (navigator.clipboard?.writeText) {
@@ -167,16 +148,12 @@ document.getElementById('tour-confirm-join-btn')?.addEventListener('click', asyn
   }
 });
 
-/*──────────────────────────────────────────────────────────────*
- *  Web-socket helper  – now clears stale data when finished
- *──────────────────────────────────────────────────────────────*/
 function connectWs() {
-  /* after a hard-refresh, resurrect the stored code (if any) */
   if (!code) {
     const stored = localStorage.getItem('tournamentCode');
     if (stored) code = stored;
   }
-  if (!code) return;            // nothing to connect to → abort
+  if (!code) return;
 
   socket = new WebSocket(
     `${WS_BASE}/tournament?token=${localStorage.getItem('token')}&code=${code}`
@@ -191,7 +168,6 @@ function connectWs() {
       pushHome();
     }
 
-    /* live roster refresh --------------------------------------------------*/
     if (msg.type === 'playersUpdate') {
       updateSlots(msg.players);
 
@@ -202,13 +178,11 @@ function connectWs() {
           : 'Bracket ready – pairing players…';
     }
 
-    /* server confirms the bracket begins ----------------------------------*/
     if (msg.type === 'tournamentStart') {
       updateSlots(msg.players);
       bracketHint.textContent = 'Pairing players…';
     }
 
-    /* semi-final or final assignment --------------------------------------*/
     if (msg.type === 'gameAssigned' || msg.type === 'finalAssigned') {
       const stored = localStorage.getItem('user');
       const raw    = stored ? JSON.parse(stored) : null;
@@ -216,16 +190,13 @@ function connectWs() {
 
       if (msg.type === 'gameAssigned') {
         const [pA]   = msg.players as number[];
-        const first  = round1.slice(0, 2).includes(pA); // belongs to semi-1?
+        const first  = round1.slice(0, 2).includes(pA);
         semiMap[msg.gameId] = first ? 4 : 5;
       } else {
-        finalGameId = msg.gameId;                       // keep final ID
+        finalGameId = msg.gameId;
       }
 
       if (msg.players.includes(me)) {
-        
-        //hideOverlay(ov, box);
-
         const ov = document.getElementById('tournament-overlay')!;
         ov.style.zIndex        = '0';
         ov.style.pointerEvents = 'none';         
@@ -235,7 +206,7 @@ function connectWs() {
         enableRemoteMode();
         setGameId(msg.gameId);
         pushGame(msg.gameId);
-        connectWebSocket();          // hook into /ws/game
+        connectWebSocket();
       }
 
       bracketHint.textContent = 'A match is running…';
@@ -250,8 +221,6 @@ function connectWs() {
       }
       bracketHint.textContent = 'Waiting for next match…';
     }
-
-    /* tournament over – tidy up & forget the code -------------------------*/
     if (msg.type === 'tournamentFinished') {
       const ov = document.getElementById('tournament-overlay')!;
       ov.style.zIndex        = '40';
@@ -261,27 +230,18 @@ function connectWs() {
       setSlot(6, msg.winnerId);
       bracketHint.textContent = `🏆 Winner: ${msg.winnerId}`;
 
-      localStorage.removeItem('tournamentCode');  // ← NEW: prevent stale restores
-      code = '';                                  // ← NEW
+      localStorage.removeItem('tournamentCode');
+      code = ''
       pushHome();
     }
   });
 
-  /* if the socket ever drops, also remove the stored code */
   socket.addEventListener('close', () => {
-    localStorage.removeItem('tournamentCode');    // ← NEW
-    code = '';                                    // ← NEW
+    localStorage.removeItem('tournamentCode');
+    code = '';                                
   });
 }
 
-
-
-/*──────────────────────────────────────────────────────────────*
- *  UI helpers – identical animation helpers from original file
- *──────────────────────────────────────────────────────────────*/
-/* unified slot updater */
-/* ── fill the four bracket slots ──────────────────────────── */
-/* ── fill the four first-round slots ─────────────────────────── */
 function updateSlots(
   players: Array<number | { id: number; username: string }>
 ) {
@@ -289,13 +249,12 @@ function updateSlots(
   const raw    = stored ? JSON.parse(stored) : null;
   const me     = raw ? Number(raw.id ?? raw.userId) : NaN;
 
-  /* remember the original order (once) */
   if (players.length === 4 && round1.length === 0) {
     round1 = players.map(p => (typeof p === 'number' ? p : p.id));
   }
 
   slotEls.forEach((el, i) => {
-    if (i > 3) return;                         // only slots 0-3 here
+    if (i > 3) return;
 
     const player = players[i];
     if (!player) {
@@ -306,7 +265,7 @@ function updateSlots(
     const id   = typeof player === 'number' ? player         : player.id;
     const name = typeof player === 'number' ? String(player) : player.username;
 
-    idToName.set(id, name);                    // cache for later rounds
+    idToName.set(id, name);
     el.textContent = id === me ? YOU : name;
   });
 }
@@ -315,13 +274,12 @@ function updateSlots(
 
 
 function goto(el: HTMLElement) {
-  [stepMain, stepJoin, /* stepCreated, */ stepBracket]  // ← removed stepCreated
+  [stepMain, stepJoin, stepBracket]
     .forEach(s => s.classList.add('hidden'));
   el.classList.remove('hidden');
 }
 
 
-/*──── exported overlay helpers (unchanged) ────*/
 function showOverlay(overlay: HTMLElement, inner?: HTMLElement) {
   overlay.classList.remove('hidden', 'opacity-0');
   if (inner) inner.classList.remove('scale-95', 'opacity-0');
