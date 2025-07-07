@@ -14,12 +14,12 @@ function getAuthHeader(): HeadersInit {
 /* Called from nav.ts when the History tab is opened */
 export async function initHistoryTab(): Promise<void> {
   try {
-    /* 1) Fetch + parse */
+    //1- Fetch + parse
     const r = await fetch(ENDPOINT, { headers: getAuthHeader() });
     if (!r.ok) throw new Error("Failed to load history.");
     const rows = (await r.json()) as MatchRow[];
 
-    /* 2) Render */
+    //2- Render
     renderRows(rows);
   } catch (err: any) {
   console.error("History fetch failed:", err);
@@ -35,19 +35,17 @@ export async function initHistoryTab(): Promise<void> {
   }
 }
 
-/* ------- helper ------- */
-
 function renderRows(rows: MatchRow[]): void {
   const tbody = document.getElementById(
     "history-body"
   ) as HTMLTableSectionElement;
   if (!tbody) return;
 
-  tbody.innerHTML = ""; // clear existing rows
+  tbody.innerHTML = "";
 
   rows.forEach((row, i) => {
     const tr = document.createElement("tr");
-    if (i % 2) tr.className = "bg-white/5"; // zebra striping
+    if (i % 2) tr.className = "bg-white/5";
 
     tr.innerHTML = `
       <td class="py-2">${row.id}</td>

@@ -1,18 +1,10 @@
 // frontend/src/notifications.ts
-// ---------------------------------------------------------------
-// This module is completely self‑contained.  Simply import it once from any
-// bootstrap file (e.g. nav.ts) or reference the compiled JS in <script type="module" …>.
-// It will wire up the bell button (#nav-notif), render the dropdown panel
-// (#notif-panel) and keep the unread badge (#notif-badge) in sync.
 
+import { WS_BASE } from "./config.js";
 import { loadFriendsSidebar } from "./friends.js";
-import { ClientMsgJoin } from "./types/ws.js";
-import { connectWebSocket, setGameId, enableRemoteMode } from "./main.js";
-import { WS_BASE } from "./config.js"; 
+import { connectWebSocket, enableRemoteMode, setGameId } from "./main.js";
 
-/* ------------------------------------------------------------------
- * Types & state
- * ----------------------------------------------------------------*/
+//declaring the notification objec tstructure
 interface Notification {
 	id: number;
 	text: string;
@@ -23,21 +15,14 @@ interface Notification {
 	gameId?: string;
 }
 
+//notifications objects
 let notifications: Notification[] = [];
-
 let notifSocket: WebSocket | null = null;
-
-
-/* ------------------------------------------------------------------
- * DOM handles (all exist in index.html)
- * ----------------------------------------------------------------*/
 const bell   = document.querySelector<HTMLButtonElement>("#nav-notif");
 const panel  = document.querySelector<HTMLDivElement>("#notif-panel");
 const badge  = document.querySelector<HTMLSpanElement>("#notif-badge");
 
-/* ------------------------------------------------------------------
- *  Helpers
- * ----------------------------------------------------------------*/
+
 function fmtDate(iso: string): string {
 	const d = new Date(iso);
 	return d.toLocaleString(undefined, {
@@ -49,24 +34,15 @@ function fmtDate(iso: string): string {
 }
 
 function renderPanel(): void {
-	/* ----------------------------------------------------------------
-	 *  Reset / early-outs
-	 * ---------------------------------------------------------------*/
 	if (!panel) return;
 	panel.innerHTML = "";
-
-	/* top spacer so items don’t “stick” to the rounded border */
 	const header = document.createElement("div");
-	header.className = "relative h-6 mb-2";   // 1.5 rem tall spacer
-
-	/* red trash-can to clear the list */
+	header.className = "relative h-6 mb-2";
 	const clearBtn = document.createElement("button");
 	clearBtn.setAttribute("aria-label", "Clear notifications");
 	clearBtn.className =
 		"absolute right-0 top-0 text-white-500 hover:text-red-600 " +
 		"transition-transform duration-200 hover:scale-110";
-
-	/* heroicons/solid trash 20 px  – drop in any SVG you like */
 	clearBtn.innerHTML = `
 		<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
 		  <path fill-rule="evenodd"
@@ -76,8 +52,6 @@ function renderPanel(): void {
 		       10-2 0v9a1 1 0 102 0V6z"
 		    clip-rule="evenodd"/>
 		</svg>`;
-
-	/* optional behaviour – wipe client list & refresh badge */
 	clearBtn.onclick = async (e) => {
 		notifications = [];
 		const me = JSON.parse(localStorage.getItem("user") || "{}");
@@ -88,10 +62,8 @@ function renderPanel(): void {
     headers: { Authorization: `Bearer ${t}` },
   });
 	notifications = notifications.filter(x => x.id !== me.id);
-		renderPanel();      // re-render empty state
-		updateBadge();      // badge already exists lower in the file
-
-		//here you will apply the logic to remove the notf from the db
+		renderPanel();
+		updateBadge();
 	};
 
 	header.appendChild(clearBtn);
@@ -105,11 +77,7 @@ function renderPanel(): void {
 		return;
 	}
 
-	/* ----------------------------------------------------------------
-	 *  One row per notification
-	 * ---------------------------------------------------------------*/
 	notifications.forEach(n => {
-		/* Basic row skeleton */
 		const row = document.createElement("div");
 		row.className = [
 			"flex", "items-start", "gap-3", "p-3", "rounded-lg",
@@ -117,11 +85,8 @@ function renderPanel(): void {
 		].join(" ");
 		if (!n.read) row.classList.add("border-l-4", "border-amber-500");
 
-		/* 🔔 icon */
 		const icon = document.createElement("span");
 		icon.textContent = "🔔";
-
-		/* message + timestamp */
 		const wrap = document.createElement("div");
 		const msg  = document.createElement("p");
 		msg.textContent = n.text;
@@ -132,9 +97,6 @@ function renderPanel(): void {
 
 		row.append(icon, wrap);
 
-		/* ============================================================
-		 *  1. CHALLENGE  – anything that carries a gameId
-		 * ==========================================================*/
 		if (n.gameId) {
 			const box = document.createElement("div");
 			box.className = "relative left-[-20px] ml-auto flex gap-2";
@@ -152,14 +114,12 @@ function renderPanel(): void {
 				enableRemoteMode();
 				connectWebSocket();
 
-				/* 🔸 local UI cleanup */
 				n.read = true;
 				panel.classList.add("hidden");
 				updateBadge();
 				notifications = notifications.filter(x => x.id !== n.id);
 			};
 
-			/* Decline */
 			const decline = document.createElement("button");
 			decline.textContent = "Decline";
 			decline.className =
@@ -182,18 +142,14 @@ function renderPanel(): void {
 			row.append(box);
 		}
 
-		/* ============================================================
-		 *  2. FRIEND REQUEST  – only if it *wasn’t* a challenge
-		 * ==========================================================*/
 		else if (n.type === "friend_request" && n.reference_id) {
-			/* shared helper for both buttons */
 			const respond = async (
 				e: MouseEvent,
 				action: "accept" | "decline",
 				btn: HTMLButtonElement
 			) => {
 				e.stopPropagation();
-				btn.disabled = true;  // prevent double-clicks
+				btn.disabled = true;
 
 				const token = localStorage.getItem("token")!;
 				await fetch(`/api/users/respond-friend`, {
@@ -242,9 +198,6 @@ function renderPanel(): void {
 			row.append(box);
 		}
 
-		/* ------------------------------------------------------------
-		 *  Click anywhere else on the row → mark as read
-		 * -----------------------------------------------------------*/
 		row.addEventListener("click", () => {
 			n.read = true;
 			updateBadge();
@@ -263,9 +216,6 @@ function updateBadge(): void {
 	badge.style.opacity = unread > 0 ? "1" : "0";
 }
 
-/* ------------------------------------------------------------------
- *  Public API – import { pushNotification, fetchNotifications } …
- * ----------------------------------------------------------------*/
 export function pushNotification(text: string): void {
 	notifications.unshift({
 		id: Date.now(),
@@ -274,7 +224,6 @@ export function pushNotification(text: string): void {
 		read: false,
 	});
 	updateBadge();
-	// If panel is currently open, re‑render it immediately
 	if (!panel?.classList.contains("hidden")) renderPanel();
 }
 
@@ -294,9 +243,6 @@ export async function fetchNotifications(): Promise<void> {
 	}
 }
 
-/* ------------------------------------------------------------------
- *  Event wiring – open/close dropdown & outside‑click handling
- * ----------------------------------------------------------------*/
 bell?.addEventListener("click", async ev => {
 	ev.stopPropagation();
 	const t = localStorage.getItem("token")!;
@@ -306,7 +252,7 @@ bell?.addEventListener("click", async ev => {
 	});
 	panel?.classList.toggle("hidden");
 	renderPanel();
-	notifications.forEach(n => (n.read = true)); // mark all as read when opened
+	notifications.forEach(n => (n.read = true));
 	updateBadge();
 });
 
@@ -317,15 +263,7 @@ document.addEventListener("click", ev => {
 	}
 });
 
-/* ------------------------------------------------------------------
- *  Initialise immediately (e.g. after login)
- * ----------------------------------------------------------------*/
 updateBadge();
-// Optional: 
-// Example: pushNotification("Welcome back! Good luck in the arena 🏓");
-
-//MHEISENBERG
-// 2. connect to WS so we get new ones in real time
 function startNotificationsSocket(): void {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -343,8 +281,6 @@ function startNotificationsSocket(): void {
         notifSocket.onmessage = async ev => {
       try {
         const incoming = JSON.parse(ev.data);
-
-        /* 1️⃣  Challenger refreshed → drop the invite */
         if (incoming.type === "challenge_cancelled") {
           notifications = notifications.filter(
             n => !(n.type === "challenge" && n.reference_id === incoming.from)
@@ -353,19 +289,13 @@ function startNotificationsSocket(): void {
           if (!panel?.classList.contains("hidden")) renderPanel();
           return;
         }
-
-        /* 2️⃣  Opponent declined while we were waiting */
         if (incoming.type === "challenge_declined") {
           (window as any).removeWaitingOverlay?.();
         }
-
-        /* 3️⃣  Live presence update */
         if (incoming.type === "presence") {
           loadFriendsSidebar();
           return;
         }
-
-        /* 4️⃣  Normal notification payload */
         const n = incoming as Notification;
         notifications.unshift({ ...n, read: false });
         updateBadge();
@@ -397,13 +327,12 @@ export function initNotifications() {
 	fetchNotifications();
 }
 
-// new exported “stop” function
 export function stopNotifications() {
 	if (notifSocket) {
 		notifSocket.close();
 		notifSocket = null;
 	}
-	notifications = [];   // (optional) wipe out local state
+	notifications = [];
 	updateBadge();
 }
 

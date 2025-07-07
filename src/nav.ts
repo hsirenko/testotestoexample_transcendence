@@ -1,7 +1,4 @@
-/* nav.ts – navbar, overlays, tabs, play-flow
- * ------------------------------------------
- *  Inline-profile editor code was moved to profile-setting.ts
- */
+// nav.ts – navbar, overlays, tabs, play-flow
 import { initHistoryTab } from "./history.js";
 import { initRemoteModal } from './main.js';
 import { WS_BASE } from './config.js';
@@ -15,18 +12,14 @@ import { initStatsTab } from "./stats.js";
 import { hideOverlay, initTournamentModal, showOverlay } from './tournament.js';
 import "./welcome.js";
 
+//get the html elements
+const profileOv  = document.getElementById('profile-overlay')!;
+const profileBox = document.getElementById('profile-container')!;
 
-  /* cache the two DOM nodes once */
-const profileOv  = document.getElementById('profile-overlay')!;    // wrapper  (class="overlay")
-const profileBox = document.getElementById('profile-container')!;  // inner panel
-
-/* ───── shorthand ───── */
 const $ = <T extends HTMLElement = HTMLElement>(sel: string) =>
   document.querySelector<T>(sel);
 
-/* =========================================================================
- *  NAVBAR  (burger, mobile dropdown)
- * =======================================================================*/
+//hamburger menu for mobile objects
 const navMenu   = $("#nav-menu");
 const BURGER    = $("#burger");
 const MOBILE_BP = 640;
@@ -55,10 +48,8 @@ addEventListener("resize", () => {
   else applyMobile(true);
 });
 
-/* ── Friendly toast used only for avatar messages ─────────────── */
 function flashAvatarWarn(text: string): void {
   let n = document.getElementById("avatar-warn") as HTMLDivElement | null;
-
   if (!n) {
     n = document.createElement("div");
     n.id = "avatar-warn";
@@ -69,27 +60,18 @@ function flashAvatarWarn(text: string): void {
       "opacity-0 pointer-events-none transition-opacity duration-300";
     document.body.appendChild(n);
   }
-
   n.textContent = text;
-
-  /* trigger fade-in */
   n.classList.remove("opacity-0");
-
-  /* auto-hide after 2 s */
   setTimeout(() => n!.classList.add("opacity-0"), 2_000);
 }
 
-
-/* PROFILE OVERLAY – avatar upload */
 const avatarInput = document.getElementById('avatar-input') as HTMLInputElement | null;
 const avatarImg   = document.getElementById('avatar-img')   as HTMLImageElement  | null;
 
-/* --------------- remove-avatar button -------------------------- */
 const removeBtn = document.getElementById('avatar-remove-btn') as HTMLButtonElement | null;
 
 if (removeBtn) {
   removeBtn.addEventListener('click', async () => {
-    /* 1) optimistic UI */
     const FALLBACK =
       "https://img.freepik.com/free-vector/" +
       "cute-astronaut-playing-vr-game-with-controller-cartoon-vector-icon-" +
@@ -97,7 +79,6 @@ if (removeBtn) {
     if (avatarImg) avatarImg.src = FALLBACK;
     if (avatarInput) avatarInput.value = "";
 
-    /* 2) API call */
     const token = localStorage.getItem('token');
     const res = await fetch(`/api/users/avatar`, {
       method: 'DELETE',
@@ -108,7 +89,6 @@ if (removeBtn) {
       return;
     }
 
-    /* 3) update localStorage cache */
     const user = JSON.parse(localStorage.getItem('user') ?? '{}');
     user.avatar_url = null;
     localStorage.setItem('user', JSON.stringify(user));
@@ -121,11 +101,7 @@ if (avatarInput) {
   avatarInput.addEventListener('change', async (ev) => {
     const file = (ev.currentTarget as HTMLInputElement).files?.[0];
     if (!file) return;
-
-    /* —— 1. optimistic preview —— */
     if (avatarImg) avatarImg.src = URL.createObjectURL(file);
-
-    /* —— 2. upload to backend —— */
     const fd = new FormData();
     fd.append('avatar', file);
 
@@ -137,18 +113,17 @@ if (avatarInput) {
     });
 
     if (!res.ok) {
-      console.error('Avatar upload failed');            // dev aid
+      console.error('Avatar upload failed');
       return;
     }
 
-    const { avatar_url } = await res.json();             // avatars/xyz.png
+    const { avatar_url } = await res.json();
     const fullUrl = `/uploads/${avatar_url}`;
 
-    /* —— 3. update all cached places —— */
     if (avatarImg) avatarImg.src = fullUrl;
 
     const user = JSON.parse(localStorage.getItem('user') ?? '{}');
-    user.avatar_url = avatar_url;                        // keep *relative* in LS
+    user.avatar_url = avatar_url;
     localStorage.setItem('user', JSON.stringify(user));
     flashAvatarWarn("Avatar updated 👍");
   });
@@ -185,24 +160,19 @@ tabBtns.forEach(btn =>
 );
 addEventListener("resize", updateUnderline);
 
-/* open / close overlay */
 $("#nav-profile")?.addEventListener("click", () => {
-  populateProfileViews();        // fresh user data
-  setActiveTab("info");          // always start on Info
+  populateProfileViews();
+  setActiveTab("info"); 
   showOverlay(profileOv, profileBox);
-  //pushOverlay('profile-overlay', 'profile-container');               
   updateUnderline();
   refreshProfileHeader();
 });
 
-
-/* close via × button */
 document.getElementById('profile-close')?.addEventListener('click', () => {
   hideOverlay(profileOv, profileBox);   // fade/scale-out
   pushHome();                           // history: back to home
 });
 
-/* close via Esc key (only if overlay is visible) */
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && !profileOv.classList.contains('hidden')) {
     hideOverlay(profileOv, profileBox);
@@ -210,22 +180,15 @@ document.addEventListener('keydown', e => {
   }
 });
 
-/* =========================================================================
- *  GENERIC OVERLAY HELPERS
- * =======================================================================*/
+//function used to show overlay
 function show(ov: HTMLElement, inner?: HTMLElement) {
-  // Remove any hiding styles or Animate.css classes
   ov.classList.remove("hidden", "opacity-0", "animate__fadeOut", "animate__animated", "animate__fadeIn");
 
-  // Instantly reset scale if needed
   if (inner) inner.classList.remove("scale-90");
 
-  // Directly show it without any delay or animation
-  ov.style.transition = "none";         // disables any CSS transition
-  ov.classList.add("opacity-100");      // assume your visible state uses opacity-100
-
-  // (Optional) Force visibility immediately for safety
-  ov.offsetHeight; // trigger reflow
+  ov.style.transition = "none";
+  ov.classList.add("opacity-100");
+  ov.offsetHeight;
   ov.style.removeProperty("transition");
 }
 
@@ -240,21 +203,17 @@ function hide(ov: HTMLElement, inner?: HTMLElement) {
   }, { once:true });
 }
 
-/* =========================================================================
- *  PLAY → DIFFICULTY FLOW   (unchanged)
- * =======================================================================*/
-const playOv  = document.getElementById('play-overlay')!;    // wrapper
-const playBox = document.getElementById('play-container')!;  // inner panel
+const playOv  = document.getElementById('play-overlay')!;
+const playBox = document.getElementById('play-container')!;
 
 $("#nav-play")?.addEventListener("click", () => show(playOv));
 
 /* CLOSE via × button */
 document.getElementById('play-close')?.addEventListener('click', () => {
-  hideOverlay(playOv, playBox);   // fade/scale-out both layers
-  pushHome();                     // history: overlay → home
+  hideOverlay(playOv, playBox);
+  pushHome();
 });
 
-/* CLOSE via Esc key */
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && !playOv.classList.contains('hidden')) {
     hideOverlay(playOv, playBox);
@@ -295,7 +254,7 @@ document.querySelectorAll<HTMLButtonElement>(".diff-btn").forEach(btn =>
   })
 );
 
-//TWO FACTOR AUTHENTICATION
+//TWO FACTOR AUTHENTICATION, FOR MUHAISEN BY JNDE
 document.getElementById('remove-2fa-btn')?.addEventListener('click', () => {
   (document.getElementById('remove-2fa-modal') as HTMLElement).classList.remove('hidden');
   (document.getElementById('remove-2fa-token-input') as HTMLInputElement).value = '';
@@ -327,9 +286,8 @@ document.getElementById('remove-2fa-confirm-btn')?.addEventListener('click', asy
       return;
     }
 
-    // Success
     (document.getElementById('remove-2fa-modal') as HTMLElement).classList.add('hidden');
-    refreshProfileHeader(); // Refresh UI
+    refreshProfileHeader();
   } catch (err) {
     errorEl.textContent = 'Network error';
   }

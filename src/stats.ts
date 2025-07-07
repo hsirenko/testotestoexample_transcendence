@@ -1,9 +1,6 @@
-/**
- * stats.ts – all graphs & cards in the Stats tab
- * Strict-mode TypeScript
- */
+//stats.ts
 
-declare const Chart: any; // Chart.js from CDN
+declare const Chart: any;
 
 import {
   GoalsTotalDTO,
@@ -12,10 +9,9 @@ import {
   WinsTotalDTO,
 } from "./types.js";
 
-/* base URL */
 const API_BASE = ``;
 
-/* REST endpoints */
+//REST endpoints
 const ENDPOINT = {
   winsMonth: `${API_BASE}/api/stats/monthly-wins`,
   winsTotal: `${API_BASE}/api/stats/wins`,
@@ -25,7 +21,7 @@ const ENDPOINT = {
   me        : `${API_BASE}/api/users/me`,
 };
 
-/* destroy any existing Chart.js instance on a canvas */
+//destroy any existing Chart.js instance on a canvas
 function zap(id: string): void {
   const el = document.getElementById(id) as HTMLCanvasElement | null;
   if (!el) return;
@@ -33,7 +29,7 @@ function zap(id: string): void {
   if (chart) chart.destroy();
 }
 
-/* ───── error helper ───── */
+//error ghandling helper
 function showStatsError(canvasId: string): void {
   const el = document.getElementById(canvasId);
   if (!el) return;
@@ -42,14 +38,11 @@ function showStatsError(canvasId: string): void {
   msg.textContent = "Failed to load stats.";
   msg.className   = "py-4 text-center text-red-400";
 
-  el.replaceWith(msg);          // swap canvas for the message
+  el.replaceWith(msg);
 }
 
 export function initStatsTab(): void {
-  /* wipe previous charts (if any) to avoid “canvas already in use” errors */
   ["monthly-chart","life-chart","goals-chart","hits-chart"].forEach(zap);
-
-  /* re-fetch and re-draw every time */
   drawMonthlyWins();
   drawLifePie();
   drawGoalsPie();
@@ -58,7 +51,6 @@ export function initStatsTab(): void {
 }
 
 
-/* ───── helpers ───── */
 function last12Labels(d: Date = new Date()): string[] {
   return Array.from({ length: 12 }, (_, i) =>
     new Date(d.getFullYear(), d.getMonth() - 11 + i, 1).toLocaleString(
@@ -82,7 +74,6 @@ async function fetchJSON<T>(url: string): Promise<T> {
   return (await r.json()) as T;
 }
 
-/* 1) Monthly win-rate bar */
 async function drawMonthlyWins(): Promise<void> {
   zap("monthly-chart");
   const labels = last12Labels();
@@ -121,7 +112,6 @@ async function drawMonthlyWins(): Promise<void> {
   
 }
 
-/* 2) Life-time wins vs losses pie */
 async function drawLifePie(): Promise<void> {
   zap("monthly-chart");
   try {
@@ -149,7 +139,6 @@ async function drawLifePie(): Promise<void> {
   }
 }
 
-/* 3) Total goals pie */
 async function drawGoalsPie(): Promise<void> {
   zap("monthly-chart");
   try {
@@ -176,7 +165,6 @@ async function drawGoalsPie(): Promise<void> {
   }
 }
 
-/* 4) Monthly goals scored vs conceded bars */
 async function drawMonthlyGoalsBars(): Promise<void> {
   zap("monthly-chart");
   const labels = last12Labels();
@@ -224,7 +212,6 @@ async function drawMonthlyGoalsBars(): Promise<void> {
     }
 }
 
-/* 5-b  total trophies */
 async function renderTrophies(): Promise<void> {
   zap("monthly-chart");
   try {

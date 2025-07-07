@@ -1,36 +1,27 @@
-import { installPopHandler, pushGame, pushHome, pushOverlay, showHome } from './nav_history.js';
-
-
 //frontend/src/main.ts
+import { nextAIPaddleY, setAIRefresh as setAIRefreshAI } from "./ai.js";
+import { WS_BASE } from './config.js';
+import { fetchFriends, resolveAvatar } from "./friends.js";
+import { installPopHandler, pushGame, pushHome, pushOverlay, showHome } from './nav_history.js';
+import { hideOverlay, showOverlay } from "./tournament.js";
 import {
     ClientMsgJoin,
     ClientMsgMove,
     ClientMsgStart,
     ServerMsg
 } from "./types/ws.js";
-import { WS_BASE } from './config.js';
 
-import { fetchFriends, resolveAvatar } from "./friends.js";
-
-import { hideOverlay, showOverlay } from "./tournament.js";
-
-/* ---------- NEW AI IMPORTS -------------------------------------- */
-import { nextAIPaddleY, setAIRefresh as setAIRefreshAI } from "./ai.js";
-
-/* ------------------------------------------------------------------
- * Game constants (unchanged)
- * ----------------------------------------------------------------*/
-const WORLD_WIDTH = 800;
-const WORLD_HEIGHT = 600;
+const WORLD_WIDTH = 800;//game width
+const WORLD_HEIGHT = 600;//game height
 
 const GSpeed = 1.25; // global game speed multiplier
 const BallSpeed = 330; // ball speed in px/s
-const MobileW = 640;
+const MobileW = 640;//mobile size
 const PadSpeed = window.innerWidth <= MobileW ? 0.75 : 0.45; // height / s
-let BallSize = window.innerWidth <= MobileW ? 5 : 10;
-const PadW = window.innerWidth <= MobileW ? 10 : 12;
-const PadH = window.innerWidth <= MobileW ? 60 : 80;
-const PadGap = 24;
+let BallSize = window.innerWidth <= MobileW ? 5 : 10;//ball size
+const PadW = window.innerWidth <= MobileW ? 10 : 12;//paddle width
+const PadH = window.innerWidth <= MobileW ? 60 : 80;//paddle height
+const PadGap = 24;//space between paddle and the container (borders)
 
 let ignoreServerState = false;
 
@@ -39,13 +30,11 @@ const ColRPad = "#fbbf24";
 const ColBall = "#f472b6";
 const ColLine = "#f3f4f6";
 
-const TimeToIncSpeed = 12; // seconds until speed increases
-const IncRate = 0.1; // increment per second after the above
-const WinScore = 3; // points to win
+const TimeToIncSpeed = 12; //increase speed every how many seconds
+const IncRate = 0.1; //how much we increment it
+const WinScore = 3;//points needed to win
 
-/* ------------------------------------------------------------------
- * Types
- * ----------------------------------------------------------------*/
+//declare type for paddle, vector and ball
 interface Vec {
     x: number;
     y: number;
@@ -59,17 +48,13 @@ interface Ball extends Vec {
     r: number;
 }
 
-/* ------------------------------------------------------------------
- * Canvas + DOM handles
- * ----------------------------------------------------------------*/
+//initialise html elements
 const CanvasHtml = document.getElementById("pong-canvas") as HTMLCanvasElement;
 const ctx = CanvasHtml.getContext("2d")!;
 const sLeft = document.getElementById("score-left")!;
 const sRight = document.getElementById("score-right")!;
-/* ------------------------------------------------------------------
- * Badge handles
- * ----------------------------------------------------------------*/
-/* chips already exist in index.html – just cache handles */
+
+//get the game elements
 const badgeLeft   = document.querySelector<HTMLDivElement> ('#badge-left')!;
 const badgeRight  = document.querySelector<HTMLDivElement> ('#badge-right')!;
 const avatarLeft  = document.querySelector<HTMLImageElement>('#avatar-left')!;
@@ -81,13 +66,12 @@ function hidePlayerBadges() {
   [badgeLeft, badgeRight].forEach(b => (b.style.opacity = "0"));
 }
 
-/* auth header for plain fetches ---------------------------------- */
 const authHdr = (): HeadersInit => {
   const t = localStorage.getItem('token');
   return t ? { Authorization: `Bearer ${t}` } : {};
 };
 
-
+//show player badges and details
 async function showPlayerBadges(selfId: number, oppId: number) {
   try {
     const fetchUser = (id: number) =>
@@ -96,12 +80,8 @@ async function showPlayerBadges(selfId: number, oppId: number) {
           if (!r.ok) throw new Error(`HTTP ${r.status}`);
           return r.json();
         });
-
     const [me, opp] = await Promise.all([fetchUser(selfId), fetchUser(oppId)]);
-
-    /* SIDE-ASSIGNMENT — now driven by mySide, not by ownGameId */
-    const selfOnLeft = mySide === "left";      // ✨ CHANGED
-
+    const selfOnLeft = mySide === "left";
     if (selfOnLeft) {
         avatarLeft .src       = resolveAvatar(me .avatar_url);
         avatarRight.src       = resolveAvatar(opp.avatar_url);
@@ -113,65 +93,51 @@ async function showPlayerBadges(selfId: number, oppId: number) {
         nameLeft .textContent = opp.username;
         nameRight.textContent = me .username;
     }
-
     [badgeLeft, badgeRight].forEach(b => (b.style.opacity = "1"));
   } catch (err) {
-    console.error("⚠️  Could not load player badges", err);
+    console.error("Could not load player badges", err);
   }
 }
 
 
-/* ------------------------------------------------------------------
- * Game-state variables
- * ----------------------------------------------------------------*/
+//declare the game elements
 let left: Paddle;
 let right: Paddle;
 let ball: Ball;
-
 let LScore = 0;
 let RScore = 0;
-
 let playing = false;
 let gameMode: "pvp" | "ai" = "pvp";
 let lastTime = performance.now();
-
 let roundElapsed = 0;
 let prevSpeed = GSpeed;
 
-/* ------------------------------------------------------------------
- * Remote-play state
- * ----------------------------------------------------------------*/
+//remote players elements
 let gameId = "";
 let socket: WebSocket | null = null;
 let remoteMode = false;
 let ownGameId: string | null = null;
 let hasJoined = false;
-
 let remoteErrorEl: HTMLElement | null = null;
 
+//handle the delaye between each round and the 3 seconds delaye at the start of the game
 const pauseAndReset = (dir: 1 | -1): void => {
     if (remoteMode) {
         playing = false;
         ignoreServerState = true;
-
-        /* stop the active render/update chain */
         if (rafId !== null) {
             cancelAnimationFrame(rafId);
             rafId = null;
         }
-
         render();
-
         setTimeout(() => {
             ignoreServerState = false;
             lastTime = performance.now();
             playing = true;
-            rafId = requestAnimationFrame(loop);   // restart loop
+            rafId = requestAnimationFrame(loop);
         }, 1000);
         return;
     }
-
-    /* offline / vs-AI path (unchanged) */
     playing = false;
     ball.v.x = ball.v.y = 0;
     resetPositions(dir);
@@ -182,16 +148,16 @@ const pauseAndReset = (dir: 1 | -1): void => {
     }, 1000);
 };
 
-/* Shared key state (for human control) ---------------------------- */
+//add keys to handle them
 const keys: Record<string, boolean> = {};
 
-/* Key listeners – W/S + Arrows ----------------------------------- */
+//handle the key clicks
 for (const type of ["keydown", "keyup"] as const) {
     window.addEventListener(type, (evt) => {
         const e = evt as KeyboardEvent;
         if (!["w", "s", "ArrowUp", "ArrowDown"].includes(e.key)) return;
 
-        /* ignore if user is typing in an input */
+        //ignore handling in case its not a game, in case of typing like login and sign up
         const active = document.activeElement as HTMLElement | null;
         if (
             active &&
@@ -199,11 +165,8 @@ for (const type of ["keydown", "keyup"] as const) {
                 active.isContentEditable)
         )
             return;
-
         e.preventDefault();
         keys[e.key] = type === "keydown";
-
-        /* Remote paddle-move messages */
         if (
             remoteMode &&
             socket?.readyState === WebSocket.OPEN &&
@@ -217,13 +180,11 @@ for (const type of ["keydown", "keyup"] as const) {
     });
 }
 
-/* Helpers --------------------------------------------------------- */
+//make sure that the ball and the paddle still on the limit
 const clamp = (v: number, lo: number, hi: number) =>
     v < lo ? lo : v > hi ? hi : v;
 
-/* ------------------------------------------------------------------
- * Setup / reset helpers
- * ----------------------------------------------------------------*/
+//reset objects and settings to its default settings
 export function resetObjects(): void {
     const scale = window.innerWidth <= MobileW ? 0.7 : 1;
     BallSize = window.innerWidth <= MobileW ? 7 : 10;
@@ -236,6 +197,7 @@ export function resetObjects(): void {
     prevSpeed = GSpeed;
 }
 
+//reset paddle and ball to default positions
 function resetPositions(dir: 1 | -1): void {
     left.y = (CanvasHtml.height - left.h) / 2;
     right.y = (CanvasHtml.height - right.h) / 2;
@@ -261,11 +223,9 @@ export function resizeCanvas(): void {
     render();
 }
 
-/* ------------------------------------------------------------------
- * Animation loop
- * ----------------------------------------------------------------*/
-let rafId: number | null = null;        // <-- track the active rAF
+let rafId: number | null = null;//track the active rAF
 
+//main loog of functonality, while playing handle everything, in both normal and remote mode
 function loop(now: number): void {
     const dt = (now - lastTime) / 1000;
     lastTime = now;
@@ -278,19 +238,14 @@ function loop(now: number): void {
             if (keys["s"] || keys["ArrowDown"])
                 socket.send(JSON.stringify({ type: "move", dir: "down" } as ClientMsgMove));
         }
-
-        if (!remoteMode) update(dt);   // physics locally only
-        render();                      // always draw latest state
+        if (!remoteMode) update(dt);
+        render();
     }
-
-    rafId = requestAnimationFrame(loop);   // keep id updated
+    rafId = requestAnimationFrame(loop);
 }
 
-/* ------------------------------------------------------------------
- * Physics + game rules
- * ----------------------------------------------------------------*/
+//used in the main loop to keep updating the setting with time of each round as mentioned above
 function update(dt: number): void {
-    /* --- Speed ramping -------------------------------------------------- */
     roundElapsed += dt;
     const currSpeed =
         GSpeed + Math.max(0, roundElapsed - TimeToIncSpeed) * IncRate;
@@ -301,15 +256,10 @@ function update(dt: number): void {
         ball.v.y *= scale;
         prevSpeed = currSpeed;
     }
-
     const paddleV = CanvasHtml.height * PadSpeed * currSpeed;
-
-    /* --- Left paddle (player – W/S) ------------------------------------- */
     if (keys["w"]) left.y -= paddleV * dt;
     if (keys["s"]) left.y += paddleV * dt;
     left.y = clamp(left.y, 0, CanvasHtml.height - left.h);
-
-    /* --- Right paddle (PvP or AI) -------------------------------------- */
     if (!remoteMode) {
         if (gameMode === "pvp") {
             if (keys["ArrowUp"]) right.y -= paddleV * dt;
@@ -323,17 +273,11 @@ function update(dt: number): void {
                 CanvasHtml.height,
                 paddleV
             );
-            //   const move = computeMove(ball, right, dt, CanvasHtml.height);
-            //   if (move.up)   right.y -= paddleV * AI_MAX_SPEED * dt;
-            //   if (move.down) right.y += paddleV * AI_MAX_SPEED * dt;
         }
         right.y = clamp(right.y, 0, CanvasHtml.height - right.h);
     }
-
-    /* --- Ball ----------------------------------------------------------- */
     ball.x += ball.v.x * dt;
     ball.y += ball.v.y * dt;
-
     if (ball.y - BallSize < 0 || ball.y + BallSize > CanvasHtml.height) {
         ball.v.y *= -1;
         ball.y = clamp(ball.y, BallSize, CanvasHtml.height - BallSize);
@@ -353,7 +297,6 @@ function update(dt: number): void {
         }
         return false;
     };
-
     if (hitPaddle(left, "left") || hitPaddle(right, "right")) {
         const p = ball.v.x < 0 ? left : right;
         const rel = (ball.y - (p.y + p.h / 2)) / (p.h / 2);
@@ -376,17 +319,13 @@ function update(dt: number): void {
     }
 }
 
-/* ------------------------------------------------------------------
- * Scoreboard helper
- * ----------------------------------------------------------------*/
+//update score board
 export function updateScore(): void {
     sLeft.textContent = String(LScore);
     sRight.textContent = String(RScore);
 }
 
-/* ------------------------------------------------------------------
- * Rendering
- * ----------------------------------------------------------------*/
+//render all the object, used on the loop function
 export function render(): void {
     ctx.clearRect(0, 0, CanvasHtml.width, CanvasHtml.height);
     drawNet();
@@ -395,6 +334,7 @@ export function render(): void {
     drawBall();
 }
 
+//draw the game container and use canvas functions(fillrect)
 function drawNet(): void {
     ctx.fillStyle = ColLine;
     const w = 4,
@@ -417,9 +357,7 @@ function drawBall(): void {
     ctx.fill();
 }
 
-/* ------------------------------------------------------------------
- * Global helpers exposed on window
- * ----------------------------------------------------------------*/
+//helper to know if its a pvp an ai game (mhmd ali)
 declare global {
     interface Window {
         setAIRefresh: (sec: number) => void;
@@ -427,10 +365,10 @@ declare global {
     }
 }
 
-/* Implement the AI refresh setter via the new module */
+//mhmd ali
 window.setAIRefresh = setAIRefreshAI;
 
-/* setGameMode (unchanged, except no AI vars here) ------------------ */
+//set game mode type
 window.setGameMode = (mode: "pvp" | "ai"): void => {
     cleanupRemote();
     (window as any).showGameArea?.();
@@ -447,9 +385,7 @@ window.setGameMode = (mode: "pvp" | "ai"): void => {
     startCountdown(3, beginPlay);
 };
 
-/* WIN MESSAGE, MOBILE CONTROLS, COUNTDOWN, etc. */
-/* … (leave your existing implementations here unchanged) … */
-
+//set the delay and execute adter finish
 function startCountdown(sec: number, callback: () => void): void {
     let remaining = sec;
     const overlay = document.createElement("div");
@@ -483,7 +419,7 @@ function startCountdown(sec: number, callback: () => void): void {
     setTimeout(tick, 1000);
 }
 
-/* ═════════════ WIN MESSAGE ═════════════ */
+//handle win messge for both left and right player on both normal and remote games
 function handleWin(remote: boolean): void {
 
     const ov = document.getElementById('tournament-overlay')!;
@@ -491,11 +427,9 @@ function handleWin(remote: boolean): void {
       ov.style.pointerEvents = 'auto';
       ov.style.background    = 'rgba(0,0,0,0.6)';
 
-      
     playing = false;
-    //reshow that shit
     document.body.classList.remove("game-playing");
-    (window as any).refreshMobilePads?.(); // hide mobile arrows.
+    (window as any).refreshMobilePads?.();
     (window as any).hideGameBackdrop?.();
 
     const winner = LScore > RScore ? "Left Player" : "Right Player";
@@ -512,13 +446,13 @@ function handleWin(remote: boolean): void {
     }
 
     overlay.innerHTML = remote
-        ? /* —— REMOTE MATCH —— show only the CLOSE button —— */
+        ?
           `
       <div class="msg-box">
         <span class="winner">${winner} Wins!</span>
         <button id="close-btn">Home</button>
       </div>`
-        : /* —— OFF-LINE / AI —— show PLAY AGAIN + CLOSE —— */
+        :
           `
       <div class="msg-box">
         <span class="winner">${winner} Wins!</span>
@@ -529,8 +463,6 @@ function handleWin(remote: boolean): void {
       </div>`;
 
     overlay.className = "overlay";
-
-    /* inject style only once */
     if (!document.getElementById("win-style")) {
         const style = document.createElement("style");
         style.id = "win-style";
@@ -579,7 +511,6 @@ function handleWin(remote: boolean): void {
 			filter:brightness(1.15);
 		}
 
-		/* Desktop refinements */
 		@media (min-width:640px){
 			#win-message .msg-box{
 			flex-direction:row;
@@ -599,7 +530,6 @@ function handleWin(remote: boolean): void {
               justify-content:center;
             }
                 
-            /* CLOSE / HOME button 🎨 */
             #close-btn{
               margin-top:1rem;
               padding:.55rem 2rem;
@@ -607,7 +537,7 @@ function handleWin(remote: boolean): void {
               font-weight:700;
               border:none;
               border-radius:10px;
-              background:#facc15;           /* sunny amber, contrasts play-again pink */
+              background:#facc15;
               color:#000;
               cursor:pointer;
               transition:transform .2s,filter .2s;
@@ -621,7 +551,7 @@ function handleWin(remote: boolean): void {
         document.head.appendChild(style);
     }
 
-    /* play-again button logic */
+    //handle play again by reetting everything and restart the counter
     const againBtn = document.getElementById(
         "play-again"
     ) as HTMLButtonElement | null;
@@ -638,32 +568,29 @@ function handleWin(remote: boolean): void {
             startCountdown(3, beginPlay);
         };
     }
-
     closeBtn.onclick = () => {
-        // reuse the existing navbar handler so all clean-up paths stay identical
         (document.getElementById("nav-home") as HTMLAnchorElement).click();
     };
 }
 
+//begin a game
 function beginPlay(): void {
     if (!remoteMode) hidePlayerBadges();
     playing = true;
     document.body.classList.add("game-playing");
     lastTime = performance.now();
-
-    /* ensure **one** animation chain */
     if (rafId === null) rafId = requestAnimationFrame(loop);
 
     (window as any).refreshMobilePads?.();
 }
-/* ═════════════ REMOTE MODE ═════════════ */
 
+//remote mode
 let opponentId: number | null = null;
 let currentMatchId: number | null = null;
 let yourUserId: number | null = null;
 let mySide: "left" | "right" | null = null;
 
-export function set_side(side: "left" | "right") {   //  ← NEW (lower-case name)
+export function set_side(side: "left" | "right") {
   mySide = side;
 }
 
@@ -675,6 +602,7 @@ const auth = (): HeadersInit => {
     return t ? { Authorization: `Bearer ${t}` } : {};
 };
 
+//show the waiting for other players overlay
 function waitForBothPlayers(): void {
     const waitingOverlay = document.createElement("div");
     waitingOverlay.id = "waiting-overlay";
@@ -692,7 +620,7 @@ function waitForBothPlayers(): void {
             color: "#fff",
             backdropFilter: "blur(3px)",
             zIndex: "100",
-            pointerEvents: "all",     // block every click underneath
+            pointerEvents: "all",
         } as Partial<CSSStyleDeclaration>
     );
 
@@ -702,6 +630,7 @@ function waitForBothPlayers(): void {
     document.body.appendChild(waitingOverlay);
 }
 
+//hide the remote overlay
 function hideRemotePlayModal(): void {
     const ov    = document.getElementById("remote-modal");
     const inner = document.getElementById("remote-container");
@@ -710,13 +639,14 @@ function hideRemotePlayModal(): void {
     if (ov)    ov.classList.add("hidden", "opacity-0");
 }
 
+//hide the waiting overlay
 function removeWaitingOverlay(): void {
     const ov = document.getElementById("waiting-overlay");
     if (ov) ov.remove();
 }
 (window as any).removeWaitingOverlay = removeWaitingOverlay;
 
-
+//start remote game
 function startGameRemote() {
     const game = document.getElementById("game-container") as HTMLElement;
     const WSec = document.getElementById("welcome-section") as HTMLElement;
@@ -725,6 +655,7 @@ function startGameRemote() {
     game.classList.add("animate__animated", "animate__zoomIn");
 }
 
+//return home and finish the game in case clicked during a game
 document.getElementById("nav-home")!.addEventListener("click", e => {
     e.preventDefault();
     showHome();
@@ -745,8 +676,8 @@ document.getElementById("nav-play")!.addEventListener("click", () => {
 
 document.getElementById("nav-profile")!.addEventListener("click", () => {
     showOverlay(
-    document.getElementById('profile-overlay')!,       // wrapper
-    document.getElementById('profile-container')!      // inner panel
+    document.getElementById('profile-overlay')!,
+    document.getElementById('profile-container')!
   );
     pushOverlay('profile-overlay', 'profile-container');
     cleanupRemote();
@@ -758,22 +689,18 @@ document.getElementById("nav-signout")!.addEventListener("click", () => {
     resetObjects();
 });
 
+//clean up remotegame
 function cleanupRemote() {
     if (socket) {
         socket.close();
         socket = null;
     }
-    //also restore that shit in remote
     document.body.classList.remove("game-playing");
     remoteMode = false;
 	hasJoined   = false;
     mySide     = null;
-    // isCreator   = false;
-    // isJoiner = false;
-    // remove any waiting/countdown overlays left behind
     document.getElementById("waiting-overlay")?.remove();
     document.getElementById("countdown-overlay")?.remove();
-    // hide remote modal if it’s still up
     document.getElementById("remote-modal")?.classList.add("hidden");
     hidePlayerBadges();
 }
@@ -782,19 +709,11 @@ export function setGameId(id: string) {
   gameId = id;
 }
 
-// Enables remote-play mode from other modules (notifications.ts, etc.)
 export function enableRemoteMode(): void {
   remoteMode = true;
 }
 
 export function connectWebSocket() {
-    // if (socket && socket.readyState === WebSocket.OPEN) return;
-    // if (ownGameId && gameId === ownGameId && !hasJoined) {
-    //     // the creator should *only* wait for the other player, not re-join themselves
-    //     hasJoined = true;
-    // } else if (ownGameId && gameId === ownGameId && hasJoined) {
-    //     return;
-    // }
 	if (socket && socket.readyState === WebSocket.OPEN) return;
 	if (hasJoined) return;
     console.log(`[client] 🎾 connecting to ${WS_BASE}/game`);
@@ -802,7 +721,6 @@ export function connectWebSocket() {
         `${WS_BASE}/game?token=${localStorage.getItem("token")}`
     );
     socket.onopen = () => {
-		/* Always send exactly one JOIN on the first successful open */
 		const join: ClientMsgJoin = { type: "join", gameId };
 		socket!.send(JSON.stringify(join));
 		hasJoined = true;
@@ -810,14 +728,10 @@ export function connectWebSocket() {
 
     socket.onmessage = async (ev) => {
         const msg = JSON.parse(ev.data) as ServerMsg;
-
-        /* Skip live-state updates while we’re showing the 1-second pause */
         if (msg.type === "state" && ignoreServerState) return;
-
-        // 1) got the “ready” signal from the server?
         if (msg.type === "error") {
 			alert(msg.type || "Invalid Game ID");
-			hasJoined = false;            // allow another attempt
+			hasJoined = false;
 			socket!.close();
 			return;
 		}
@@ -826,29 +740,18 @@ export function connectWebSocket() {
             if (mySide === null) {
                 set_side(ownGameId && gameId === ownGameId ? "left" : "right");
             }
-                    
-            /* 1️⃣  both players are connected – clear the waiting banner */
             removeWaitingOverlay();
-
-            /* 2️⃣  identify the opponent and show avatars */
             opponentId = msg.opponentId;
             showPlayerBadges(yourUserId!, opponentId);
-
-            /* 3️⃣  hide the “remote-play” modal if it happens to be open */
             const modal = document.getElementById("remote-modal");
             if (modal) modal.classList.add("hidden");
-
-            /* 4️⃣  reset UI & state, then reveal the board */
             document.getElementById("win-message")?.remove();
-            startGameRemote();     // un-hide the game container
+            startGameRemote();
             resetObjects();
             resizeCanvas();
             updateScore();
-
-            /* 5️⃣  three-second countdown, then start local loop and
-                     tell the server to run its physics */
             startCountdown(3, () => {
-                beginPlay();       // starts the render/update loop
+                beginPlay();
                 socket!.send(
                     JSON.stringify({ type: "start" } as ClientMsgStart)
                 );
@@ -858,10 +761,8 @@ export function connectWebSocket() {
         }
         if (msg.type === "state") {
             if (!playing) return;
-            // compute scale factors from server coords → canvas pixels
             const sx = CanvasHtml.width / WORLD_WIDTH;
             const sy = CanvasHtml.height / WORLD_HEIGHT;
-            // scale paddles
             const [PL, PR] = msg.paddles;
             left = { x: PL.x * sx, y: PL.y * sy, w: PL.w * sx, h: PL.h * sy };
             right = { x: PR.x * sx, y: PR.y * sy, w: PR.w * sx, h: PR.h * sy };
@@ -876,9 +777,8 @@ export function connectWebSocket() {
             };
             
             if (msg.scores.left !== LScore || msg.scores.right !== RScore) {
-                const dir: 1 | -1 = msg.scores.left > LScore ? 1 : -1; // ← decide who scored first
-
-                LScore = msg.scores.left; // then update our local copies
+                const dir: 1 | -1 = msg.scores.left > LScore ? 1 : -1;
+                LScore = msg.scores.left;
                 RScore = msg.scores.right;
                 updateScore();
             }
@@ -890,7 +790,7 @@ export function connectWebSocket() {
             const btnJoin = document.getElementById(
                 "remote-join-btn"
             )! as HTMLButtonElement;
-            const dir: 1 | -1 = msg.scores.left > LScore ? 1 : -1; // ← decide who scored first
+            const dir: 1 | -1 = msg.scores.left > LScore ? 1 : -1;
             LScore = msg.scores.left;
             RScore = msg.scores.right;
             updateScore();
@@ -908,7 +808,6 @@ export function connectWebSocket() {
 }
 
 //here is the new challenge pop up part
-
 const btnChallenge = document.getElementById(
     "remote-challenge-btn"
 )! as HTMLButtonElement;
@@ -1001,7 +900,7 @@ btnChallenge.addEventListener("click", openChallengeModal);
 challengeClose.addEventListener("click", closeChallengeModal);
 
 challengeModal.addEventListener("click", (e) => {
-    if (e.target === challengeModal) closeChallengeModal(); // click-outside
+    if (e.target === challengeModal) closeChallengeModal();
 });
 
 document.addEventListener("click", async (e) => {
@@ -1013,12 +912,10 @@ document.addEventListener("click", async (e) => {
     const targetId = Number(btn.dataset.id);
     if (!targetId) return;
 
-    /* ❶ Instantly get rid of all pop-ups/dialogs */
-    closeChallengeModal();   // the user list
-    hideRemotePlayModal();   // the Remote Play panel
-    waitForBothPlayers();    // show the waiting overlay right now
+    closeChallengeModal();
+    hideRemotePlayModal();
+    waitForBothPlayers();
 
-    /* ❷ Make sure we own (or create) a game room */
     if (!gameId) {
         const res = await fetch(`/api/game`, {
             method: "POST",
@@ -1029,12 +926,8 @@ document.addEventListener("click", async (e) => {
         remoteMode = true;
         ownGameId  = gameId;
         set_side("left");
-        // const waitingLayer = document.getElementById("waiting-overlay");
-        // waitingLayer?.remove();
-        connectWebSocket();          // join as player-1
+        connectWebSocket();
     }
-
-    /* ❸ Send the actual challenge */
     const token = localStorage.getItem("token");
     await fetch(`/api/challenge`, {
         method : "POST",
@@ -1046,13 +939,10 @@ document.addEventListener("click", async (e) => {
     });
 });
 
-
-
 export function initRemoteModal(): void {
-    const ov = document.getElementById("remote-modal")!; // overlay
-    const inner = ov.querySelector("div")! as HTMLElement; // white card
-    /* ➋ Show with the shared helper */
-    showOverlay(ov, inner); // << replaces “classList.remove('hidden') …”
+    const ov = document.getElementById("remote-modal")!;
+    const inner = ov.querySelector("div")! as HTMLElement;
+    showOverlay(ov, inner);
 
     const modal = document.getElementById("remote-modal")!;
     const btnCreate = document.getElementById(
@@ -1092,14 +982,11 @@ export function initRemoteModal(): void {
         const data = (await res.json()) as { gameId: string };
         gameId = data.gameId;
         remoteMode = true;
-        // isCreator = true;
-        // modal.classList.add('hidden');
         ownGameId  = gameId;
         set_side("left");
         connectWebSocket();
         inputId.value = data.gameId;
         sectCreate.classList.remove("hidden");
-        // NEW: reveal the canvas + countdown behind the modal
         (window as any).showGameArea?.();
         pushHome();
         resetObjects();
@@ -1121,8 +1008,6 @@ export function initRemoteModal(): void {
     btnJoin.onclick = () => {
         sectJoin.classList.remove("hidden");
         joinInp.value = "";
-        // isCreator = false;
-        // isJoiner = true;
     };
 
     // Confirm join
@@ -1133,7 +1018,7 @@ export function initRemoteModal(): void {
 		return;
 	}
 
-	/* reset any stale state from a previous failed attempt */
+	// reset any stale state from a previous failed attempt
 	if (socket && socket.readyState === WebSocket.OPEN) socket.close();
 	hasJoined  = false;
 	gameId     = id;
@@ -1161,33 +1046,26 @@ export function initRemoteModal(): void {
 window.addEventListener("beforeunload", () => {
     cleanupRemote();
 });
-/* ───────────────────────────────────────────────────────────── *
- *  One call that wires Back / Forward to the router
- * ───────────────────────────────────────────────────────────── */
-installPopHandler(state => {
-  console.log('[POP]', state);        // fires once per arrow click
 
-  /* 1) Hide every visible overlay (wrapper + inner) */
+
+installPopHandler(state => {
+  console.log('[POP]', state);
+
     document.querySelectorAll<HTMLElement>('.overlay:not(.hidden)')
             .forEach(ov => {
-            // find the child that showOverlay() animated
             const inner = ov.querySelector<HTMLElement>(':scope > *:not(.hidden)') ?? undefined;
-            hideOverlay(ov, inner);        // uses your existing helper
+            hideOverlay(ov, inner);
             });
 
-    document.body.classList.remove('game-playing');   // stop canvas etc.
-
-  /* 2) Restore what the new state demands  ──────────────────── */
-  if (!state) return;                 // safety guard
-
+    document.body.classList.remove('game-playing');
+  if (!state) return;
   switch (state.screen) {
     case 'home': {
   cleanupRemote();
   resetObjects();
 
-  (window as any).hideGameArea?.();   // ⬅️  NOW DEFINED
+  (window as any).hideGameArea?.();
 
-  /* hide every overlay still visible */
   document.querySelectorAll<HTMLElement>('.overlay:not(.hidden)')
           .forEach(ov => {
             const inner = ov.querySelector<HTMLElement>(
@@ -1216,7 +1094,6 @@ installPopHandler(state => {
 
 
 
-// initial game setup
 resetObjects();
 resizeCanvas();
 render();

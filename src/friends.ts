@@ -27,7 +27,6 @@ export async function fetchFriends(): Promise<any[]> {
   });
 
   if (!res.ok) {
-    /* optional: log the full response for debugging */
     console.error("fetchFriends()", res.status, await res.text());
     throw new Error("Failed to load friends.");
   }
@@ -106,28 +105,24 @@ function render(friends: any[]): void {
             moreBtn.textContent = open ? "less ▲" : "more ▾";
         });
 
-        //step-1  Remove → show confirm bar
+        //1.Remove then show confirm bar
         stats.addEventListener("click", () => {
             openFriendStats(friendId, f);
         });
-
-        
-
-        //step-1  Remove → show confirm bar
-        removeBtn.addEventListener("click", () => {
+            removeBtn.addEventListener("click", () => {
             submenu.classList.add("hidden");
             confirm.classList.remove("hidden");
             row.style.maxHeight = confirm.scrollHeight + 56 + "px";
         });
 
-        //step-2a User cancels
+        //2a- User cancels
         noBtn.addEventListener("click", () => {
             confirm.classList.add("hidden");
             submenu.classList.remove("hidden");
             row.style.maxHeight = submenu.scrollHeight + 56 + "px";
         });
 
-        //step-2b User confirms
+        //2-b User confirms so we delete
         yesBtn.addEventListener("click", async () => {
             row.style.opacity = "0.6";
             yesBtn.disabled = noBtn.disabled = true;
@@ -209,7 +204,7 @@ export function initFriendsSidebarToggle(): void {
         btn.innerHTML = open ? "❯" : "❮";
     };
 
-    //click-toggle
+    //expan the friends list on toggle
     btn.addEventListener("click", () => { open = !open; apply(); });
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && open) {
