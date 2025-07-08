@@ -111,7 +111,6 @@ import db from './utils/db';
 
 // console.log("✅ 10 dummy matches inserted.");
 
-
 // const senderId = 38;
 // const receiverId = 49;
 
@@ -173,7 +172,6 @@ db.exec(`ALTER TABLE users   ADD COLUMN wallet_address TEXT;`);
 //   else {
 //   console.log(`⚠️  Users ${senderId} and ${receiverId} are already friends or pending`);
 // }
-
 
 // if (!existing) {
 //   db.prepare(`

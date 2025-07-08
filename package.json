@@ -1,39 +1,43 @@
 {
-  "name": "startpage",
-  "version": "1.0.0",
-  "main": "index.js",
-  "overrides": {
-    "minimatch": "5.1.2",
-    "glob": "8.1.0"
-  },
-  "scripts": {
-    "build": "tsc",
-    "serve": "http-server . -p 5500 -c-1 --cors",
-    "dev": "concurrently \"tsc --watch\" \"http-server . -p 5500 -c-1 --cors\"",
-    "start": "npm run build && npm run serve"
-  },
-  "devDependencies": {
-	"@nomicfoundation/hardhat-toolbox": "^6.0.0",
-	"hardhat": "^2.25.0",
-    "concurrently": "^8.2.2",
-    "typescript": "^5.8.3"
-  },
-  "dependencies": {
-	"fastify-multipart": "^5.3.1",
-    "@fastify/multipart": "^9.0.3",
-    "@fastify/static": "^8.2.0",
-    "chart.js": "^4.4.9",
-    "http-server": "^14.1.1"
-  },
-  "description": "",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Omarak9120/ft_transcendence.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Omarak9120/ft_transcendence/issues"
-  }
+    "name": "startpage",
+    "version": "1.0.0",
+    "main": "index.js",
+    "overrides": {
+        "minimatch": "5.1.2",
+        "glob": "8.1.0"
+    },
+    "scripts": {
+        "build": "tsc",
+        "serve": "http-server . -p 5500 -c-1 --cors",
+        "dev": "concurrently \"tsc --watch\" \"http-server . -p 5500 -c-1 --cors\"",
+        "start": "npm run build && npm run serve"
+    },
+    "devDependencies": {
+        "@nomicfoundation/hardhat-toolbox": "^6.0.0",
+        "concurrently": "^8.2.2",
+        "eslint": "^9.30.1",
+        "eslint-config-prettier": "^10.1.5",
+        "eslint-plugin-prettier": "^5.5.1",
+        "hardhat": "^2.25.0",
+        "prettier": "^3.6.2",
+        "typescript": "^5.8.3"
+    },
+    "dependencies": {
+        "@fastify/multipart": "^9.0.3",
+        "@fastify/static": "^8.2.0",
+        "chart.js": "^4.4.9",
+        "fastify-multipart": "^5.3.1",
+        "http-server": "^14.1.1"
+    },
+    "description": "",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Omarak9120/ft_transcendence.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/Omarak9120/ft_transcendence/issues"
+    }
 }

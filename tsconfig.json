@@ -1,12 +1,12 @@
 {
-  "compilerOptions": {
-    "target": "ES2017",
-    "module": "ES2015",
-    "outDir": "dist",
-    "rootDir": "src",
-    "moduleResolution": "node",
-    "strict": true,
-    "esModuleInterop": true
-  },
-  "include": ["src/**/*.ts"]
+    "compilerOptions": {
+        "target": "ES2017",
+        "module": "ES2015",
+        "outDir": "dist",
+        "rootDir": "src",
+        "moduleResolution": "node",
+        "strict": true,
+        "esModuleInterop": true
+    },
+    "include": ["src/**/*.ts"]
 }
