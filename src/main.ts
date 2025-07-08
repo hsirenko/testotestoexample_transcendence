@@ -100,6 +100,110 @@ async function showPlayerBadges(selfId: number, oppId: number) {
 }
 
 
+//mobile controles helpers
+/* =============================================================
+   Mobile on-screen controllers  – visible only on phones/tablets
+   ============================================================= */
+
+type PadSide = 'left' | 'right';
+let   padLayer: HTMLDivElement | null = null;
+
+/* expose helpers for other modules */
+(window as any).refreshMobilePads = refreshMobilePads;
+(window as any).hideMobilePads    = hideMobilePads;
+
+/* ---------------------------------------------------------------- */
+/* internal helpers                                                 */
+/* ---------------------------------------------------------------- */
+
+function isMobileDevice(): boolean {
+  return window.matchMedia('(pointer:coarse)').matches
+      || window.innerWidth <= 768;
+}
+
+function sendSyntheticKey(key: string, type: 'keydown' | 'keyup'): void {
+  const ev = new KeyboardEvent(type, { key });
+  window.dispatchEvent(ev);
+}
+
+function createPad(side: PadSide): HTMLDivElement {
+  const wrap = document.createElement('div');
+  Object.assign(wrap.style, {
+    display:        'flex',
+    flexDirection:  'column',
+    gap:            '8px',
+    pointerEvents:  'auto',
+  });
+
+  const btnUp   = document.createElement('button');
+  const btnDown = document.createElement('button');
+
+  btnUp.textContent   = '▲';
+  btnDown.textContent = '▼';
+
+  [btnUp, btnDown].forEach(btn => {
+    Object.assign(btn.style, {
+      width:        '60px',
+      height:       '60px',
+      borderRadius: '50%',
+      fontSize:     '1.6rem',
+      background:   '#000',
+      color:        '#fff',
+      opacity:      '0.70',
+      border:       'none',
+      touchAction:  'none',
+    });
+  });
+
+  const keyUp   = side === 'left' ? 'w'        : 'ArrowUp';
+  const keyDown = side === 'left' ? 's'        : 'ArrowDown';
+
+  btnUp.addEventListener  ('touchstart', () => sendSyntheticKey(keyUp  , 'keydown'));
+  btnUp.addEventListener  ('touchend'  , () => sendSyntheticKey(keyUp  , 'keyup'));
+  btnDown.addEventListener('touchstart', () => sendSyntheticKey(keyDown, 'keydown'));
+  btnDown.addEventListener('touchend'  , () => sendSyntheticKey(keyDown, 'keyup'));
+
+  wrap.append(btnUp, btnDown);
+  return wrap;
+}
+
+function refreshMobilePads(): void {
+  hideMobilePads();                     // re-build each time
+  if (!isMobileDevice()) return;        // desktop => no pads
+
+  padLayer = document.createElement('div');
+  Object.assign(padLayer.style, {
+    position:      'fixed',
+    inset:         '0',
+    display:       'flex',
+    justifyContent:'space-between',
+    alignItems:    'flex-end',
+    padding:       '0 1rem 1.5rem',
+    pointerEvents: 'none',
+    zIndex:        '999',
+  });
+
+  const leftPad  = createPad('left');
+  const rightPad = createPad('right');
+
+  /* show one or two controllers according to game mode */
+  if (remoteMode || gameMode === 'ai') {
+    const pad = (remoteMode && mySide === 'right') ? rightPad : leftPad;
+    padLayer.appendChild(pad);
+  } else {
+    padLayer.append(leftPad, rightPad); // local 1 v 1
+  }
+
+  document.body.appendChild(padLayer);
+}
+
+function hideMobilePads(): void {
+  padLayer?.remove();
+  padLayer = null;
+}
+
+
+
 //declare the game elements
 let left: Paddle;
 let right: Paddle;
@@ -155,7 +259,7 @@ const keys: Record<string, boolean> = {};
 for (const type of ["keydown", "keyup"] as const) {
     window.addEventListener(type, (evt) => {
         const e = evt as KeyboardEvent;
-        if (!["w", "s", "ArrowUp", "ArrowDown"].includes(e.key)) return;
+        if (!["w", "s", "W", "S", "ArrowUp", "ArrowDown"].includes(e.key)) return;
 
         //ignore handling in case its not a game, in case of typing like login and sign up
         const active = document.activeElement as HTMLElement | null;
@@ -173,7 +277,7 @@ for (const type of ["keydown", "keyup"] as const) {
             type === "keydown"
         ) {
             const dir: "up" | "down" =
-                e.key === "w" || e.key === "ArrowUp" ? "up" : "down";
+                e.key === "w" || e.key === "W" || e.key === "ArrowUp" ? "up" : "down";
             const mv: ClientMsgMove = { type: "move", dir };
             socket.send(JSON.stringify(mv));
         }
@@ -233,9 +337,9 @@ function loop(now: number): void {
     if (playing) {
         /* Remote – continuously send held keys */
         if (remoteMode && socket?.readyState === WebSocket.OPEN) {
-            if (keys["w"] || keys["ArrowUp"])
+            if (keys["w"] || keys["ArrowUp"] || keys["W"])
                 socket.send(JSON.stringify({ type: "move", dir: "up" } as ClientMsgMove));
-            if (keys["s"] || keys["ArrowDown"])
+            if (keys["s"] || keys["S"] || keys["ArrowDown"])
                 socket.send(JSON.stringify({ type: "move", dir: "down" } as ClientMsgMove));
         }
         if (!remoteMode) update(dt);
@@ -257,8 +361,8 @@ function update(dt: number): void {
         prevSpeed = currSpeed;
     }
     const paddleV = CanvasHtml.height * PadSpeed * currSpeed;
-    if (keys["w"]) left.y -= paddleV * dt;
-    if (keys["s"]) left.y += paddleV * dt;
+    if (keys["w"] || keys["W"]) left.y -= paddleV * dt;
+    if (keys["s"] || keys["S"]) left.y += paddleV * dt;
     left.y = clamp(left.y, 0, CanvasHtml.height - left.h);
     if (!remoteMode) {
         if (gameMode === "pvp") {
@@ -688,21 +792,20 @@ document.getElementById("nav-signout")!.addEventListener("click", () => {
     resetObjects();
 });
 
-//clean up remotegame
+// clean up remote-game
 function cleanupRemote() {
-    if (socket) {
-        socket.close();
-        socket = null;
-    }
-    document.body.classList.remove("game-playing");
-    remoteMode = false;
-	hasJoined   = false;
-    mySide     = null;
-    document.getElementById("waiting-overlay")?.remove();
-    document.getElementById("countdown-overlay")?.remove();
-    document.getElementById("remote-modal")?.classList.add("hidden");
-    hidePlayerBadges();
+  if (socket) {
+    socket.close();
+    socket = null;
+  }
+  document.body.classList.remove('game-playing');
+  remoteMode = false;
+  hasJoined  = false;
+  mySide     = null;
+
+  (window as any).hideMobilePads?.();      // NEW – remove mobile pads
 }
+
 
 export function setGameId(id: string) {
   gameId = id;

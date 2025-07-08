@@ -311,7 +311,7 @@ form.addEventListener("submit", async (e) => {
 
     const email = (
         document.getElementById("email") as HTMLInputElement
-    ).value.trim();
+    ).value.trim().toLowerCase();
     const password = (document.getElementById("password") as HTMLInputElement)
         .value;
     const twofaInput = document.getElementById(
