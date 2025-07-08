@@ -219,7 +219,9 @@ export function handleGameResult(
     broadcast(tour, { type: "tournamentFinished", winnerId });
     
     // Automatically record scores on blockchain
-    recordTournamentScoresOnChain(tour.id);
+    recordTournamentScoresOnChain(tour.id).catch(error => {
+      console.error(`Failed to initiate blockchain recording for tournament ${tour.id}:`, error);
+    });
   }
 }
 
