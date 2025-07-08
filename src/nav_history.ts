@@ -33,4 +33,7 @@ export function showHome(): void {
   document.getElementById('home-screen')?.classList.remove('hidden');
   document.getElementById('game-screen')?.classList.add('hidden');
   document.body.classList.remove('game-playing');
+
+  (window as any).hideMobilePads?.();
 }
+
