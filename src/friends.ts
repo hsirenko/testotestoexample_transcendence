@@ -169,7 +169,7 @@ export async function loadFriendsSidebar(): Promise<void> {
 }
 
 (async () => {
-  if (!localStorage.getItem("token")) return;
+  if (!(await (window as any).isValidToken?.())) return;
 
   await loadFriendsSidebar();
 })();

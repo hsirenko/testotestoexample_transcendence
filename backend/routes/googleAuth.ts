@@ -55,7 +55,7 @@ export default async function googleAuthRoutes(fastify: FastifyInstance) {
 		twofaPending: true,
       });
 
-      return reply.redirect(`http://${HOST}:5500?twofaPending=true&token=${tempToken}`);
+      return reply.redirect(`https://${HOST}:8443?twofaPending=true&token=${tempToken}`);
     }
     const jwtToken = generateToken({
       userId: user.id,
@@ -64,7 +64,7 @@ export default async function googleAuthRoutes(fastify: FastifyInstance) {
     });
 
     // Redirect back with token (or use cookie/session)
-    return reply.redirect(`http://${HOST}:5500?token=${jwtToken}`);
+    return reply.redirect(`https://${HOST}:8443?token=${jwtToken}`);
   });
 
   fastify.post('/auth/google/2fa', async (req, reply) => {

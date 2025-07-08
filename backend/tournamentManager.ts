@@ -3,6 +3,7 @@ import db from "./utils/db";
 import { Game } from "./game";
 import { games } from "./gameManager";
 import type { WebSocket } from "ws";
+import { persistScoresOnChain } from "./services/tournamentScoreService";
 
 export interface LiveTournament {
   id: number;
@@ -180,15 +181,16 @@ export function handleGameResult(
 
   const tour = tours.get(code)!;
   const match = db
-    .prepare(`SELECT id FROM matches WHERE game_id = ?`)
-    .get(gameId) as { id: number };
+    .prepare(`SELECT id, player1_id, player2_id FROM matches WHERE game_id = ?`)
+    .get(gameId) as { id: number; player1_id: number; player2_id: number };
 
+  const winnerScore = winnerId === match.player1_id ? scoreP1 : scoreP2;
   db.prepare(
     `
     UPDATE matches
-       SET winner_id = ?, score_p1 = ?, score_p2 = ?, played_at = CURRENT_TIMESTAMP
+       SET winner_id = ?, score_p1 = ?, score_p2 = ?, winner_score = ?, played_at = CURRENT_TIMESTAMP
      WHERE id = ?`
-  ).run(winnerId, scoreP1, scoreP2, match.id);
+  ).run(winnerId, scoreP1, scoreP2, winnerScore, match.id);
 
   broadcast(tour, {
     type: "matchFinished",
@@ -215,6 +217,11 @@ export function handleGameResult(
       `UPDATE tournaments SET status='finished', winner_id=? WHERE id=?`
     ).run(winnerId, tour.id);
     broadcast(tour, { type: "tournamentFinished", winnerId });
+    
+    // Automatically record scores on blockchain
+    recordTournamentScoresOnChain(tour.id).catch(error => {
+      console.error(`Failed to initiate blockchain recording for tournament ${tour.id}:`, error);
+    });
   }
 }
 
@@ -294,4 +301,41 @@ function fetchWinner(gameId: string) {
     .prepare(`SELECT winner_id FROM matches WHERE game_id=?`)
     .get(gameId) as { winner_id: number };
   return row.winner_id;
+}
+
+async function recordTournamentScoresOnChain(tournamentId: number) {
+  try {
+    const rows = db.prepare(`
+      SELECT
+        m.winner_id               AS userId,
+        m.winner_score            AS score,
+        u.wallet_address          AS wallet_address
+      FROM matches m
+      JOIN users u ON u.id = m.winner_id
+      WHERE m.tournament_id = ?
+        AND m.winner_id IS NOT NULL
+    `).all(tournamentId) as {
+      userId: number;
+      score: number | null;
+      wallet_address: string | null;
+    }[];
+
+    if (rows.length === 0) {
+      console.log(`No winners found for tournament ${tournamentId}`);
+      return;
+    }
+
+    await persistScoresOnChain(
+      tournamentId,
+      rows.map(r => ({
+        userId: r.userId,
+        score: r.score ?? 0,
+        wallet: r.wallet_address ?? undefined
+      }))
+    );
+
+    console.log(`✓ Tournament ${tournamentId} scores recorded on blockchain`);
+  } catch (error) {
+    console.error(`✗ Failed to record tournament ${tournamentId} scores on blockchain:`, error);
+  }
 }

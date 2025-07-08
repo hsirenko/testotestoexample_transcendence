@@ -367,4 +367,6 @@ export function stopNotifications() {
 	updateBadge();
 }
 
-if (localStorage.getItem("token")) initNotifications();
+(async () => {
+  if (await (window as any).isValidToken?.()) initNotifications();
+})();
