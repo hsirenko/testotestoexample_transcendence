@@ -367,6 +367,30 @@ export function stopNotifications() {
 	updateBadge();
 }
 
-(async () => {
-  if (await (window as any).isValidToken?.()) initNotifications();
-})();
+// Initialize notifications when DOM is ready and user is logged in
+document.addEventListener('DOMContentLoaded', async () => {
+  // Wait for auth.ts to load and expose isValidToken
+  let retries = 0;
+  const maxRetries = 20; // Wait up to 2 seconds
+  
+  while (retries < maxRetries) {
+    if ((window as any).isValidToken) {
+      try {
+        if (await (window as any).isValidToken()) {
+          initNotifications();
+        }
+      } catch (error) {
+        console.error('Error checking token validity:', error);
+      }
+      break;
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 100));
+    retries++;
+  }
+  
+  // Fallback: simple token check if isValidToken is not available
+  if (retries >= maxRetries && localStorage.getItem("token")) {
+    initNotifications();
+  }
+});
