@@ -321,7 +321,9 @@ refreshProfileHeader();
 });
 
 
-if (localStorage.getItem("token")) {
-populateProfileViews();
-refreshProfileHeader();
-}
+(async () => {
+  if (await (window as any).isValidToken?.()) {
+    populateProfileViews();
+    refreshProfileHeader();
+  }
+})();

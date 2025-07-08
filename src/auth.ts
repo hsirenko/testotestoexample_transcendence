@@ -5,6 +5,7 @@ import "./history.js";
 import { render, resetObjects, resizeCanvas, updateScore } from "./main.js";
 import { initNotifications, stopNotifications } from "./notifications.js";
 import "./stats.js";
+import { API_BASE } from "./config.js";
 
 const overlay = document.getElementById("login-overlay") as HTMLElement;
 const appShell = document.getElementById("app") as HTMLElement;
@@ -24,6 +25,29 @@ const $ = <T extends HTMLElement = HTMLElement>(sel: string) =>
     document.querySelector<T>(sel);
 
 const GOOGLE_LOGIN_URL = `/auth/google`;
+
+// Token validation function
+async function isValidToken(): Promise<boolean> {
+    const token = localStorage.getItem("token");
+    if (!token) return false;
+    
+    try {
+        const response = await fetch(`${API_BASE}/users/me`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!response.ok) {
+            localStorage.removeItem("token");
+            return false;
+        }
+        return true;
+    } catch {
+        localStorage.removeItem("token");
+        return false;
+    }
+}
+
+// Make it globally available
+(window as any).isValidToken = isValidToken;
 
 const originalSubmit = form.querySelector(
     "button[type='submit'],input[type='submit']"
@@ -62,7 +86,7 @@ const originalSubmit = form.querySelector(
 
     localStorage.setItem("token", googleToken);
     try {
-        const res = await fetch(`/api/users/me`, {
+        const res = await fetch(`${API_BASE}/users/me`, {
             headers: { Authorization: `Bearer ${googleToken}` },
         });
         const user = await res.json();
@@ -323,7 +347,7 @@ form.addEventListener("submit", async (e) => {
                 return;
             }
 
-            const userRes = await fetch(`/api/users/me`, {
+            const userRes = await fetch(`${API_BASE}/users/me`, {
                 headers: { Authorization: `Bearer ${pendingGoogleToken}` },
             });
             const user = await userRes.json();
@@ -370,7 +394,8 @@ form.addEventListener("submit", async (e) => {
         return;
     }
 
-    const res = await fetch(`/login`, {
+    const loginUrl = location.port === '5500' ? 'http://localhost:3000/login' : '/login';
+    const res = await fetch(loginUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -391,7 +416,7 @@ form.addEventListener("submit", async (e) => {
             return;
         }
 
-        const retry = await fetch(`/login`, {
+        const retry = await fetch(loginUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, password, twofaToken }),
@@ -415,7 +440,7 @@ form.addEventListener("submit", async (e) => {
     localStorage.setItem("token", data.token);
     let fullUser = data.user;
     try {
-    const resMe = await fetch(`/api/users/me`, {
+    const resMe = await fetch(`${API_BASE}/users/me`, {
         headers: { Authorization: `Bearer ${data.token}` },
     });
     if (resMe.ok) {
