@@ -264,6 +264,9 @@ function connectWs() {
     });
 }
 
+(window as any).showGameBackdrop = showGameBackdrop;
+(window as any).hideGameBackdrop = hideGameBackdrop;
+
 function updateSlots(players: Array<number | { id: number; username: string }>) {
     const stored = localStorage.getItem('user');
     const raw = stored ? JSON.parse(stored) : null;

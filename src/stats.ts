@@ -3,6 +3,7 @@
 declare const Chart: any;
 
 import { GoalsTotalDTO, MonthlyGoalsRowDTO, MonthlyWinRateDTO, WinsTotalDTO } from './types.js';
+import { getAuthHeader } from './utils/auth.js';
 
 const API_BASE = ``;
 
@@ -54,16 +55,9 @@ function last12Labels(d: Date = new Date()): string[] {
     );
 }
 
-function getAuthHeader(): HeadersInit {
-    const token = localStorage.getItem('token');
-    return {
-        'Content-Type': 'application/json',
-        Authorization: token ? `Bearer ${token}` : '',
-    };
-}
 
 async function fetchJSON<T>(url: string): Promise<T> {
-    const r = await fetch(url, { headers: getAuthHeader() });
+    const r = await fetch(url, { headers: getAuthHeader(true) });
     if (!r.ok) throw new Error('Failed to load stats.');
     return (await r.json()) as T;
 }

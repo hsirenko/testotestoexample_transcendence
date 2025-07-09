@@ -60,7 +60,8 @@ const originalSubmit = form.querySelector(
     if (!googleToken) return;
 
     if (twofaPending) {
-        twofaInput.classList.remove('hidden');
+        const twofaWrapper = document.getElementById('twofa-wrapper') as HTMLElement;
+        twofaWrapper.classList.remove('hidden');
         twofaInput.focus();
         loginError.textContent = 'Enter your 2FA code and press Login.';
 
@@ -359,7 +360,7 @@ form.addEventListener('submit', async (e) => {
 
             emailEl.setAttribute('required', 'true');
             passwordEl.setAttribute('required', 'true');
-            twofaInput.classList.add('hidden');
+            twofaWrapper.classList.add('hidden');
             twofaInput.value = '';
 
             hideLogin();
@@ -440,7 +441,6 @@ form.addEventListener('submit', async (e) => {
         }
     } catch {}
     localStorage.setItem('user', JSON.stringify(data.user));
-    twofaInput.classList.add('hidden');
     twofaWrapper.classList.add('hidden');
     twofaInput.value = '';
 

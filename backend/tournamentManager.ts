@@ -296,38 +296,56 @@ function fetchWinner(gameId: string) {
 
 async function recordTournamentScoresOnChain(tournamentId: number) {
     try {
-        const rows = db
-            .prepare(
-                `
-      SELECT
-        m.winner_id               AS userId,
-        m.winner_score            AS score,
-        u.wallet_address          AS wallet_address
-      FROM matches m
-      JOIN users u ON u.id = m.winner_id
-      WHERE m.tournament_id = ?
-        AND m.winner_id IS NOT NULL
-    `
-            )
-            .all(tournamentId) as {
-            userId: number;
-            score: number | null;
-            wallet_address: string | null;
-        }[];
-
-        if (rows.length === 0) {
-            console.log(`No winners found for tournament ${tournamentId}`);
+        // Get tournament info
+        const tournament = db.prepare('SELECT winner_id FROM tournaments WHERE id = ?').get(tournamentId) as { winner_id: number | null };
+        
+        if (!tournament) {
+            console.log(`Tournament ${tournamentId} not found`);
             return;
         }
 
-        await persistScoresOnChain(
-            tournamentId,
-            rows.map((r) => ({
-                userId: r.userId,
-                score: r.score ?? 0,
-                wallet: r.wallet_address ?? undefined,
-            }))
-        );
+        // Get all tournament participants
+        const participants = db.prepare(`
+            SELECT tp.user_id, u.wallet_address, u.username
+            FROM tournament_players tp
+            JOIN users u ON tp.user_id = u.id
+            WHERE tp.tournament_id = ?
+        `).all(tournamentId) as { user_id: number; wallet_address: string | null; username: string }[];
+
+        if (participants.length === 0) {
+            console.log(`No participants found for tournament ${tournamentId}`);
+            return;
+        }
+
+        // Calculate tournament standings using actual game scores
+        const standings = participants.map(p => {
+            // Get the highest score this player achieved in any match during this tournament
+            const playerHighScore = db.prepare(`
+                SELECT MAX(
+                    CASE 
+                        WHEN m.player1_id = ? THEN m.score_p1
+                        WHEN m.player2_id = ? THEN m.score_p2
+                        ELSE 0
+                    END
+                ) as max_score
+                FROM matches m
+                WHERE m.tournament_id = ? 
+                AND (m.player1_id = ? OR m.player2_id = ?)
+            `).get(p.user_id, p.user_id, tournamentId, p.user_id, p.user_id) as { max_score: number | null };
+            
+            const actualScore = playerHighScore?.max_score || 0;
+            
+            return {
+                userId: p.user_id,
+                score: actualScore,
+                wallet: p.wallet_address ?? undefined,
+                username: p.username
+            };
+        });
+
+        console.log(`Recording tournament ${tournamentId} standings:`, standings.map(s => `${s.username}: ${s.score} points`));
+
+        await persistScoresOnChain(tournamentId, standings);
 
         console.log(`✓ Tournament ${tournamentId} scores recorded on blockchain`);
     } catch (error) {

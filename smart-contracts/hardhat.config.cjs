@@ -1,10 +1,16 @@
 //frontend/smart-contracts/hardhat.config.cjs
 /** @type import('hardhat/config').HardhatUserConfig */
 require('@nomicfoundation/hardhat-toolbox');
-// require("dotenv").config();
+require('dotenv').config();
 
-const FUJI_RPC = 'https://avalanche-fuji-c-chain-rpc.publicnode.com'; // e.g. https://avalanche-fuji...
-const PRIVATE_KEY = '16264a2fa6b25f47a4bad96b2135416ee8555243726a078f1152e4fe2ec9c267'; // wallet that deploys
+// Load environment variables
+const FUJI_RPC = process.env.FUJI_RPC;
+const PRIVATE_KEY = process.env.PRIVATE_KEY;
+
+// Validate required environment variables
+if (!FUJI_RPC || !PRIVATE_KEY) {
+    throw new Error('Please set FUJI_RPC and PRIVATE_KEY in your .env file');
+}
 
 module.exports = {
     solidity: '0.8.28',

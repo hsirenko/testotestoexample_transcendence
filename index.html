@@ -790,6 +790,13 @@
                         >
                             History
                         </button>
+                        <button
+                            type="button"
+                            data-tab="tournament-scores"
+                            class="tab-btn pb-2 cursor-pointer"
+                        >
+                            Tournament Scores
+                        </button>
 
                         <!-- sliding underline -->
                         <span
@@ -1074,6 +1081,37 @@
                                     </thead>
                                     <tbody id="history-body"></tbody>
                                 </table>
+                            </div>
+                        </section>
+
+                        <!-- TOURNAMENT SCORES -->
+                        <section data-panel="tournament-scores" class="panel hidden">
+                            <h2 class="mb-6 text-2xl font-bold text-white">Tournament Scores</h2>
+                            <div class="overflow-x-auto">
+                                <div id="tournament-scores-loading" class="text-center text-white/70 py-8">
+                                    <div class="animate-spin w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full mx-auto mb-4"></div>
+                                    Loading tournament scores from blockchain...
+                                </div>
+                                <div id="tournament-scores-error" class="hidden text-center text-red-400 py-8">
+                                    <div class="text-xl mb-2">⚠️</div>
+                                    <p>Failed to load tournament scores</p>
+                                    <button 
+                                        id="tournament-scores-retry" 
+                                        class="mt-4 px-4 py-2 bg-amber-500 hover:bg-amber-600 rounded text-white font-semibold"
+                                    >
+                                        Retry
+                                    </button>
+                                </div>
+                                <div id="tournament-scores-empty" class="hidden text-center text-white/70 py-8">
+                                    <div class="text-4xl mb-4">🏆</div>
+                                    <p>No tournament scores found on blockchain</p>
+                                    <p class="text-sm mt-2">Tournament scores will appear here after you participate in tournaments</p>
+                                </div>
+                                <div id="tournament-scores-content" class="hidden">
+                                    <div id="tournament-scores-list" class="space-y-6">
+                                        <!-- Tournament scores will be populated here -->
+                                    </div>
+                                </div>
                             </div>
                         </section>
                     </div>

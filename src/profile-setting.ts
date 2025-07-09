@@ -1,6 +1,7 @@
 // profile-setting.ts – Info panel & inline-editor
 
 import { resolveAvatar } from './friends.js';
+import { getAuthHeader } from './utils/auth.js';
 
 export function $(sel: string): HTMLElement | null {
     return document.querySelector(sel);
@@ -17,11 +18,6 @@ function validatePassword(pw: string): string | null {
     return null;
 }
 
-//athentication header
-function getAuthHeader(): HeadersInit {
-    const t = localStorage.getItem('token');
-    return t ? { Authorization: `Bearer ${t}` } : {};
-}
 
 async function fetchMe(): Promise<any | null> {
     try {
@@ -94,6 +90,12 @@ verifyBtn.addEventListener('click', async (e) => {
             body: JSON.stringify({ token, secretFromReq }),
         });
         if (!res.ok) throw await res.json();
+        
+        // Update localStorage user object to reflect 2FA enabled status
+        const user = JSON.parse(localStorage.getItem('user') ?? '{}');
+        user.twofa_enabled = true;
+        localStorage.setItem('user', JSON.stringify(user));
+        
         modal2FA.classList.add('hidden');
         refreshProfileHeader();
     } catch (e: any) {
