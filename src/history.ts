@@ -1,21 +1,15 @@
 import { MatchRow } from './types.js';
+import { getAuthHeader } from './utils/auth.js';
 
 const API_BASE = ``;
 const ENDPOINT = `${API_BASE}/api/matches/history`;
 
-function getAuthHeader(): HeadersInit {
-    const token = localStorage.getItem('token');
-    return {
-        'Content-Type': 'application/json',
-        Authorization: token ? `Bearer ${token}` : '',
-    };
-}
 
 /* Called from nav.ts when the History tab is opened */
 export async function initHistoryTab(): Promise<void> {
     try {
         //1- Fetch + parse
-        const r = await fetch(ENDPOINT, { headers: getAuthHeader() });
+        const r = await fetch(ENDPOINT, { headers: getAuthHeader(true) });
         if (!r.ok) throw new Error('Failed to load history.');
         const rows = (await r.json()) as MatchRow[];
 

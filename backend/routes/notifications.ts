@@ -23,7 +23,14 @@ export default async function notifRoutes(fastify: FastifyInstance) {
 		`
             )
             .all(userId);
-        return reply.send(rows);
+        
+        // Convert SQLite date format to ISO format
+        const formattedRows = rows.map((row: any) => ({
+            ...row,
+            date: new Date(row.date + 'Z').toISOString() // Add Z to treat as UTC
+        }));
+        
+        return reply.send(formattedRows);
     });
 
     //Mark one as read

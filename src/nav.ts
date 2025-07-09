@@ -6,6 +6,7 @@ import { pushHome } from './nav_history.js';
 import { populateProfileViews, refreshProfileHeader, setActiveTab } from './profile-setting.js';
 import { initStatsTab } from './stats.js';
 import { hideOverlay, initTournamentModal, showOverlay } from './tournament.js';
+import { loadTournamentScores } from './tournament-scores.js';
 import './welcome.js';
 
 //get the html elements
@@ -168,6 +169,7 @@ tabBtns.forEach((btn) =>
         panels.forEach((p) => p.classList.toggle('hidden', p.dataset.panel !== btn.dataset.tab));
         if (btn.dataset.tab === 'stats') initStatsTab();
         if (btn.dataset.tab === 'history') initHistoryTab();
+        if (btn.dataset.tab === 'tournament-scores') loadTournamentScores();
     })
 );
 addEventListener('resize', updateUnderline);
@@ -304,6 +306,11 @@ document.getElementById('remove-2fa-confirm-btn')?.addEventListener('click', asy
             errorEl.textContent = result.error || 'Something went wrong.';
             return;
         }
+
+        // Update localStorage user object to reflect 2FA disabled status
+        const user = JSON.parse(localStorage.getItem('user') ?? '{}');
+        user.twofa_enabled = false;
+        localStorage.setItem('user', JSON.stringify(user));
 
         (document.getElementById('remove-2fa-modal') as HTMLElement).classList.add('hidden');
         refreshProfileHeader();

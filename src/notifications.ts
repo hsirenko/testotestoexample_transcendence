@@ -23,7 +23,30 @@ const panel = document.querySelector<HTMLDivElement>('#notif-panel');
 const badge = document.querySelector<HTMLSpanElement>('#notif-badge');
 
 function fmtDate(iso: string): string {
+    // Handle empty or null dates
+    if (!iso || iso.trim() === '') {
+        return new Date().toLocaleString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    }
+    
     const d = new Date(iso);
+    
+    // Check if date is valid
+    if (isNaN(d.getTime())) {
+        console.warn('Invalid date string:', iso);
+        // Return current time formatted instead of fallback text
+        return new Date().toLocaleString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    }
+    
     return d.toLocaleString(undefined, {
         month: 'short',
         day: 'numeric',
@@ -273,8 +296,6 @@ function startNotificationsSocket(): void {
         return;
     }
     const wsUrl = `${WS_BASE}/notifications?token=${token}`;
-    const me = JSON.parse(localStorage.getItem('user') || '{}');
-    const myUserId = me.id;
     console.log('[notif] connecting to WS at', wsUrl);
     notifSocket = new WebSocket(wsUrl);
 
@@ -308,6 +329,12 @@ function startNotificationsSocket(): void {
     notifSocket.onmessage = async (ev) => {
         try {
             const incoming = JSON.parse(ev.data);
+            
+            // Handle ping/pong messages - ignore them
+            if (incoming.type === 'pong') {
+                return;
+            }
+            
             if (incoming.type === 'challenge_cancelled') {
                 notifications = notifications.filter(
                     (n) => !(n.type === 'challenge' && n.reference_id === incoming.from)
@@ -318,16 +345,21 @@ function startNotificationsSocket(): void {
             }
             if (incoming.type === 'challenge_declined') {
                 (window as any).removeWaitingOverlay?.();
+                return;
             }
             if (incoming.type === 'presence') {
                 loadFriendsSidebar();
                 return;
             }
-            const n = incoming as Notification;
-            notifications.unshift({ ...n, read: false });
-            updateBadge();
-            if (!panel?.classList.contains('hidden')) renderPanel();
-            if (n.type === 'friend_accept') loadFriendsSidebar();
+            
+            // Only process actual notifications, not system messages
+            if (incoming.id && incoming.text && incoming.date) {
+                const n = incoming as Notification;
+                notifications.unshift({ ...n, read: false });
+                updateBadge();
+                if (!panel?.classList.contains('hidden')) renderPanel();
+                if (n.type === 'friend_accept') loadFriendsSidebar();
+            }
         } catch (err) {
             console.log('[notif] WS parse error', err);
         }

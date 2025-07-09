@@ -1,11 +1,8 @@
 // friends.ts – sidebar with two-click “Remove friend” confirmation
 import { openFriendStats } from './friendstats.js';
+import { getAuthHeader } from './utils/auth.js';
 const statusDots = new Map<number, HTMLSpanElement>();
 
-function getAuthHeader(): HeadersInit {
-    const t = localStorage.getItem('token');
-    return t ? { Authorization: `Bearer ${t}` } : {};
-}
 
 function showToast(msg: string, isError = false): void {
     const t = document.getElementById('friends-toast')!;
@@ -157,11 +154,53 @@ export async function loadFriendsSidebar(): Promise<void> {
     }
 }
 
-(async () => {
-    if (!(await (window as any).isValidToken?.())) return;
+// Initialize friends sidebar on page load
+async function initFriends() {
+    // Check if user is logged in using localStorage first (immediate check)
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    
+    if (!token || !user) {
+        return;
+    }
 
-    await loadFriendsSidebar();
-})();
+    // Wait for isValidToken to be available and validate the token
+    let retries = 0;
+    const maxRetries = 50; // Wait up to 5 seconds
+    
+    while (retries < maxRetries) {
+        if ((window as any).isValidToken) {
+            try {
+                const isValid = await (window as any).isValidToken();
+                if (isValid) {
+                    await loadFriendsSidebar();
+                }
+                return;
+            } catch (error) {
+                console.error('Error validating token:', error);
+                return;
+            }
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 100));
+        retries++;
+    }
+    
+    // Fallback: if isValidToken is not available after waiting, just load friends
+    // since we already checked localStorage
+    try {
+        await loadFriendsSidebar();
+    } catch (error) {
+        console.error('Failed to load friends sidebar:', error);
+    }
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initFriends);
+} else {
+    initFriends();
+}
 
 const refreshBtn = document.getElementById('friends-refresh') as HTMLButtonElement | null;
 
