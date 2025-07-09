@@ -1,50 +1,50 @@
 services:
-  backend:
-    build:
-      context: ./backend
-      # assumes ./backend/Dockerfile exists
-    env_file:
-      - ./backend/.env
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./backend/pong.db:/app/dist/pong.db # mount existing database file to correct path
-      - ./uploads:/app/uploads
-    networks:
-      - transcendence_net
+    backend:
+        build:
+            context: ./backend
+            # assumes ./backend/Dockerfile exists
+        env_file:
+            - ./backend/.env
+        ports:
+            - '3000:3000'
+        volumes:
+            - ./backend/pong.db:/app/dist/pong.db # mount existing database file to correct path
+            - ./uploads:/app/uploads
+        networks:
+            - transcendence_net
 
-  frontend:
-    build:
-      context: .
-      # assumes ./Dockerfile exists in project root
-    ports:
-      - "5500:5500"
-    depends_on:
-      - backend
-    environment:          # used at build-time by Vite / Rollup
-      - VITE_API_URL=/api
-      - VITE_WS_URL=/ws
-    networks:
-      - transcendence_net
+    frontend:
+        build:
+            context: .
+            # assumes ./Dockerfile exists in project root
+        ports:
+            - '5500:5500'
+        depends_on:
+            - backend
+        environment: # used at build-time by Vite / Rollup
+            - VITE_API_URL=/api
+            - VITE_WS_URL=/ws
+        networks:
+            - transcendence_net
 
-  nginx:
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
-    ports:
-      - "8090:80"
-      - "8443:443"
-    volumes:
-      - ./uploads:/app/uploads        # ⬅️ must match backend path
-    depends_on:
-      - frontend
-      - backend
-    networks:
-      - transcendence_net
+    nginx:
+        build:
+            context: ./nginx
+            dockerfile: Dockerfile
+        ports:
+            - '8090:80'
+            - '8443:443'
+        volumes:
+            - ./uploads:/app/uploads # ⬅️ must match backend path
+        depends_on:
+            - frontend
+            - backend
+        networks:
+            - transcendence_net
 
 volumes:
-  uploads:  
+    uploads:
 
 networks:
-  transcendence_net:
-    driver: bridge
+    transcendence_net:
+        driver: bridge

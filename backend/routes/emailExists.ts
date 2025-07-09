@@ -9,11 +9,11 @@ import db from '../utils/db';
  *   – 404 { exists: false }  when the e-mail is **not** found
  */
 export default async function emailExistsRoutes(fastify: FastifyInstance) {
-  fastify.post('/auth/email-exists', async (req, reply) => {
-    const { email } = req.body as { email?: string };
-    if (!email) return reply.code(400).send({ error: 'Email required' });
+    fastify.post('/auth/email-exists', async (req, reply) => {
+        const { email } = req.body as { email?: string };
+        if (!email) return reply.code(400).send({ error: 'Email required' });
 
-    const hit = db.prepare('SELECT 1 FROM users WHERE email = ?').get(email);
-    return reply.send({ exists: Boolean(hit) });
-  });
+        const hit = db.prepare('SELECT 1 FROM users WHERE email = ?').get(email);
+        return reply.send({ exists: Boolean(hit) });
+    });
 }

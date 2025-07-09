@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Frontend Development
+
 ```bash
 # Install dependencies
 npm install
@@ -23,6 +24,7 @@ npm run serve
 ```
 
 ### Backend Development
+
 ```bash
 # Navigate to backend directory
 cd backend
@@ -38,6 +40,7 @@ npm run start
 ```
 
 ### Full Application
+
 ```bash
 # Start entire application with Docker
 docker-compose up --build
@@ -52,12 +55,14 @@ This is a **full-stack multiplayer Pong game** built as a Single Page Applicatio
 ### Key Components
 
 **Frontend (TypeScript + Tailwind CSS)**
+
 - SPA with custom routing (`nav_history.ts`)
 - Real-time game rendering on HTML5 Canvas
 - WebSocket client for multiplayer synchronization
 - Chart.js for statistics visualization
 
 **Backend (Fastify + Node.js)**
+
 - RESTful API with JWT authentication
 - WebSocket server for real-time multiplayer
 - Server-side game logic to prevent cheating
@@ -65,18 +70,21 @@ This is a **full-stack multiplayer Pong game** built as a Single Page Applicatio
 - Google OAuth2 and 2FA support
 
 **Infrastructure**
+
 - Docker Compose with nginx reverse proxy
 - Three-service architecture (frontend, backend, nginx)
 - SSL/TLS termination at nginx layer
 - Persistent SQLite database via Docker volumes
 
 ### Real-Time Features
+
 - **Game State Synchronization**: Server-side game logic broadcasts to all connected clients
 - **Live Chat**: Direct messaging and game invitations
 - **Tournament System**: Bracket-style tournaments with live updates
 - **Notifications**: Real-time notifications for game invites, friend requests, etc.
 
 ### Security Implementation
+
 - **Authentication**: JWT tokens with refresh mechanism
 - **2FA**: TOTP with QR code generation using Speakeasy
 - **Password Security**: PBKDF2 hashing with salt
@@ -84,13 +92,16 @@ This is a **full-stack multiplayer Pong game** built as a Single Page Applicatio
 - **HTTPS/WSS**: Secure connections enforced
 
 ### Database Schema
+
 SQLite database handles:
+
 - User management (profiles, friends, authentication)
 - Game history and statistics
 - Tournament records
 - Chat messages and notifications
 
 ### Blockchain Integration
+
 - **Smart Contracts**: Solidity contracts deployed on Avalanche Fuji testnet
 - **Purpose**: Immutable tournament score storage
 - **Technology**: Hardhat development framework with Ethers.js
@@ -98,6 +109,7 @@ SQLite database handles:
 ## Development Notes
 
 ### File Structure
+
 - `src/`: Frontend TypeScript source files
 - `backend/`: Fastify backend server
 - `smart-contracts/`: Solidity smart contracts
@@ -105,6 +117,7 @@ SQLite database handles:
 - `uploads/`: User avatar storage
 
 ### Key Files
+
 - `main.ts`: Core game logic and WebSocket handling
 - `game.ts`: Server-side Pong game implementation
 - `gameManager.ts`: Manages active game instances
@@ -112,13 +125,17 @@ SQLite database handles:
 - `auth.ts`: Frontend authentication flow
 
 ### Environment Setup
+
 Backend requires `.env` file with:
+
 - `JWT_SECRET`: Strong secret for JWT signing
 - `GOOGLE_CLIENT_ID` & `GOOGLE_CLIENT_SECRET`: Google OAuth credentials
 - `IP_ADDR`: Server IP address for Docker networking
 
 ### WebSocket Events
+
 The application uses extensive WebSocket communication for:
+
 - Game state updates
 - Player actions (paddle movement, game commands)
 - Tournament progression
@@ -126,4 +143,5 @@ The application uses extensive WebSocket communication for:
 - Friend status updates
 
 ### Testing
+
 No automated test suite is currently configured. Manual testing is performed through the web interface.

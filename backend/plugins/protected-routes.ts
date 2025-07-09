@@ -12,25 +12,25 @@ import friendsStatsRoutes from '../routes/friendsStats';
 import gameRoutes from '../routes/gameRoutes';
 import notifRoutes from '../routes/notifications';
 import challengeRoutes from '../routes/challengeRoutes';
-import tournamentRoutes      from '../routes/tournamentRoutes';
+import tournamentRoutes from '../routes/tournamentRoutes';
 import scoreRoutes from '../routes/scoreRoutes';
 
 export default async function protectedRoutes(fastify: FastifyInstance) {
-  // Add auth middleware to all routes in this plugin
-  fastify.addHook('preHandler', authMiddleware);
+    // Add auth middleware to all routes in this plugin
+    fastify.addHook('preHandler', authMiddleware);
 
-  // Register protected routes
-  await fastify.register(matchRoutes);
-  await fastify.register(statsRoutes);
-  await fastify.register(userRoutes);
-  await fastify.register(userFriends);
-  await fastify.register(twoFactorSetupRoutes);
-  await fastify.register(twoFactorVerifyRoutes);
-  await fastify.register(twoFactorRemoveRoutes);
-  await fastify.register(friendsStatsRoutes);
-  await fastify.register(gameRoutes);
-  await fastify.register(notifRoutes);
-  await fastify.register(challengeRoutes);
-  await fastify.register(tournamentRoutes);
-  await fastify.register(scoreRoutes);
-} 
+    // Register protected routes
+    await fastify.register(matchRoutes);
+    await fastify.register(statsRoutes);
+    await fastify.register(userRoutes);
+    await fastify.register(userFriends);
+    await fastify.register(twoFactorSetupRoutes);
+    await fastify.register(twoFactorVerifyRoutes);
+    await fastify.register(twoFactorRemoveRoutes);
+    await fastify.register(friendsStatsRoutes);
+    await fastify.register(gameRoutes);
+    await fastify.register(notifRoutes);
+    await fastify.register(challengeRoutes);
+    await fastify.register(tournamentRoutes);
+    await fastify.register(scoreRoutes);
+}

@@ -5,7 +5,6 @@ const path = require('path');
 const dbPath = path.join(__dirname, '..', 'pong.db');
 const db = new Database(dbPath);
 
-
 // USERS
 db.exec(`
 CREATE TABLE IF NOT EXISTS users (
@@ -22,7 +21,6 @@ CREATE TABLE IF NOT EXISTS users (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 `);
-
 
 // TOURNAMENTS
 db.exec(`
@@ -84,7 +82,6 @@ CREATE TABLE IF NOT EXISTS friends (
 );
 `);
 
-
 db.exec(`
 CREATE TABLE IF NOT EXISTS challenges (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -122,7 +119,5 @@ CREATE TABLE IF NOT EXISTS password_resets (
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
 `);
-
-
 
 export default db;
