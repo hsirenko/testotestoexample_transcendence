@@ -145,7 +145,7 @@ export async function refreshProfileHeader(): Promise<void> {
         if (mailEl && user.email) mailEl.textContent = user.email;
         if (avatar) avatar.src = resolveAvatar(user.avatar_url);
         const me = await fetchMe();
-        if (user.twofa_enabled) {
+        if (me.twofa_enabled) {
             status2FA.textContent = '2FA Enabled ✅';
             enable2FABtn.innerHTML = 'Reset 2FA';
             remove2FABtn.classList.remove('hidden');
